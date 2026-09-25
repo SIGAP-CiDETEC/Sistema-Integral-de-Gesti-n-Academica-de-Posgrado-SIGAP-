@@ -1,0 +1,22 @@
+@import "tailwindcss";
+
+/* Paleta institucional SIGAP (tomada de los mockups) */
+@theme {
+  --color-navy-950: #0b2240;
+  --color-navy-900: #0f2d55;
+  --color-navy-800: #143a6b;
+  --color-navy-700: #1c4a85;
+  --color-primary: #1d4ed8;
+  --color-primary-hover: #1e40af;
+  --color-guinda: #6c1d45;
+  --color-guinda-soft: #f6e9f0;
+  --color-surface: #f4f5f9;
+
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, "Segoe UI", Roboto,
+    Arial, sans-serif;
+}
+
+body {
+  background: var(--color-surface);
+  color: #111827;
+}
