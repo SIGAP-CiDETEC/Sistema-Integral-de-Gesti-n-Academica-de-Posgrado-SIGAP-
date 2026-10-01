@@ -1,5 +1,8 @@
 import {
+  Award,
   BarChart3,
+  CalendarRange,
+  LayoutPanelTop,
   BookOpenCheck,
   CalendarDays,
   Bell,
@@ -40,6 +43,9 @@ const ICONS: Record<IconName, React.ComponentType<LucideProps>> = {
   comunicados: Mail,
   idiomas: Languages,
   cartas: FileSignature,
+  resultados: Award,
+  contenido: LayoutPanelTop,
+  calendario: CalendarRange,
 };
 
 export function NavIcon({ name, ...props }: { name: IconName } & LucideProps) {

@@ -18,13 +18,13 @@ export const MODALIDADES: Record<
 > = {
   propedeutico: {
     titulo: "Cursos propedéuticos con opción a examen",
-    fechas: "27 de abril al 29 de mayo de 2026",
+    fechas: "9 de noviembre al 10 de diciembre de 2026",
     detalle: "Presencial · duración 5 semanas",
-    segundaOportunidad: "Si no acreditas el curso, puedes presentar el examen de admisión el 8 de junio de 2026 (RN-08).",
+    segundaOportunidad: "Si no acreditas una o las dos áreas del curso, puedes presentar el examen de esas áreas el 15 de diciembre de 2026 (RN-08).",
   },
   examen: {
     titulo: "Presentar solo examen",
-    fechas: "8 de junio de 2026",
+    fechas: "15 de diciembre de 2026",
     detalle: "Examen de admisión directo",
     segundaOportunidad: "Si no acreditas el examen, el proceso termina y podrás participar en una nueva convocatoria (RN-08).",
   },

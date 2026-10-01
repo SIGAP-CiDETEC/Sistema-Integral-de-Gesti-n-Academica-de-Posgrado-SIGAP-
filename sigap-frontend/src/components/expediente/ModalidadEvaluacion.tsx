@@ -1,10 +1,12 @@
 "use client";
 
+import Link from "next/link";
 import { AlertTriangle, BookOpen, CalendarDays, CheckCircle2, FileQuestion, Info, Lock, Mail, RotateCcw } from "lucide-react";
 import { CORREO_POSGRADO } from "@/lib/config";
 import { DIAS, choques, describirGrupo, type Grupo, type Materia, type ModalidadId } from "@/lib/evaluacion";
 import { useConfigEvaluacion } from "@/lib/evaluacion-config";
 import { useExpediente } from "./ExpedienteProvider";
+import { RecordatoriosExamen } from "./Recordatorios";
 
 const ICONO: Record<ModalidadId, typeof BookOpen> = { propedeutico: BookOpen, examen: FileQuestion };
 
@@ -34,7 +36,7 @@ export function ModalidadEvaluacion() {
   const faltanGrupos = modalidad === "propedeutico" && elegidos.length < MATERIAS.length;
   const puedeConfirmar = !!modalidad && !faltanGrupos && cruces.length === 0;
 
-  const reiniciarDemo = () => guardarEvaluacion({ modalidad: undefined, grupos: {}, confirmadaEl: undefined });
+  const reiniciarDemo = () => guardarEvaluacion({ modalidad: undefined, grupos: {}, confirmadaEl: undefined, segundaOportunidad: undefined });
 
   if (confirmada && modalidad) {
     return (
@@ -251,12 +253,18 @@ function Resumen({
         </p>
       </section>
 
+      {modalidad === "examen" && <RecordatoriosExamen />}
+
       <section className="flex gap-3 rounded-xl border border-gray-200 bg-white p-5 text-sm">
         <Info size={18} className="mt-0.5 shrink-0 text-primary" />
         <div>
-          <p className="font-semibold text-gray-900">Resultado</p>
+          <p className="font-semibold text-gray-900">Resultados</p>
           <p className="mt-1 text-gray-600">
-            Posgrado registrará tu resultado (aprobatorio o reprobatorio) al terminar. {m.segundaOportunidad}
+            Posgrado publicará tus resultados por área en{" "}
+            <Link href="/aspirante/resultados" className="font-medium text-primary underline">
+              5 · Resultados
+            </Link>
+            . {m.segundaOportunidad}
           </p>
         </div>
       </section>

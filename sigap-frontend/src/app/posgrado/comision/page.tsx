@@ -4,10 +4,10 @@ import { useState } from "react";
 import { ArrowRight, CheckCircle2, Download, FileText, Paperclip, Send } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { usePosgrado } from "@/components/posgrado/PosgradoProvider";
-import { Aviso, Etiqueta, Tarjeta, botonPrimario, botonSecundario, inputBase } from "@/components/posgrado/ui";
+import { Aviso, Etiqueta, Tarjeta, botonPrimario, botonSecundario, inputBase, Regresar } from "@/components/posgrado/ui";
 import { convocatoriaActual } from "@/lib/config";
 import { MODALIDADES } from "@/lib/evaluacion";
-import { fechaCorta, prorrogasDe, resultadoFinal, totalPuntaje, type AspiranteP, type ResolucionColegio } from "@/lib/posgrado/datos";
+import { fechaCorta, prorrogasDe, resultadoFinal, type AspiranteP, type ResolucionColegio } from "@/lib/posgrado/datos";
 
 const TONO: Record<ResolucionColegio, string> = {
   Aceptado: "bg-emerald-50 text-emerald-700",
@@ -24,24 +24,23 @@ export default function Comision() {
   const [res, setRes] = useState<Record<string, ResolucionColegio>>({});
   if (!cargado) return null;
 
-  const enComision = aspirantes.filter((a) => a.etapa === "dictamen" && !a.concluido);
+  const enComision = aspirantes.filter((a) => a.etapa === "dictamen" && !a.concluido && !a.turnadoUteycv);
   const sinResolucion = enComision.filter((a) => !a.resolucion);
   const porTurnar = enComision.filter((a) => a.resolucion && a.resolucion !== "No aceptado");
-  const turnados = aspirantes.filter((a) => a.etapa === "matricula");
+  const turnados = aspirantes.filter((a) => !!a.turnadoUteycv);
   const informeListo = !!acta?.informeGeneradoEl;
   const resolucionDe = (a: AspiranteP) => res[a.id] ?? "Aceptado";
   const puedeRegistrar = informeListo && numero.trim() && fecha && archivo && sinResolucion.length > 0;
 
   const descargarInforme = () => {
     const filas = [
-      ["ID temporal", "Aspirante", "Procedencia", "Promedio", "Entrevista", "Puntaje", "Modalidad", "Calificación", "Propuesta"],
+      ["ID temporal", "Aspirante", "Procedencia", "Promedio", "Entrevista", "Modalidad", "Calificación", "Propuesta"],
       ...enComision.map((a) => [
         a.id,
         a.nombre,
         a.procedencia,
         a.promedio,
         a.dictamen?.resolucion ?? "",
-        a.dictamen ? String(totalPuntaje(a.dictamen.puntajes)) : "",
         a.evaluacion.modalidad ? MODALIDADES[a.evaluacion.modalidad].titulo : "",
         String(resultadoFinal(a.evaluacion)?.calificacion ?? ""),
         a.resolucion ?? "Aceptado",
@@ -58,6 +57,7 @@ export default function Comision() {
 
   return (
     <>
+      <Regresar href="/posgrado" t="Inicio" />
       <PageHeader titulo="Comisión y dictamen" subtitulo="Informe de la Comisión de Admisión y resolución del Colegio de Profesores" />
 
       <div className="space-y-6">
@@ -102,7 +102,7 @@ export default function Comision() {
                         </p>
                       </td>
                       <td className="py-2.5 text-gray-700">
-                        {a.dictamen ? `${a.dictamen.resolucion} · ${totalPuntaje(a.dictamen.puntajes)}/100` : "—"}
+                        {a.dictamen ? a.dictamen.resolucion : "—"}
                       </td>
                       <td className="py-2.5 text-gray-700">
                         {a.evaluacion.modalidad === "examen" || a.evaluacion.examen ? "Examen" : "Propedéutico"} · {r?.calificacion ?? "—"}
@@ -188,7 +188,7 @@ export default function Comision() {
                     r === "No aceptado" ? "Resultado de tu proceso de admisión" : "¡Fuiste admitido(a)!",
                     r === "No aceptado"
                       ? `Estimado(a) ${nom}:\n\nAgradecemos tu interés en la Maestría en Tecnología de Cómputo. Te informamos que tu proceso de admisión en esta convocatoria ha concluido.\n\nAtentamente,\nDepartamento de Posgrado · CIDETEC`
-                      : `Estimado(a) ${nom}:\n\nEl Colegio de Profesores resolvió tu admisión a la Maestría en Tecnología de Cómputo${r === "Condicionado" ? " (condicionada)" : ""}. Control Escolar (UTEyCV) te enviará tu dictamen SIP-04 y las instrucciones de inscripción.\n\nAtentamente,\nDepartamento de Posgrado · CIDETEC`,
+                      : `Estimado(a) ${nom}:\n\nEl Colegio de Profesores resolvió tu admisión a la Maestría en Tecnología de Cómputo${r === "Condicionado" ? " (condicionada)" : ""}. Control Escolar (UTEyCV) te enviará tu dictamen SIP-04, con el que concluye tu proceso de admisión.\n\nAtentamente,\nDepartamento de Posgrado · CIDETEC`,
                   );
                 });
               }}
@@ -204,7 +204,7 @@ export default function Comision() {
         </Tarjeta>
 
         <Tarjeta titulo="3. Turnar a Control Escolar (UTEyCV)">
-          <p className="text-sm text-gray-600">UTEyCV elabora el dictamen SIP-04, recaba firmas, lo publica al aspirante y formaliza su matrícula (SICEP).</p>
+          <p className="text-sm text-gray-600">UTEyCV elabora el dictamen SIP-04, recaba firmas y lo publica al aspirante. Con eso concluye su proceso de admisión.</p>
           <p className="mt-1 text-xs text-gray-500">Si tiene documentos en prórroga, se turna igual y UTEyCV verá la fecha límite.</p>
           {porTurnar.length ? (
             <ul className="mt-3 divide-y divide-gray-100 text-sm">
@@ -221,7 +221,7 @@ export default function Comision() {
                   <button
                     type="button"
                     className={botonSecundario}
-                    onClick={() => actualizar(a.id, { etapa: "matricula", turnadoUteycv: new Date().toISOString() }, "Turnó a UTEyCV para SIP-04 y matrícula")}
+                    onClick={() => actualizar(a.id, { turnadoUteycv: new Date().toISOString() }, "Turnó a UTEyCV para el dictamen SIP-04")}
                   >
                     <Send size={14} /> Turnar
                   </button>

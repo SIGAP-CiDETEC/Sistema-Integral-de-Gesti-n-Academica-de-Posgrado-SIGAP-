@@ -6,7 +6,7 @@ import { useEstadoAdmision } from "@/lib/posgrado/revision";
 const fechaLarga = (f: string) =>
   new Date(`${f}T12:00:00`).toLocaleDateString("es-MX", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
 
-/** Cita de entrevista que programó Posgrado (RF-10). El aspirante ve fecha, hora y lugar; no los puntajes. */
+/** Cita de entrevista que programó Posgrado (RF-10). El aspirante ve fecha, hora y lugar. */
 export function CitaEntrevista() {
   const { entrevista, resultadoEntrevista } = useEstadoAdmision();
 

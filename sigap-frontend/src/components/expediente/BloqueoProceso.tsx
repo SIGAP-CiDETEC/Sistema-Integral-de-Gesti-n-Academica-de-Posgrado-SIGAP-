@@ -10,7 +10,7 @@ const SIEMPRE = ["/aspirante", "/aspirante/admision", "/aspirante/notificaciones
 
 /**
  * RF-14, RN-05 y RN-08: si el proceso concluyó sin admisión, el aspirante ya no puede avanzar.
- * Solo ve un aviso general (RF-17: no se le muestra "Rechazado" ni los puntajes).
+ * Solo ve un aviso general (RF-17: no se le muestra "Rechazado").
  */
 export function BloqueoProceso({ children }: { children: React.ReactNode }) {
   const { concluido } = useEstadoAdmision();

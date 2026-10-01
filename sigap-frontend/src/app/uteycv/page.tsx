@@ -12,10 +12,7 @@ import { TONO_UTEYCV, diasPara, estadoUteycv, fechaCorta, prorrogasDe } from "@/
 export default function UteycvInicio() {
   const { aspirantes, cargado, usuario } = usePosgrado();
   if (!cargado) return null;
-  const activos = aspirantes.filter((a) => !a.concluido);
-  const porAvalar = activos.filter((a) => a.documentos.some((d) => d.id === "ingles" && d.estado === "aval"));
-  const cartas = activos.filter((a) => a.formatos["sip-05"] && a.formatos["sip-06"] && !a.uteycv?.cartasValidadasEl);
-  const turnados = aspirantes.filter((a) => a.etapa === "matricula");
+  const turnados = aspirantes.filter((a) => !!a.turnadoUteycv);
   const estados = turnados.map((a) => estadoUteycv(a));
   const prorrogas = turnados.flatMap((a) => prorrogasDe(a).map((d) => ({ a, d, dias: diasPara(d.prorrogaHasta!) })));
 
@@ -23,11 +20,9 @@ export default function UteycvInicio() {
     <>
       <PageHeader titulo="Control Escolar · Admisión" subtitulo={`${convocatoriaActual.nombre} · Hola, ${usuario}`} />
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Kpi valor={porAvalar.length} etiqueta="Constancias de inglés por avalar (DFLE)" color="text-amber-600" href="/uteycv/ingles" />
-        <Kpi valor={cartas.length} etiqueta="Cartas SIP-05/06 por validar" color="text-primary" href="/uteycv/cartas" />
-        <Kpi valor={estados.filter((e) => e !== "Integrando expediente" && e !== "Listo para formalizar" && e !== "Matrícula formalizada").length} etiqueta="Dictámenes SIP-04 en proceso" color="text-guinda" href="/uteycv/dictamen" />
-        <Kpi valor={estados.filter((e) => e === "Matrícula formalizada").length} etiqueta={`Matrículas formalizadas de ${turnados.length}`} color="text-emerald-700" href="/uteycv/matricula" />
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Kpi valor={estados.filter((e) => e !== "Dictamen publicado").length} etiqueta="Dictámenes SIP-04 en proceso" color="text-guinda" href="/uteycv/dictamen" />
+        <Kpi valor={estados.filter((e) => e === "Dictamen publicado").length} etiqueta={`Dictámenes publicados de ${turnados.length}`} color="text-emerald-700" href="/uteycv/dictamen" />
       </div>
 
       <div className="mt-6 grid gap-6 xl:grid-cols-[1fr_340px]">
@@ -45,7 +40,6 @@ export default function UteycvInicio() {
               <tbody className="divide-y divide-gray-100">
                 {turnados.map((a) => {
                   const e = estadoUteycv(a);
-                  const enDictamen = !["Integrando expediente", "Listo para formalizar", "Matrícula formalizada"].includes(e);
                   return (
                     <tr key={a.id}>
                       <td className="py-2.5">
@@ -59,8 +53,8 @@ export default function UteycvInicio() {
                         <Etiqueta tono={TONO_UTEYCV[e]}>{e}</Etiqueta>
                       </td>
                       <td className="py-2.5 text-right">
-                        <Link href={`${enDictamen ? "/uteycv/dictamen" : "/uteycv/matricula"}?id=${a.id}`} className="text-primary hover:underline">
-                          {enDictamen ? "SIP-04" : e === "Matrícula formalizada" ? "Ver" : "Matrícula"}
+                        <Link href={`/uteycv/dictamen?id=${a.id}`} className="text-primary hover:underline">
+                          {e === "Dictamen publicado" ? "Ver" : "SIP-04"}
                         </Link>
                       </td>
                     </tr>
@@ -79,21 +73,10 @@ export default function UteycvInicio() {
         </Tarjeta>
 
         <div className="space-y-6">
-          {porAvalar.length > 0 && (
-            <Aviso tono="alerta" titulo={`${porAvalar.length} constancia(s) de inglés esperan el aval de la DFLE`}>
-              <ul className="mt-1 list-disc pl-5">
-                {porAvalar.map((a) => (
-                  <li key={a.id}>
-                    {a.nombre} {a.uteycv?.avalEnviadoEl ? `· enviada el ${fechaCorta(a.uteycv.avalEnviadoEl)}` : "· sin enviar"}
-                  </li>
-                ))}
-              </ul>
-            </Aviso>
-          )}
           {prorrogas.length > 0 && (
             <Aviso tono="info" titulo="Documentos en prórroga de aspirantes turnados">
               <p className="flex items-start gap-1.5">
-                <TriangleAlert size={14} className="mt-0.5 shrink-0" /> Verifícalos antes de formalizar la matrícula.
+                <TriangleAlert size={14} className="mt-0.5 shrink-0" /> Verifícalos antes de publicar el dictamen.
               </p>
               <ul className="mt-1 space-y-0.5">
                 {prorrogas.map(({ a, d, dias }) => (

@@ -6,7 +6,7 @@ import type { Respuestas } from "./registro-form";
  * (ver useExpediente). Con backend: GET /aspirantes/me.
  */
 export const REGISTRO_DEMO: Respuestas = {
-  semestre: "B26 (agosto 2026 - enero 2027)",
+  semestre: "A27 (enero – junio 2027)",
   programa: "Maestría en Tecnología de Cómputo",
   apellidoPaterno: "González",
   apellidoMaterno: "López",
@@ -17,7 +17,7 @@ export const REGISTRO_DEMO: Respuestas = {
   ultimosEstudios: "Ingeniería en Sistemas Computacionales",
   porQuePrograma: "Quiero especializarme en cómputo de alto desempeño.",
   institucion: "IPN",
-  unidadIpn: "ESCOM",
+  unidadIpn: "ESCOM — Escuela Superior de Cómputo",
   promedio: "8.7",
   titulado: "Sí",
   opcionTitulacion: "Tesis",

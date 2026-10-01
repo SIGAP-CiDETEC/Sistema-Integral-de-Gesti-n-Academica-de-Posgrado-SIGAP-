@@ -5,7 +5,7 @@ import { useState } from "react";
 import { Info, Search } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { usePosgrado } from "@/components/posgrado/PosgradoProvider";
-import { EtiquetaBandeja, Etiqueta, Progreso, inputBase } from "@/components/posgrado/ui";
+import { EtiquetaBandeja, Etiqueta, Progreso, inputBase, Regresar } from "@/components/posgrado/ui";
 import { ETAPAS } from "@/lib/admision";
 import { TONO_BANDEJA, bandejaDe, prioridadDe, progresoDe, type Bandeja, type Prioridad } from "@/lib/posgrado/datos";
 
@@ -36,6 +36,7 @@ export function BandejaAspirantes({ inicial, prioridadInicial }: { inicial?: str
 
   return (
     <>
+      <Regresar href="/posgrado" t="Inicio" />
       <PageHeader titulo="Bandeja de aspirantes" subtitulo="Consulta y prioriza solicitudes" />
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">

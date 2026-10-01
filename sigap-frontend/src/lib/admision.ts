@@ -12,7 +12,6 @@ export const ETAPAS = [
   { id: "entrevista", label: "Entrevista", estado: "Entrevista programada" },
   { id: "evaluacion", label: "Evaluación", estado: "En evaluación" },
   { id: "dictamen", label: "Dictamen final", estado: "En dictamen final" },
-  { id: "matricula", label: "Matrícula", estado: "Inscrito" },
 ] as const;
 
 export type EtapaId = (typeof ETAPAS)[number]["id"];
@@ -107,20 +106,6 @@ export const SOLICITUDES_DEMO: Record<EtapaId, SolicitudAdmision> = {
     proximaActividad: { fecha: "30 abr", descripcion: "Publicación de resultados" },
     avisos: [
       { tipo: "exito", titulo: "Evaluación acreditada", texto: "Tu resultado pasa a la Comisión de Admisión del Colegio de Profesores." },
-    ],
-    siguientePaso: null,
-  },
-  matricula: {
-    ...base,
-    etapa: "matricula",
-    documentos: { validados: 5, total: 5 },
-    proximaActividad: { fecha: "4 may", descripcion: "Inicio de inscripciones" },
-    avisos: [
-      {
-        tipo: "exito",
-        titulo: "¡Fuiste admitido!",
-        texto: "Tu boleta definitiva es B260842. Úsala para iniciar sesión a partir de ahora.",
-      },
     ],
     siguientePaso: null,
   },

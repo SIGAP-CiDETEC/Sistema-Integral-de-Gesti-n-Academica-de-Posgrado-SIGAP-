@@ -6,16 +6,14 @@ import { use, useState } from "react";
 import { ArrowLeft, AtSign, Eye, EyeOff, Lock, LogIn, ShieldCheck } from "lucide-react";
 import { Logos } from "@/components/Logos";
 import { PERIODO_ESCOLAR } from "@/lib/config";
-import { leerCuenta } from "@/lib/cuenta-alumno";
 import { USUARIOS_DEMO, autenticar, iniciarSesion } from "@/lib/sesion";
 
 /**
  * Login único para todos los usuarios. El campo acepta:
  * - ID temporal de aspirante (ASP-2026-001)          → CU-ADM-01
- * - Número de registro SICEP / boleta (B260842)      → RF-30, RN-12
  * - Correo institucional (@ipn.mx)                  → RF-32 (personal: cada quien con su cuenta)
  *
- * CASCARÓN: aspirantes/alumnos entran con cualquier contraseña; el personal usa las
+ * CASCARÓN: los aspirantes entran con cualquier contraseña; el personal usa las
  * cuentas de USUARIOS_DEMO (src/lib/sesion.ts), cada una con su contraseña. Se decide el destino según el formato
  * del usuario; cuando exista NestJS, esto se reemplaza por POST /auth/login.
  */
@@ -28,18 +26,9 @@ function destinoSimulado(usuario: string, password: string): { ruta: string } | 
     iniciarSesion(cuentaPersonal);
     return { ruta: `/${cuentaPersonal.rol}` };
   }
-  const cuenta = leerCuenta();
-  if (u.startsWith("ASP-")) {
-    // RF-30: con número SICEP asignado, el ID temporal deja de servir para entrar
-    if (cuenta) return { error: `Tu ID temporal ya no es válido. Ahora inicias sesión con tu número de registro ${cuenta.numeroRegistro}.` };
-    return { ruta: "/aspirante" };
-  }
-  if (/^[A-Z]?\d{6,}$/.test(u)) {
-    // Primer inicio de sesión como alumno: debe cambiar la contraseña temporal
-    if (cuenta && u === cuenta.numeroRegistro.toUpperCase() && !cuenta.contrasenaCambiadaEl) return { ruta: "/cambiar-contrasena" };
-    return { ruta: "/alumno" };
-  }
-  return { error: "Usuario no reconocido. Usa tu correo institucional, tu ID temporal o tu número de registro." };
+  // El proceso de admisión termina con el dictamen SIP-04: el aspirante siempre entra con su ID temporal
+  if (u.startsWith("ASP-")) return { ruta: "/aspirante" };
+  return { error: "Usuario no reconocido. Usa tu correo institucional o tu ID temporal de aspirante." };
 }
 
 export default function LoginPage({ searchParams }: PageProps<"/login">) {
@@ -72,7 +61,7 @@ export default function LoginPage({ searchParams }: PageProps<"/login">) {
         <div className="flex flex-col items-center text-center">
           <Logos size={64} />
           <span className="mt-5 rounded-full bg-indigo-50 px-3 py-0.5 text-xs font-medium text-primary">
-            Portal de Aspirantes, Alumnos y Docentes
+            Portal de Aspirantes y personal del CIDETEC
           </span>
           <h1 className="mt-3 text-xl font-semibold leading-snug text-gray-900">
             Sistema Integral de Gestión Académica de Posgrado
@@ -96,13 +85,13 @@ export default function LoginPage({ searchParams }: PageProps<"/login">) {
                   setUsuario(e.target.value);
                   setError("");
                 }}
-                placeholder="correo@ipn.mx, ASP-2026-001 o boleta"
+                placeholder="correo@ipn.mx o ASP-2026-001"
                 autoComplete="username"
                 className="w-full py-2.5 text-sm outline-none"
               />
             </div>
             <p className="mt-1 text-xs text-gray-500">
-              Correo institucional, ID temporal de aspirante o número de registro.
+              Correo institucional o ID temporal de aspirante.
             </p>
           </div>
 
@@ -169,12 +158,9 @@ export default function LoginPage({ searchParams }: PageProps<"/login">) {
         {/* Solo para el cascarón: accesos de prueba */}
         <div className="mt-6 border-t border-dashed border-gray-200 pt-4">
           <p className="text-center text-xs text-gray-500">Acceso de prueba (solo cascarón)</p>
-          <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
+          <div className="mt-2 grid gap-2 text-xs">
             <Link href="/aspirante" className="rounded-md border border-gray-200 py-1.5 text-center hover:bg-gray-50">
               Aspirante
-            </Link>
-            <Link href="/alumno" className="rounded-md border border-gray-200 py-1.5 text-center hover:bg-gray-50">
-              Alumno
             </Link>
           </div>
           <p className="mt-3 text-xs text-gray-500">Cuentas del personal (cada una con su contraseña):</p>

@@ -5,8 +5,13 @@ import { RegistroWizard } from "@/components/registro/RegistroWizard";
 import { PERIODO_ESCOLAR } from "@/lib/config";
 import { NombreConvocatoria, RegistroSiActiva } from "@/components/registro/RegistroSiActiva";
 
-/** Registro inicial del aspirante (CU-ADM-01 / RF-01). Solo con convocatoria activa. */
-export default function RegistroPage() {
+/**
+ * Registro inicial del aspirante (CU-ADM-01 / RF-01). Solo con convocatoria activa.
+ * ?convocatoria=A|B preselecciona el semestre de ingreso elegido en el inicio.
+ */
+export default async function RegistroPage({ searchParams }: PageProps<"/registro">) {
+  const { convocatoria } = await searchParams;
+  const id = convocatoria === "A" || convocatoria === "B" ? convocatoria : undefined;
   return (
     <div className="min-h-screen">
       <header className="bg-navy-900 text-white">
@@ -23,7 +28,7 @@ export default function RegistroPage() {
           <div>
             <h1 className="text-2xl text-gray-900 sm:text-3xl">Registro inicial</h1>
             <p className="mt-1 text-sm text-gray-500">
-              <NombreConvocatoria /> · Completa tus datos para crear tu expediente
+              <NombreConvocatoria id={id} /> · Completa tus datos para crear tu expediente
             </p>
           </div>
           <span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-medium text-navy-800">
@@ -32,7 +37,7 @@ export default function RegistroPage() {
         </div>
 
         <RegistroSiActiva>
-          <RegistroWizard />
+          <RegistroWizard convocatoria={id} />
         </RegistroSiActiva>
       </main>
     </div>

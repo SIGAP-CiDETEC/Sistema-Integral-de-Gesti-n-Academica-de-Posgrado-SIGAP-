@@ -15,8 +15,9 @@ export type ConfigEvaluacion = {
 };
 
 export const CONFIG_EVALUACION_DEFECTO: ConfigEvaluacion = {
-  propedeutico: { inicio: "2026-04-27", fin: "2026-05-29", modalidad: "Presencial", duracion: "5 semanas" },
-  examen: { fecha: "2026-06-08", hora: "10:00", lugar: "Aula 3, CIDETEC" },
+  // Calendario A-27 de CIDETEC: propedéuticos del 9 de noviembre al 10 de diciembre; examen el 15 de diciembre de 2026
+  propedeutico: { inicio: "2026-11-09", fin: "2026-12-10", modalidad: "Presencial", duracion: "5 semanas" },
+  examen: { fecha: "2026-12-15", hora: "10:00", lugar: "Aula 3, CIDETEC" },
   materias: MATERIAS,
 };
 
@@ -46,7 +47,7 @@ export function modalidadesDe(c: ConfigEvaluacion): typeof MODALIDADES {
       titulo: MODALIDADES.propedeutico.titulo,
       fechas: rango(c.propedeutico.inicio, c.propedeutico.fin),
       detalle: `${c.propedeutico.modalidad} · duración ${c.propedeutico.duracion}`,
-      segundaOportunidad: `Si no acreditas el curso, puedes presentar el examen de admisión el ${examen} (RN-08).`,
+      segundaOportunidad: `Si no acreditas una o las dos áreas del curso, puedes presentar el examen de esas áreas el ${examen} (RN-08).`,
     },
     examen: {
       titulo: MODALIDADES.examen.titulo,

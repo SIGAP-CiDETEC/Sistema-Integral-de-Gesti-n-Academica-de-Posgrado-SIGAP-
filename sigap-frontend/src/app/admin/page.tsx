@@ -11,7 +11,7 @@ import { USUARIOS_DEMO } from "@/lib/sesion";
 /** Inicio del Administrador: convocatoria, usuarios y actividad reciente. */
 export default function AdminInicio() {
   const acc = useAccesos();
-  const { conv, config, cargada } = useConvocatoria();
+  const { cargada, hayActiva, nombres } = useConvocatoria();
   if (!cargada) return null;
   const cuentas = [
     ...USUARIOS_DEMO.filter((u) => u.rol !== "admin").map((u) => ({ correo: u.correo, nombre: u.nombre, activo: !acc.inactivos.includes(u.correo) })),
@@ -23,7 +23,7 @@ export default function AdminInicio() {
     <>
       <PageHeader titulo="Administración" subtitulo="Proceso de admisión · convocatoria, roles y usuarios" />
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Kpi valor={config.activa ? "Activa" : "Cerrada"} etiqueta={conv.nombre} color={config.activa ? "text-emerald-700" : "text-gray-500"} href="/admin/convocatoria" />
+        <Kpi valor={hayActiva ? "Abierta" : "Cerradas"} etiqueta={hayActiva ? nombres : "Convocatorias A y B"} color={hayActiva ? "text-emerald-700" : "text-gray-500"} href="/admin/convocatoria" />
         <Kpi valor={cuentas.filter((c) => c.activo).length} etiqueta="Cuentas del personal activas" color="text-primary" href="/admin/usuarios" />
         <Kpi valor={acc.roles.length} etiqueta="Roles por departamento" color="text-guinda" href="/admin/roles" />
         <Kpi valor={fallidos} etiqueta="Intentos de acceso fallidos" color={fallidos ? "text-red-700" : "text-gray-500"} href="/admin/bitacora" />

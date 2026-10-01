@@ -8,10 +8,9 @@ import type { ModalidadId } from "../evaluacion";
  */
 
 /**
- * aval = constancia de inglés que no es de CELEX/CENLEX: UTEyCV la envió a la DFLE para su aval (RF-53, RN-09).
  * prorroga = Posgrado le dio más tiempo para entregarlo; el proceso sigue mientras tanto.
  */
-export type EstadoDoc = "falta" | "pendiente" | "aprobado" | "observado" | "aval" | "prorroga";
+export type EstadoDoc = "falta" | "pendiente" | "aprobado" | "observado" | "prorroga";
 export type DocAspirante = {
   id: string;
   nombre: string;
@@ -33,35 +32,65 @@ export type Entrevista = {
 };
 
 export type Resolucion = "Aprobado" | "Con reservas" | "Rechazado";
-export type Puntajes = { trayectoria: number; proyecto: number; conocimientos: number; motivacion: number };
-export const MAX_PUNTAJE: Record<keyof Puntajes, number> = { trayectoria: 30, proyecto: 30, conocimientos: 25, motivacion: 15 };
-export const ETIQUETA_PUNTAJE: Record<keyof Puntajes, string> = {
-  trayectoria: "Trayectoria académica",
-  proyecto: "Proyecto",
-  conocimientos: "Conocimientos",
-  motivacion: "Motivación",
+/** La entrevista colegiada no lleva ponderación: solo Aprobado, Con reservas o Rechazado (RF-12). */
+export type DictamenEntrevista = { resolucion: Resolucion; comentarios: string; registradoEl: string };
+
+/** Áreas que se califican en el propedéutico y en el examen de admisión. */
+export type AreaEvalId = "matematicas" | "programacion";
+export const AREAS_EVAL: { id: AreaEvalId; nombre: string }[] = [
+  { id: "matematicas", nombre: "Matemáticas Discretas y Continuas" },
+  { id: "programacion", nombre: "Programación" },
+];
+export const nombreArea = (id: AreaEvalId) => AREAS_EVAL.find((a) => a.id === id)?.nombre ?? id;
+export type ResultadoArea = { calificacion: number; acreditado: boolean };
+export type ResultadoEval = {
+  /** Promedio de las áreas evaluadas */
+  calificacion: number;
+  /** true si acreditó TODAS las áreas evaluadas */
+  acreditado: boolean;
+  registradoEl: string;
+  areas?: Partial<Record<AreaEvalId, ResultadoArea>>;
+  /** Fecha en que Posgrado publicó el resultado al aspirante (antes no lo ve) */
+  publicadoEl?: string;
 };
-
-export type DictamenEntrevista = { puntajes: Puntajes; resolucion: Resolucion; comentarios: string; registradoEl: string };
-
-export type ResultadoEval = { calificacion: number; acreditado: boolean; registradoEl: string };
+/** Decisión del aspirante que no acreditó una o las dos áreas del propedéutico (RN-08). */
+export type SegundaOportunidad = { decision: "examen" | "no"; areas: AreaEvalId[]; el: string };
 export type EvaluacionP = {
   modalidad?: ModalidadId;
   grupos: Record<string, string>;
   propedeutico?: ResultadoEval;
   examen?: ResultadoEval;
+  segundaOportunidad?: SegundaOportunidad;
 };
+
+/** En qué punto va la evaluación de un aspirante (vista de Posgrado). */
+export function estadoEvaluacion(e: EvaluacionP): { t: string; tono: string } {
+  const so = e.segundaOportunidad;
+  if (!e.modalidad) return { t: "Sin elegir", tono: "bg-gray-100 text-gray-600" };
+  if (e.examen && !e.examen.publicadoEl) return { t: "Resultados del examen por publicar", tono: "bg-violet-50 text-violet-800" };
+  if (e.examen) return { t: e.examen.acreditado ? "Examen acreditado" : "Examen no acreditado", tono: e.examen.acreditado ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700" };
+  if (e.modalidad === "examen") return { t: "Presentará examen", tono: "bg-sky-50 text-sky-800" };
+  if (!e.propedeutico) return { t: "Cursando propedéutico", tono: "bg-sky-50 text-sky-800" };
+  if (!e.propedeutico.publicadoEl) return { t: "Resultados del propedéutico por publicar", tono: "bg-violet-50 text-violet-800" };
+  if (e.propedeutico.acreditado) return { t: "Propedéutico acreditado", tono: "bg-emerald-50 text-emerald-700" };
+  if (!so) return { t: "Esperando decisión del aspirante", tono: "bg-amber-50 text-amber-800" };
+  return so.decision === "examen" ? { t: "Presentará examen de áreas no acreditadas", tono: "bg-amber-50 text-amber-800" } : { t: "Decidió no presentar el examen", tono: "bg-red-50 text-red-700" };
+}
+
+/** Áreas no acreditadas de un resultado. */
+export const areasReprobadas = (r?: ResultadoEval): AreaEvalId[] =>
+  r?.areas ? (Object.entries(r.areas) as [AreaEvalId, ResultadoArea][]).filter(([, x]) => !x.acreditado).map(([k]) => k) : r && !r.acreditado ? AREAS_EVAL.map((a) => a.id) : [];
 
 export type ResolucionColegio = "Aceptado" | "Condicionado" | "No aceptado";
 
 export type Prioridad = "Alta" | "Media" | "Normal";
 export type Dedicacion = "Tiempo completo" | "Tiempo parcial";
 
-/** Trabajo de Control Escolar (UTEyCV) sobre el aspirante: aval DFLE, cartas, SIP-04, SIP-08 y matrícula. */
+/**
+ * Trabajo de Control Escolar (UTEyCV) sobre el aspirante: cartas y dictamen SIP-04.
+ * El proceso de admisión termina cuando UTEyCV publica el SIP-04 firmado.
+ */
 export type UteycvP = {
-  /** Oficio con el que se envió la constancia de inglés a la DFLE */
-  avalEnviadoEl?: string;
-  avalOficio?: string;
   cartasValidadasEl?: string;
   /** SIP-04: fecha y hora de la sesión del Colegio que dictaminó */
   fechaSesion?: string;
@@ -72,13 +101,6 @@ export type UteycvP = {
   firmasEl?: string;
   sip04PublicadoEl?: string;
   sip04Archivo?: string;
-  /** SIP-08 que preparó el asesor, publicado para que el aspirante lo firme */
-  sip08PublicadoEl?: string;
-  sip01Firmado?: boolean;
-  sip08Firmado?: boolean;
-  foto?: boolean;
-  sicep?: string;
-  formalizadoEl?: string;
 };
 
 /** Fecha ISO de hace n días (para que los ejemplos tengan tiempos de espera realistas). */
@@ -108,13 +130,13 @@ export type AspiranteP = {
   dictamen?: DictamenEntrevista;
   evaluacion: EvaluacionP;
   resolucion?: ResolucionColegio;
-  /** Fecha en que se turnó a UTEyCV para SIP-04 y matrícula */
+  /** Fecha en que se turnó a UTEyCV para el dictamen SIP-04 */
   turnadoUteycv?: string;
   /** Formatos firmados recibidos (SIP-02, SIP-05…) */
   formatos: Record<string, boolean>;
   /** true = es el aspirante que se llenó en este navegador */
   enVivo?: boolean;
-  /** Dedicación que ELIGIÓ el aspirante en su carta protesta (SIP-05); UTEyCV solo la usa en el SIP-04 y en SICEP */
+  /** Dedicación que ELIGIÓ el aspirante en su carta protesta (SIP-05); UTEyCV solo la usa en el SIP-04 */
   dedicacion?: Dedicacion;
   /** Lo que registra Control Escolar (UTEyCV) */
   uteycv?: UteycvP;
@@ -143,8 +165,8 @@ const DOCS_BASE: { id: string; nombre: string; opcional?: boolean }[] = [
   { id: "titulo", nombre: "Título de licenciatura" },
   { id: "cedula", nombre: "Cédula profesional", opcional: true },
   { id: "certificado", nombre: "Certificado de estudios" },
-  { id: "ingles", nombre: "Constancia de inglés" },
-  { id: "curp", nombre: "CURP" },
+  { id: "ingles", nombre: "Constancia de dominio de inglés" },
+  { id: "curp", nombre: "CURP", opcional: true },
   { id: "acta", nombre: "Acta de nacimiento" },
   { id: "identificacion", nombre: "Identificación oficial" },
 ];
@@ -173,8 +195,7 @@ const entrevistaDe = (fecha: string, hora: string, sinodo = ["lh", "ac", "rm"]):
   notificadaEl: "2026-03-10T10:00:00",
 });
 
-const dictamenDe = (p: Puntajes, resolucion: Resolucion, comentarios: string): DictamenEntrevista => ({
-  puntajes: p,
+const dictamenDe = (resolucion: Resolucion, comentarios: string): DictamenEntrevista => ({
   resolucion,
   comentarios,
   registradoEl: "2026-03-18T14:00:00",
@@ -226,7 +247,7 @@ export const ASPIRANTES_BASE: AspiranteP[] = [
     ultimoMovimiento: hace(3),
     registradoEl: "2026-02-18",
     etapa: "documentos",
-    documentos: docs({ titulo: "pendiente", certificado: "pendiente", ingles: "aval", acta: "falta" }, { ingles: "Constancia de institución particular; enviada a la DFLE." }),
+    documentos: docs({ titulo: "pendiente", certificado: "pendiente", ingles: "pendiente", acta: "falta" }, { ingles: "Constancia de institución particular; Posgrado verifica el nivel." }),
     evaluacion: { grupos: {} },
     formatos: F(["sip-02"]),
   },
@@ -292,7 +313,7 @@ export const ASPIRANTES_BASE: AspiranteP[] = [
     etapa: "evaluacion",
     documentos: docs({}),
     entrevista: entrevistaDe("2026-03-17", "10:30"),
-    dictamen: dictamenDe({ trayectoria: 28, proyecto: 27, conocimientos: 23, motivacion: 14 }, "Aprobado", "Perfil sólido; se recomienda fortalecer metodología."),
+    dictamen: dictamenDe("Aprobado", "Perfil sólido; se recomienda fortalecer metodología."),
     evaluacion: { modalidad: "propedeutico", grupos: PROPEDEUTICO_AB },
     formatos: F(["sip-02", "sip-05", "sip-06", "mtc-ec"]),
   },
@@ -310,11 +331,11 @@ export const ASPIRANTES_BASE: AspiranteP[] = [
     etapa: "evaluacion",
     documentos: docs({}),
     entrevista: entrevistaDe("2026-03-17", "12:00"),
-    dictamen: dictamenDe({ trayectoria: 22, proyecto: 20, conocimientos: 18, motivacion: 12 }, "Con reservas", "Debe reforzar programación."),
+    dictamen: dictamenDe("Con reservas", "Debe reforzar programación."),
     evaluacion: {
       modalidad: "propedeutico",
       grupos: { matematicas: "B", programacion: "B", seminario: "Único" },
-      propedeutico: { calificacion: 6.8, acreditado: false, registradoEl: "2026-05-30T12:00:00" },
+      propedeutico: { calificacion: 7.3, acreditado: false, registradoEl: "2026-05-30T12:00:00", publicadoEl: "2026-05-30T13:00:00", areas: { matematicas: { calificacion: 8.4, acreditado: true }, programacion: { calificacion: 6.2, acreditado: false } } },
     },
     formatos: F(["sip-02", "sip-05", "sip-06", "mtc-ec"]),
   },
@@ -332,7 +353,7 @@ export const ASPIRANTES_BASE: AspiranteP[] = [
     etapa: "evaluacion",
     documentos: docs({}),
     entrevista: entrevistaDe("2026-03-18", "10:30", ["lh", "er", "rm"]),
-    dictamen: dictamenDe({ trayectoria: 29, proyecto: 28, conocimientos: 24, motivacion: 14 }, "Aprobado", "Excelente perfil de investigación."),
+    dictamen: dictamenDe("Aprobado", "Excelente perfil de investigación."),
     evaluacion: { modalidad: "examen", grupos: {} },
     formatos: F(["sip-02", "sip-05", "sip-06", "mtc-ec"]),
   },
@@ -350,11 +371,11 @@ export const ASPIRANTES_BASE: AspiranteP[] = [
     etapa: "dictamen",
     documentos: docs({}),
     entrevista: entrevistaDe("2026-03-17", "16:00"),
-    dictamen: dictamenDe({ trayectoria: 25, proyecto: 26, conocimientos: 21, motivacion: 13 }, "Aprobado", "Buen dominio técnico."),
+    dictamen: dictamenDe("Aprobado", "Buen dominio técnico."),
     evaluacion: {
       modalidad: "propedeutico",
       grupos: PROPEDEUTICO_AB,
-      propedeutico: { calificacion: 8.9, acreditado: true, registradoEl: "2026-05-30T12:00:00" },
+      propedeutico: { calificacion: 8.9, acreditado: true, registradoEl: "2026-05-30T12:00:00", publicadoEl: "2026-05-30T13:00:00", areas: { matematicas: { calificacion: 9.0, acreditado: true }, programacion: { calificacion: 8.8, acreditado: true } } },
     },
     formatos: F(["sip-02", "sip-05", "sip-06", "mtc-ec"]),
   },
@@ -372,8 +393,8 @@ export const ASPIRANTES_BASE: AspiranteP[] = [
     etapa: "dictamen",
     documentos: docs({}),
     entrevista: entrevistaDe("2026-03-18", "16:00", ["mt", "ac", "rm"]),
-    dictamen: dictamenDe({ trayectoria: 27, proyecto: 25, conocimientos: 22, motivacion: 15 }, "Aprobado", "Muy motivada; proyecto viable."),
-    evaluacion: { modalidad: "examen", grupos: {}, examen: { calificacion: 8.4, acreditado: true, registradoEl: "2026-06-08T14:00:00" } },
+    dictamen: dictamenDe("Aprobado", "Muy motivada; proyecto viable."),
+    evaluacion: { modalidad: "examen", grupos: {}, examen: { calificacion: 8.4, acreditado: true, registradoEl: "2026-06-08T14:00:00", publicadoEl: "2026-06-09T10:00:00", areas: { matematicas: { calificacion: 8.2, acreditado: true }, programacion: { calificacion: 8.6, acreditado: true } } } },
     formatos: F(["sip-02", "sip-05", "sip-06", "mtc-ec"]),
   },
   {
@@ -391,7 +412,7 @@ export const ASPIRANTES_BASE: AspiranteP[] = [
     concluido: "Rechazado en la entrevista colegiada (RN-05)",
     documentos: docs({}),
     entrevista: entrevistaDe("2026-03-17", "17:30", ["lh", "mt", "er"]),
-    dictamen: dictamenDe({ trayectoria: 15, proyecto: 12, conocimientos: 10, motivacion: 9 }, "Rechazado", "No cumple el perfil de ingreso."),
+    dictamen: dictamenDe("Rechazado", "No cumple el perfil de ingreso."),
     evaluacion: { grupos: {} },
     formatos: F(["sip-02", "sip-05", "sip-06", "mtc-ec"]),
   },
@@ -406,11 +427,11 @@ export const ASPIRANTES_BASE: AspiranteP[] = [
     ultimoMovimiento: hace(3),
     dedicacion: "Tiempo completo",
     registradoEl: "2026-02-10",
-    etapa: "matricula",
+    etapa: "dictamen",
     documentos: docs({}),
     entrevista: entrevistaDe("2026-03-17", "09:00"),
-    dictamen: dictamenDe({ trayectoria: 26, proyecto: 27, conocimientos: 22, motivacion: 14 }, "Aprobado", "Perfil adecuado."),
-    evaluacion: { modalidad: "propedeutico", grupos: PROPEDEUTICO_AB, propedeutico: { calificacion: 9.1, acreditado: true, registradoEl: "2026-05-30T12:00:00" } },
+    dictamen: dictamenDe("Aprobado", "Perfil adecuado."),
+    evaluacion: { modalidad: "propedeutico", grupos: PROPEDEUTICO_AB, propedeutico: { calificacion: 9.1, acreditado: true, registradoEl: "2026-05-30T12:00:00", publicadoEl: "2026-05-30T13:00:00", areas: { matematicas: { calificacion: 9.3, acreditado: true }, programacion: { calificacion: 8.9, acreditado: true } } } },
     resolucion: "Aceptado",
     turnadoUteycv: hace(5),
     formatos: F(["sip-02", "sip-05", "sip-06", "mtc-ec"]),
@@ -427,11 +448,11 @@ export const ASPIRANTES_BASE: AspiranteP[] = [
     ultimoMovimiento: hace(2),
     dedicacion: "Tiempo parcial",
     registradoEl: "2026-02-17",
-    etapa: "matricula",
+    etapa: "dictamen",
     documentos: docs({}),
     entrevista: entrevistaDe("2026-03-18", "09:00", ["mt", "er", "rm"]),
-    dictamen: dictamenDe({ trayectoria: 24, proyecto: 25, conocimientos: 21, motivacion: 13 }, "Aprobado", "Buen proyecto."),
-    evaluacion: { modalidad: "examen", grupos: {}, examen: { calificacion: 8.7, acreditado: true, registradoEl: "2026-06-08T14:00:00" } },
+    dictamen: dictamenDe("Aprobado", "Buen proyecto."),
+    evaluacion: { modalidad: "examen", grupos: {}, examen: { calificacion: 8.7, acreditado: true, registradoEl: "2026-06-08T14:00:00", publicadoEl: "2026-06-09T10:00:00", areas: { matematicas: { calificacion: 8.5, acreditado: true }, programacion: { calificacion: 8.9, acreditado: true } } } },
     resolucion: "Condicionado",
     turnadoUteycv: hace(9),
     formatos: F(["sip-02", "sip-05", "sip-06", "mtc-ec"]),
@@ -444,10 +465,6 @@ export const ASPIRANTES_BASE: AspiranteP[] = [
       firmasEl: hace(6),
       sip04PublicadoEl: hace(5),
       sip04Archivo: "SIP-04_MEDINA_firmado.pdf",
-      sip08PublicadoEl: hace(4),
-      sip01Firmado: true,
-      sip08Firmado: true,
-      foto: true,
     },
   },
 ];
@@ -458,13 +475,13 @@ export type Bandeja =
   | "Registro incompleto"
   | "Por revisar"
   | "Con observaciones"
-  | "Pendiente aval DFLE"
   | "Sin cita"
   | "Entrevista programada"
   | "En evaluación"
   | "Segunda oportunidad"
   | "Esperando resolución del Colegio"
   | "Turnado a UTEyCV"
+  | "Dictamen publicado"
   | "No admitido";
 
 /** El expediente se puede aprobar cuando todo lo obligatorio está aprobado y nada queda observado o sin revisar. */
@@ -487,8 +504,8 @@ export const prorrogasDe = (a: AspiranteP) => a.documentos.filter((d) => d.estad
 export function leTocaAPosgrado(a: AspiranteP): boolean {
   const b = bandejaDe(a);
   // Entregó un documento (p. ej. dentro de su prórroga) que falta revisar
-  if (!a.concluido && a.etapa !== "matricula" && a.documentos.some((d) => d.estado === "pendiente")) return true;
-  if (b === "Registro incompleto" || b === "Con observaciones" || b === "Pendiente aval DFLE" || b === "Turnado a UTEyCV" || b === "No admitido") return false;
+  if (!a.concluido && !a.turnadoUteycv && a.documentos.some((d) => d.estado === "pendiente")) return true;
+  if (b === "Registro incompleto" || b === "Con observaciones" || b === "Turnado a UTEyCV" || b === "Dictamen publicado" || b === "No admitido") return false;
   if (b === "En evaluación" && !a.evaluacion.modalidad) return false;
   if (b === "Entrevista programada") return !!a.entrevista && diasPara(a.entrevista.fecha) < 0;
   return true;
@@ -498,7 +515,7 @@ export function leTocaAPosgrado(a: AspiranteP): boolean {
  * Prioridad calculada (no se captura a mano):
  * - Alta: una prórroga vence en 3 días o menos (o ya venció), o el expediente lleva 5+ días esperando a Posgrado.
  * - Media: lleva de 2 a 4 días esperando a Posgrado.
- * - Normal: se atendió hace menos de 2 días, o la siguiente acción es del aspirante o de otra área (p. ej. aval DFLE en UTEyCV).
+ * - Normal: se atendió hace menos de 2 días, o la siguiente acción es del aspirante o de otra área (p. ej. el SIP-04 en UTEyCV).
  */
 export function prioridadDe(a: AspiranteP): { nivel: Prioridad; motivo: string } {
   if (a.concluido) return { nivel: "Normal", motivo: "Proceso concluido" };
@@ -522,16 +539,14 @@ export function bandejaDe(a: AspiranteP): Bandeja {
     case "documentos":
       if (a.documentos.some((d) => d.estado === "pendiente")) return "Por revisar";
       if (a.documentos.some((d) => d.estado === "observado" || (d.estado === "falta" && !d.opcional))) return "Con observaciones";
-      if (a.documentos.some((d) => d.estado === "aval")) return "Pendiente aval DFLE";
       return "Por revisar";
     case "entrevista":
       return a.entrevista ? "Entrevista programada" : "Sin cita";
     case "evaluacion":
       return a.evaluacion.propedeutico && !a.evaluacion.propedeutico.acreditado ? "Segunda oportunidad" : "En evaluación";
     case "dictamen":
-      return "Esperando resolución del Colegio";
-    case "matricula":
-      return "Turnado a UTEyCV";
+      if (a.uteycv?.sip04PublicadoEl) return "Dictamen publicado";
+      return a.turnadoUteycv ? "Turnado a UTEyCV" : "Esperando resolución del Colegio";
   }
 }
 
@@ -539,19 +554,21 @@ export const TONO_BANDEJA: Record<Bandeja, string> = {
   "Registro incompleto": "bg-gray-100 text-gray-700",
   "Por revisar": "bg-amber-50 text-amber-800",
   "Con observaciones": "bg-orange-50 text-orange-800",
-  "Pendiente aval DFLE": "bg-yellow-50 text-yellow-800",
   "Sin cita": "bg-indigo-50 text-primary",
   "Entrevista programada": "bg-indigo-50 text-primary",
   "En evaluación": "bg-sky-50 text-sky-800",
   "Segunda oportunidad": "bg-amber-50 text-amber-800",
   "Esperando resolución del Colegio": "bg-violet-50 text-violet-800",
   "Turnado a UTEyCV": "bg-emerald-50 text-emerald-800",
+  "Dictamen publicado": "bg-emerald-100 text-emerald-900",
   "No admitido": "bg-red-50 text-red-700",
 };
 
-const PESO: Record<EtapaId, number> = { registro: 10, documentos: 25, entrevista: 45, evaluacion: 65, dictamen: 85, matricula: 100 };
+const PESO: Record<EtapaId, number> = { registro: 10, documentos: 25, entrevista: 45, evaluacion: 65, dictamen: 85 };
 
 export function progresoDe(a: AspiranteP) {
+  if (a.etapa === "dictamen" && a.uteycv?.sip04PublicadoEl) return { pct: 100, texto: "Dictamen publicado" };
+  if (a.etapa === "dictamen" && a.turnadoUteycv) return { pct: 92, texto: "SIP-04 en UTEyCV" };
   if (a.etapa === "documentos") {
     const ok = a.documentos.filter((d) => d.estado === "aprobado").length;
     return { pct: Math.round(15 + (ok / a.documentos.length) * 20), texto: `Documentos ${ok}/${a.documentos.length}` };
@@ -562,12 +579,9 @@ export function progresoDe(a: AspiranteP) {
     entrevista: "Entrevista",
     evaluacion: "Evaluación",
     dictamen: "Comisión",
-    matricula: "Matrícula",
   };
   return { pct: PESO[a.etapa], texto: texto[a.etapa] };
 }
-
-export const totalPuntaje = (p: Puntajes) => p.trayectoria + p.proyecto + p.conocimientos + p.motivacion;
 
 /** Resultado vigente de la evaluación (el examen, si lo hubo, manda sobre el propedéutico). */
 export function resultadoFinal(e: EvaluacionP): ResultadoEval | undefined {
@@ -576,39 +590,23 @@ export function resultadoFinal(e: EvaluacionP): ResultadoEval | undefined {
 
 // ---------- Control Escolar (UTEyCV) ----------
 
-export type EstadoUteycv = "SIP-04 por elaborar" | "Esperando confirmación" | "Recabando firmas" | "Por publicar SIP-04" | "Integrando expediente" | "Listo para formalizar" | "Matrícula formalizada";
+export type EstadoUteycv = "SIP-04 por elaborar" | "Esperando confirmación" | "Recabando firmas" | "Por publicar SIP-04" | "Dictamen publicado";
 
 export const TONO_UTEYCV: Record<EstadoUteycv, string> = {
   "SIP-04 por elaborar": "bg-amber-50 text-amber-800",
   "Esperando confirmación": "bg-gray-100 text-gray-700",
   "Recabando firmas": "bg-indigo-50 text-primary",
   "Por publicar SIP-04": "bg-amber-50 text-amber-800",
-  "Integrando expediente": "bg-sky-50 text-sky-800",
-  "Listo para formalizar": "bg-violet-50 text-violet-800",
-  "Matrícula formalizada": "bg-emerald-50 text-emerald-700",
+  "Dictamen publicado": "bg-emerald-50 text-emerald-700",
 };
-
-/** Qué falta para formalizar la matrícula de un aspirante turnado. */
-export function pendientesMatricula(a: AspiranteP) {
-  const u = a.uteycv ?? {};
-  return [
-    { t: "SIP-04 publicado", ok: !!u.sip04PublicadoEl },
-    { t: "SIP-08 del asesor publicado", ok: !!u.sip08PublicadoEl },
-    { t: "Fotografía", ok: !!u.foto },
-    { t: "SIP-01 firmado", ok: !!u.sip01Firmado },
-    { t: "SIP-08 firmado", ok: !!u.sip08Firmado },
-    { t: "Dedicación elegida por el aspirante (SIP-05)", ok: !!a.dedicacion },
-  ];
-}
 
 export function estadoUteycv(a: AspiranteP): EstadoUteycv {
   const u = a.uteycv ?? {};
-  if (u.formalizadoEl) return "Matrícula formalizada";
   if (!u.sip04ElaboradoEl) return "SIP-04 por elaborar";
   if (!u.confirmoSip04) return "Esperando confirmación";
   if (!u.firmasEl) return "Recabando firmas";
   if (!u.sip04PublicadoEl) return "Por publicar SIP-04";
-  return pendientesMatricula(a).every((p) => p.ok) ? "Listo para formalizar" : "Integrando expediente";
+  return "Dictamen publicado";
 }
 
 /** Separa "Nombre(s) Paterno Materno" (para los formatos de los aspirantes de ejemplo). */

@@ -1,9 +1,9 @@
 import { notFound } from "next/navigation";
 import { FormatoEditor } from "@/components/expediente/FormatoEditor";
-import { FORMATOS, formatoPorClave } from "@/lib/formatos";
+import { FORMATOS_ASPIRANTE, formatoPorClave } from "@/lib/formatos";
 
 export function generateStaticParams() {
-  return FORMATOS.map((f) => ({ clave: f.clave }));
+  return FORMATOS_ASPIRANTE.map((f) => ({ clave: f.clave }));
 }
 
 /** Revisar, completar y firmar un formato oficial (autollenado con los datos del aspirante). */

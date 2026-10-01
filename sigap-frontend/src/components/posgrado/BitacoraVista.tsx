@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { RotateCcw } from "lucide-react";
+import { Regresar } from "@/components/posgrado/ui";
 import { PageHeader } from "@/components/PageHeader";
 import { usePosgrado } from "@/components/posgrado/PosgradoProvider";
 import { inputBase } from "@/components/posgrado/ui";
@@ -14,8 +15,8 @@ import { useSesion } from "@/lib/sesion";
 export function BitacoraVista({ subtitulo }: { subtitulo: string }) {
   const { bitacora, cargado, porId, reiniciar } = usePosgrado();
   const { sesion } = useSesion();
-  // Posgrado abre el expediente; UTEyCV abre su pantalla de matrícula
-  const enlace = (id: string) => (sesion?.rol === "uteycv" ? `/uteycv/matricula?id=${id}` : `/posgrado/aspirantes/${id}`);
+  // Posgrado abre el expediente; UTEyCV abre su pantalla del dictamen SIP-04
+  const enlace = (id: string) => (sesion?.rol === "uteycv" ? `/uteycv/dictamen?id=${id}` : `/posgrado/aspirantes/${id}`);
   const [usuario, setUsuario] = useState("");
   if (!cargado) return null;
   const usuarios = [...new Set(bitacora.map((b) => b.usuario))];
@@ -23,6 +24,7 @@ export function BitacoraVista({ subtitulo }: { subtitulo: string }) {
 
   return (
     <>
+      <Regresar href={sesion?.rol === "uteycv" ? "/uteycv" : "/posgrado"} t="Inicio" />
       <PageHeader titulo="Bitácora" subtitulo={subtitulo} />
       <label className="mb-4 block max-w-xs text-sm">
         <span className="font-medium text-gray-900">Usuario</span>

@@ -18,7 +18,7 @@ export default async function RegistroExito({ searchParams }: PageProps<"/regist
         <h1 className="mt-3 text-xl font-semibold text-gray-900">¡Bienvenida/o al proceso de admisión!</h1>
         <p className="mt-2 text-sm text-gray-600">
           Tu solicitud fue creada correctamente. Conserva tu identificador temporal: lo usarás para iniciar
-          sesión hasta que se formalice tu matrícula y se emita tu boleta definitiva.
+          sesión durante todo tu proceso de admisión.
         </p>
 
         <div className="mt-6 rounded-xl border border-gray-200 p-5">

@@ -15,7 +15,7 @@ export function DictamenSip04({ inicial }: { inicial?: string }) {
   const { aspirantes, cargado } = usePosgrado();
   const [sel, setSel] = useState(inicial);
   if (!cargado) return null;
-  const turnados = aspirantes.filter((a) => a.etapa === "matricula");
+  const turnados = aspirantes.filter((a) => !!a.turnadoUteycv);
   const actual = turnados.find((a) => a.id === sel) ?? turnados.find((a) => !a.uteycv?.sip04PublicadoEl) ?? turnados[0];
 
   return (
@@ -57,7 +57,7 @@ function Pasos({ a }: { a: AspiranteP }) {
   const u = a.uteycv ?? {};
   const [fecha, setFecha] = useState(u.fechaSesion ?? acta?.fecha ?? "");
   const [hora, setHora] = useState(u.horaSesion ?? "12:00");
-  // La dedicación la elige el aspirante en su carta protesta (SIP-05); aquí solo se usa
+  // La dedicación la elige el aspirante al revisar su SIP-04; aquí solo se usa
   const dedicacion = a.dedicacion;
   const [archivo, setArchivo] = useState<string>();
   const [generando, setGenerando] = useState(false);
@@ -123,7 +123,7 @@ function Pasos({ a }: { a: AspiranteP }) {
             <p className={`mt-1 rounded-lg border px-3 py-2 ${dedicacion ? "border-gray-200 bg-gray-50 text-gray-900" : "border-amber-300 bg-amber-50 text-amber-800"}`}>
               {dedicacion ?? "Aún no la elige"}
             </p>
-            <span className="text-xs text-gray-500">La eligió el aspirante en su carta protesta (SIP-05).</span>
+            <span className="text-xs text-gray-500">La eligió el aspirante al revisar su dictamen.</span>
           </div>
         </div>
         <div className="mt-4 flex flex-wrap gap-2">
@@ -144,7 +144,7 @@ function Pasos({ a }: { a: AspiranteP }) {
         {u.sip04ElaboradoEl && <p className="mt-2 text-xs text-emerald-700">Elaborado el {fechaCorta(u.sip04ElaboradoEl)}</p>}
         {!dedicacion && (
           <p className="mt-2 text-xs text-amber-700">
-            {a.enVivo ? "María debe elegirla en su carta protesta (Aspirante → 2. Documentos → SIP-05)." : "El aspirante debe elegirla en su carta protesta (SIP-05)."}
+            {a.enVivo ? "María debe elegirla al revisar su dictamen (Aspirante → 6. Dictamen final)." : "El aspirante debe elegirla al revisar su dictamen (SIP-04)."}
           </p>
         )}
       </Tarjeta>
@@ -216,7 +216,7 @@ function Pasos({ a }: { a: AspiranteP }) {
                 disabled={!u.firmasEl || !archivo}
                 onClick={() => {
                   actualizarUteycv(a.id, { sip04PublicadoEl: new Date().toISOString(), sip04Archivo: archivo }, `Publicó el SIP-04 firmado (${archivo})`);
-                  enviarAviso([a.id], "ambos", "Tu dictamen SIP-04 ya está disponible", `Estimado(a) ${a.nombre.split(" ")[0]}:\n\nTu dictamen del proceso de admisión (SIP-04) ya está firmado y disponible en SIGAP (fase 5 · Dictamen final). Continúa con tu matrícula (fase 6).\n\nAtentamente,\nControl Escolar (UTEyCV) · CIDETEC`);
+                  enviarAviso([a.id], "ambos", "Tu dictamen SIP-04 ya está disponible", `Estimado(a) ${a.nombre.split(" ")[0]}:\n\nTu dictamen del proceso de admisión (SIP-04) ya está firmado y disponible en SIGAP (fase 5 · Dictamen final). Con este dictamen concluye tu proceso de admisión.\n\nAtentamente,\nControl Escolar (UTEyCV) · CIDETEC`);
                 }}
               >
                 Publicar y notificar

@@ -12,8 +12,9 @@ export const PROGRAMA = "Maestría en Tecnología de Cómputo";
 /**
  * Áreas de CIDETEC que intervienen en la admisión.
  * - Departamento de Posgrado: registro, validación de documentos, entrevistas, evaluación, comisión.
- * - UTEyCV (Unidad de Tecnología Educativa y Campus Virtual): Control Escolar — SIP-01, 04, 05, 06, 08,
- *   aval del inglés con la DFLE, número SICEP e inscripción (RF-53, Módulo 19).
+ * - UTEyCV (Unidad de Tecnología Educativa y Campus Virtual): Control Escolar — cartas SIP-05 y SIP-06
+ *   y dictamen SIP-04. El proceso de admisión termina con el dictamen (la matrícula es otro proceso).
+ * - La constancia de inglés la valida solo el Departamento de Posgrado.
  */
 export const AREAS = {
   posgrado: { corto: "Posgrado", nombre: "Departamento de Posgrado" },
@@ -40,8 +41,33 @@ export type Convocatoria = {
   fechasClave: { etiqueta: string; fecha: string }[];
 };
 
+/** Datos fijos de las dos convocatorias por ciclo: A (enero–junio) y B (agosto–diciembre). */
+export type IdConvocatoria = "A" | "B";
+export const CONVOCATORIAS_INFO: Record<IdConvocatoria, { periodo: string; semestre: string; fechasClave: { etiqueta: string; fecha: string }[] }> = {
+  A: {
+    periodo: "Enero – junio 2027",
+    semestre: "A27 (enero – junio 2027)",
+    fechasClave: [
+      { etiqueta: "Documentos", fecha: "27 nov" },
+      { etiqueta: "Entrevistas", fecha: "7–11 dic" },
+      { etiqueta: "Resultados", fecha: "15 ene" },
+      { etiqueta: "Dictamen (SIP-04)", fecha: "19 ene" },
+    ],
+  },
+  B: {
+    periodo: "Agosto – diciembre 2027",
+    semestre: "B27 (agosto – diciembre 2027)",
+    fechasClave: [
+      { etiqueta: "Documentos", fecha: "28 may" },
+      { etiqueta: "Entrevistas", fecha: "7–11 jun" },
+      { etiqueta: "Resultados", fecha: "9 jul" },
+      { etiqueta: "Dictamen (SIP-04)", fecha: "16 jul" },
+    ],
+  },
+};
+
 export const convocatoriaActual: Convocatoria = {
-  nombre: "Convocatoria de admisión 2026-A",
+  nombre: "Convocatoria de admisión A-27",
   programas: PROGRAMA,
   activa: true,
   inicio: "12 ene",
@@ -49,41 +75,14 @@ export const convocatoriaActual: Convocatoria = {
   requisitos: [
     "Título y cédula profesional",
     "Certificado de estudios y CURP",
-    "Certificado de inglés con aval DFLE o de CELEX/CENLEX",
+    "Constancia de inglés (la valida el Departamento de Posgrado)",
     "Promedio mínimo conforme al programa",
   ],
   fechasClave: [
     { etiqueta: "Documentos", fecha: "3 mar" },
     { etiqueta: "Entrevistas", fecha: "16–20 mar" },
     { etiqueta: "Resultados", fecha: "30 abr" },
-    { etiqueta: "Matrícula", fecha: "4–8 may" },
+    { etiqueta: "Dictamen (SIP-04)", fecha: "8 may" },
   ],
 };
 
-/** Tarjetas informativas (RF-08: fechas, instructivos, certificación de idiomas). */
-export const recursosAspirante = [
-  {
-    titulo: "Calendario IPN",
-    texto: "Periodos escolares, registro, exámenes y resultados del IPN.",
-    accion: "Consultar calendario",
-    href: "#",
-  },
-  {
-    titulo: "Convocatorias",
-    texto: "Convocatorias vigentes, requisitos y fechas importantes.",
-    accion: "Ver convocatorias",
-    href: "#convocatoria",
-  },
-  {
-    titulo: "Lugares para liberar el inglés",
-    texto: "Centros autorizados para acreditar o liberar el inglés.",
-    accion: "Ver centros",
-    href: "#",
-  },
-  {
-    titulo: "CELEX / CENLEX",
-    texto: "Cursos, sedes, horarios e inscripción disponibles.",
-    accion: "Más información",
-    href: "#",
-  },
-];

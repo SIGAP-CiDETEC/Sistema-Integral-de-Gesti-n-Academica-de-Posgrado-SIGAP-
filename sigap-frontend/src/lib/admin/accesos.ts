@@ -20,10 +20,9 @@ export const PERMISOS: Permiso[] = [
   { id: "pg.comision", area: "posgrado", nombre: "Comisión de Admisión y resolución del Colegio", ruta: "/posgrado/comision" },
   { id: "pg.comunicados", area: "posgrado", nombre: "Enviar comunicados a aspirantes", ruta: "/posgrado/comunicados" },
   { id: "pg.bitacora", area: "posgrado", nombre: "Consultar bitácora", ruta: "/posgrado/bitacora" },
-  { id: "ut.ingles", area: "uteycv", nombre: "Aval de inglés con la DFLE", ruta: "/uteycv/ingles" },
-  { id: "ut.cartas", area: "uteycv", nombre: "Validar cartas SIP-05 y SIP-06", ruta: "/uteycv/cartas" },
+  { id: "pg.inicio", area: "posgrado", nombre: "Editar el inicio del aspirante", ruta: "/posgrado/inicio-aspirante" },
+  { id: "pg.calendario", area: "posgrado", nombre: "Publicar el calendario de las convocatorias (Jefatura)", ruta: "/posgrado/calendario" },
   { id: "ut.dictamen", area: "uteycv", nombre: "Elaborar y publicar el dictamen SIP-04", ruta: "/uteycv/dictamen" },
-  { id: "ut.matricula", area: "uteycv", nombre: "Formalizar matrícula (SIP-08 y SICEP)", ruta: "/uteycv/matricula" },
   { id: "ut.bitacora", area: "uteycv", nombre: "Consultar bitácora", ruta: "/uteycv/bitacora" },
 ];
 
@@ -33,11 +32,11 @@ const todos = (area: AreaPersonal) => PERMISOS.filter((p) => p.area === area).ma
 
 export const ROLES_BASE: RolPersonal[] = [
   { id: "pg-jefatura", nombre: "Jefatura de Posgrado", area: "posgrado", permisos: todos("posgrado"), base: true },
-  { id: "pg-analista", nombre: "Analista de Posgrado", area: "posgrado", permisos: todos("posgrado") },
+  { id: "pg-analista", nombre: "Analista de Posgrado", area: "posgrado", permisos: todos("posgrado").filter((p) => p !== "pg.calendario") },
   { id: "pg-validaciones", nombre: "Analista de validaciones de Posgrado", area: "posgrado", permisos: ["pg.expedientes", "pg.comunicados"] },
   { id: "pg-secretaria", nombre: "Secretaria de Admisión Posgrado", area: "posgrado", permisos: ["pg.expedientes", "pg.entrevistas", "pg.comunicados"] },
   { id: "ut-control", nombre: "Control Escolar (UTEyCV)", area: "uteycv", permisos: todos("uteycv"), base: true },
-  { id: "ut-analista", nombre: "Analista de UTEyCV", area: "uteycv", permisos: ["ut.ingles", "ut.cartas"] },
+  { id: "ut-analista", nombre: "Analista de UTEyCV", area: "uteycv", permisos: ["ut.dictamen"] },
 ];
 
 /** Rol de las cuentas precargadas del cascarón (ver sesion.ts). */
@@ -58,11 +57,13 @@ type Estado = {
   /** Cuentas precargadas desactivadas */
   inactivos: string[];
   bitacora: EventoAdmin[];
+  /** Permisos que ya existían cuando se guardaron los roles (ver normalizar) */
+  permisosConocidos?: string[];
 };
 
 const CLAVE = "sigap-accesos";
 const EVENTO = "sigap-accesos";
-const INICIAL: Estado = { roles: ROLES_BASE, usuarios: [], rolDe: {}, inactivos: [], bitacora: [] };
+const INICIAL: Estado = { roles: ROLES_BASE, usuarios: [], rolDe: {}, inactivos: [], bitacora: [], permisosConocidos: PERMISOS.map((p) => p.id) };
 
 const leerRaw = () => {
   try {
@@ -72,13 +73,35 @@ const leerRaw = () => {
   }
 };
 
-export function leerAccesos(): Estado {
+/**
+ * Permisos que se agregaron después de que el navegador guardó los roles: se suman a los roles
+ * precargados que los tienen por defecto (lo que el administrador quitó a propósito no se toca).
+ */
+const PERMISOS_NUEVOS = ["pg.inicio", "pg.calendario"];
+function normalizar(e: Estado): Estado {
+  const conocidos = e.permisosConocidos ?? [];
+  const faltan = PERMISOS_NUEVOS.filter((p) => !conocidos.includes(p));
+  if (!faltan.length) return e;
+  const roles = e.roles.map((r) => {
+    const base = ROLES_BASE.find((b) => b.id === r.id);
+    const agregar = faltan.filter((p) => base?.permisos.includes(p) && !r.permisos.includes(p));
+    return agregar.length ? { ...r, permisos: [...r.permisos, ...agregar] } : r;
+  });
+  return { ...e, roles, permisosConocidos: [...conocidos, ...faltan] };
+}
+
+const interpretar = (raw: string | null): Estado => {
   try {
-    const raw = leerRaw();
-    return raw ? { ...INICIAL, ...(JSON.parse(raw) as Estado) } : INICIAL;
+    if (!raw) return INICIAL;
+    const g = JSON.parse(raw) as Estado;
+    return normalizar({ ...INICIAL, ...g, permisosConocidos: g.permisosConocidos ?? [] });
   } catch {
     return INICIAL;
   }
+};
+
+export function leerAccesos(): Estado {
+  return interpretar(leerRaw());
 }
 
 export function actualizarAccesos(fn: (e: Estado) => Estado) {
@@ -107,13 +130,7 @@ const suscribir = (cb: () => void) => {
 
 export function useAccesos(): Estado {
   const raw = useSyncExternalStore(suscribir, leerRaw, () => null);
-  return useMemo(() => {
-    try {
-      return raw ? { ...INICIAL, ...(JSON.parse(raw) as Estado) } : INICIAL;
-    } catch {
-      return INICIAL;
-    }
-  }, [raw]);
+  return useMemo(() => interpretar(raw), [raw]);
 }
 
 /** Rol vigente de una cuenta del personal (precargada o auxiliar). */

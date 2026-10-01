@@ -2,15 +2,25 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { CheckCircle2, Mail, RefreshCw, TriangleAlert } from "lucide-react";
+import { CheckCircle2, Mail, RefreshCw, Send, TriangleAlert } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { usePosgrado } from "@/components/posgrado/PosgradoProvider";
-import { Aviso, Etiqueta, Tarjeta, botonPrimario, botonSecundario, inputBase } from "@/components/posgrado/ui";
+import { Aviso, Etiqueta, Tarjeta, botonPrimario, botonSecundario, inputBase, Regresar } from "@/components/posgrado/ui";
 import { choques, describirGrupo, type ModalidadId } from "@/lib/evaluacion";
 import { fechaLargaIso, useConfigEvaluacion } from "@/lib/evaluacion-config";
 import { AvisoAspirante } from "@/components/posgrado/AvisoAspirante";
 import { EditarCalendario } from "@/components/posgrado/EditarCalendario";
-import { fechaCorta, type AspiranteP, type ResultadoEval } from "@/lib/posgrado/datos";
+import {
+  AREAS_EVAL,
+  areasReprobadas,
+  estadoEvaluacion,
+  fechaCorta,
+  nombreArea,
+  type AreaEvalId,
+  type AspiranteP,
+  type ResultadoArea,
+  type ResultadoEval,
+} from "@/lib/posgrado/datos";
 
 /** Calificación mínima aprobatoria de ejemplo (se configura por convocatoria). */
 const MINIMA = 8;
@@ -27,13 +37,13 @@ export default function EvaluacionPosgrado() {
 
   const estado = (a: AspiranteP) => {
     const e = a.evaluacion;
-    if (!e.modalidad) return <Etiqueta tono="bg-gray-100 text-gray-600">Sin elegir</Etiqueta>;
-    if (e.propedeutico && !e.propedeutico.acreditado && !e.examen) return <Etiqueta tono="bg-amber-50 text-amber-800">Segunda oportunidad</Etiqueta>;
-    return <Etiqueta tono="bg-sky-50 text-sky-800">En curso</Etiqueta>;
+    const x = estadoEvaluacion(e);
+    return <Etiqueta tono={x.tono}>{x.t}</Etiqueta>;
   };
 
   return (
     <>
+      <Regresar href="/posgrado" t="Inicio" />
       <PageHeader titulo="Evaluación académica" subtitulo="Modalidades, grupos del propedéutico y resultados" />
 
       <EditarCalendario />
@@ -65,7 +75,7 @@ export default function EvaluacionPosgrado() {
                         : "—"}
                   </td>
                   <td className="px-3 py-3 text-xs text-gray-700">
-                    {a.evaluacion.propedeutico && <p>Propedéutico: {a.evaluacion.propedeutico.calificacion}</p>}
+                    {a.evaluacion.propedeutico && <p>Propedéutico: {a.evaluacion.propedeutico.calificacion}{areasReprobadas(a.evaluacion.propedeutico).length ? ` · no acreditó ${areasReprobadas(a.evaluacion.propedeutico).length} área(s)` : ""}</p>}
                     {a.evaluacion.examen && <p>Examen: {a.evaluacion.examen.calificacion}</p>}
                     {!a.evaluacion.propedeutico && !a.evaluacion.examen && "—"}
                   </td>
@@ -217,45 +227,104 @@ function CambiarEleccion({ a }: { a: AspiranteP }) {
   );
 }
 
+type TipoResultado = "propedeutico" | "examen";
+
+function Fila({ t, r }: { t: string; r: ResultadoEval }) {
+  return (
+    <div className="border-b border-gray-100 pb-2">
+      <div className="flex flex-wrap justify-between gap-2">
+        <dt className="text-gray-500">{t}</dt>
+        <dd>
+          {r.publicadoEl ? <Etiqueta tono="bg-emerald-50 text-emerald-700">Publicado {fechaCorta(r.publicadoEl)}</Etiqueta> : <Etiqueta tono="bg-violet-50 text-violet-800">Sin publicar</Etiqueta>}
+        </dd>
+      </div>
+      <ul className="mt-1 space-y-0.5 text-sm">
+        {r.areas ? (
+          (Object.entries(r.areas) as [AreaEvalId, ResultadoArea][]).map(([k, x]) => (
+            <li key={k} className="flex justify-between gap-3">
+              <span className="text-gray-700">{nombreArea(k)}</span>
+              <span className={x.acreditado ? "text-emerald-700" : "text-red-700"}>
+                {x.calificacion} · {x.acreditado ? "acreditada" : "no acreditada"}
+              </span>
+            </li>
+          ))
+        ) : (
+          <li className={r.acreditado ? "text-emerald-700" : "text-red-700"}>
+            {r.calificacion} · {r.acreditado ? "acreditado" : "no acreditado"}
+          </li>
+        )}
+      </ul>
+    </div>
+  );
+}
+
+
 function Resultados({ a }: { a: AspiranteP }) {
   const { actualizar, enviarAviso } = usePosgrado();
-  const { modalidades: MODALIDADES } = useConfigEvaluacion();
-  const [cal, setCal] = useState("");
+  const { modalidades: MODALIDADES, config } = useConfigEvaluacion();
   const e = a.evaluacion;
-  const valor = Number(cal);
-  const valido = cal !== "" && valor >= 0 && valor <= 10;
+  const so = e.segundaOportunidad;
+  const nom = a.nombre.split(" ")[0];
+  const firma = "\n\nAtentamente,\nDepartamento de Posgrado · CIDETEC";
 
-  // Qué toca registrar
-  const tipo: "propedeutico" | "examen" | null = !e.modalidad
+  // Qué toca registrar (y de qué áreas)
+  const tipo: TipoResultado | null = !e.modalidad
     ? null
     : e.modalidad === "propedeutico" && !e.propedeutico
       ? "propedeutico"
-      : (e.modalidad === "examen" && !e.examen) || (e.propedeutico && !e.propedeutico.acreditado && !e.examen)
+      : (e.modalidad === "examen" && !e.examen) || (so?.decision === "examen" && !e.examen)
         ? "examen"
         : null;
-  const esSegunda = tipo === "examen" && !!e.propedeutico;
+  const esSegunda = tipo === "examen" && e.modalidad === "propedeutico";
+  const areas: AreaEvalId[] = esSegunda ? so!.areas : AREAS_EVAL.map((x) => x.id);
+  const [cal, setCal] = useState<Record<string, string>>({});
+  const valores = areas.map((id) => ({ id, v: Number(cal[id]), ok: cal[id] !== undefined && cal[id] !== "" && Number(cal[id]) >= 0 && Number(cal[id]) <= 10 }));
+  const completo = valores.every((x) => x.ok);
+
+  // Resultado registrado que falta publicar
+  const porPublicar: TipoResultado | null = e.examen && !e.examen.publicadoEl ? "examen" : e.propedeutico && !e.propedeutico.publicadoEl ? "propedeutico" : null;
 
   const registrar = () => {
-    if (!tipo || !valido) return;
-    const r: ResultadoEval = { calificacion: valor, acreditado: valor >= MINIMA, registradoEl: new Date().toISOString() };
-    const nom = a.nombre.split(" ")[0];
-    const nombre = tipo === "propedeutico" ? "curso propedéutico" : esSegunda ? "examen directo (segunda oportunidad)" : "examen de admisión";
+    if (!tipo || !completo) return;
+    const porArea = Object.fromEntries(valores.map((x) => [x.id, { calificacion: x.v, acreditado: x.v >= MINIMA }])) as ResultadoEval["areas"];
+    const promedio = Math.round((valores.reduce((t, x) => t + x.v, 0) / valores.length) * 10) / 10;
+    const r: ResultadoEval = { calificacion: promedio, acreditado: valores.every((x) => x.v >= MINIMA), registradoEl: new Date().toISOString(), areas: porArea };
+    const nombre = tipo === "propedeutico" ? "curso propedéutico" : esSegunda ? "examen de áreas no acreditadas" : "examen de admisión";
+    actualizar(a.id, { evaluacion: { ...e, [tipo]: r } }, `Registró ${nombre}: ${valores.map((x) => `${nombreArea(x.id)} ${x.v}`).join(", ")} (sin publicar)`);
+    setCal({});
+  };
+
+  const publicar = () => {
+    if (!porPublicar) return;
+    const r = e[porPublicar]!;
+    const publicado: ResultadoEval = { ...r, publicadoEl: new Date().toISOString() };
+    const ev = { ...e, [porPublicar]: publicado };
+    const reprobadas = areasReprobadas(r);
     if (r.acreditado) {
-      actualizar(a.id, { evaluacion: { ...e, [tipo]: r }, etapa: "dictamen" }, `Registró ${nombre}: ${valor} (acreditado); pasa a comisión`);
-      enviarAviso([a.id], "ambos", "Acreditaste tu evaluación", `Estimado(a) ${nom}:\n\nAcreditaste tu evaluación de admisión. Tu resultado pasa a la Comisión de Admisión del Colegio de Profesores.\n\nAtentamente,\nDepartamento de Posgrado · CIDETEC`);
-    } else if (tipo === "propedeutico") {
-      actualizar(a.id, { evaluacion: { ...e, propedeutico: r } }, `Registró curso propedéutico: ${valor} (no acreditado); se habilita el examen directo (RN-08)`);
-      enviarAviso([a.id], "ambos", "Tienes derecho a presentar el examen de admisión", `Estimado(a) ${nom}:\n\nNo acreditaste el curso propedéutico, pero tienes derecho a presentar el examen de admisión el ${MODALIDADES.examen.fechas} (RN-08).\n\nAtentamente,\nDepartamento de Posgrado · CIDETEC`);
-    } else {
-      actualizar(
-        a.id,
-        { evaluacion: { ...e, examen: r }, concluido: "No acreditó la evaluación (RN-08)" },
-        `Registró ${nombre}: ${valor} (no acreditado); el proceso concluye`,
+      actualizar(a.id, { evaluacion: ev, etapa: "dictamen" }, `Publicó resultados del ${porPublicar === "propedeutico" ? "propedéutico" : "examen"}: acreditado; pasa a comisión`);
+      enviarAviso([a.id], "ambos", "Resultados publicados: acreditaste tu evaluación", `Estimado(a) ${nom}:\n\nYa se publicaron tus resultados en SIGAP (5 · Resultados). Acreditaste tu evaluación; tu resultado pasa a la Comisión de Admisión del Colegio de Profesores.${firma}`);
+    } else if (porPublicar === "propedeutico") {
+      actualizar(a.id, { evaluacion: ev }, `Publicó resultados del propedéutico: no acreditó ${reprobadas.map(nombreArea).join(" y ")}; se le ofrece el examen de esas áreas (RN-08)`);
+      enviarAviso(
+        [a.id],
+        "ambos",
+        "Resultados del curso propedéutico",
+        `Estimado(a) ${nom}:\n\nYa se publicaron tus resultados del curso propedéutico en SIGAP (5 · Resultados). No acreditaste: ${reprobadas.map(nombreArea).join(" y ")}.\n\nPuedes presentar el examen de admisión de ${reprobadas.length > 1 ? "esas áreas" : "esa área"} el ${MODALIDADES.examen.fechas}. Entra a SIGAP para indicarnos si quieres presentarlo.${firma}`,
       );
+    } else {
+      actualizar(a.id, { evaluacion: ev, concluido: "No acreditó la evaluación (RN-08)" }, "Publicó resultados del examen: no acreditado; el proceso concluye");
       // RN-08: mensaje invitándolo a nuevas convocatorias (RF-17: no se le muestra "Rechazado")
-      enviarAviso([a.id], "ambos", "Resultado de tu proceso de admisión", `Estimado(a) ${nom}:\n\nAgradecemos tu participación en el proceso de admisión. Te invitamos a participar en la próxima convocatoria de la Maestría en Tecnología de Cómputo.\n\nAtentamente,\nDepartamento de Posgrado · CIDETEC`);
+      enviarAviso([a.id], "ambos", "Resultado de tu proceso de admisión", `Estimado(a) ${nom}:\n\nAgradecemos tu participación en el proceso de admisión. Te invitamos a participar en la próxima convocatoria de la Maestría en Tecnología de Cómputo.${firma}`);
     }
-    setCal("");
+  };
+
+  const decidirPorAspirante = (decision: "examen" | "no") => {
+    const reprobadas = areasReprobadas(e.propedeutico);
+    actualizar(
+      a.id,
+      { evaluacion: { ...e, segundaOportunidad: { decision, areas: reprobadas, el: new Date().toISOString() } }, ...(decision === "no" ? { concluido: "Decidió no presentar el examen de las áreas no acreditadas (RN-08)" } : {}) },
+      decision === "examen" ? `Registró que el aspirante presentará el examen de ${reprobadas.map(nombreArea).join(" y ")}` : "Registró que el aspirante no presentará el examen; el proceso concluye",
+    );
   };
 
   return (
@@ -263,52 +332,79 @@ function Resultados({ a }: { a: AspiranteP }) {
       <dl className="space-y-2 text-sm">
         <div className="flex justify-between gap-3 border-b border-gray-100 pb-2">
           <dt className="text-gray-500">Modalidad</dt>
-          <dd className="text-gray-900">{e.modalidad ? MODALIDADES[e.modalidad].titulo : "Sin elegir"}</dd>
+          <dd className="text-right text-gray-900">{e.modalidad ? MODALIDADES[e.modalidad].titulo : "Sin elegir"}</dd>
         </div>
-        {e.propedeutico && (
+        {e.propedeutico && <Fila t="Curso propedéutico" r={e.propedeutico} />}
+        {so && (
           <div className="flex justify-between gap-3 border-b border-gray-100 pb-2">
-            <dt className="text-gray-500">Curso propedéutico</dt>
-            <dd className={e.propedeutico.acreditado ? "text-emerald-700" : "text-red-700"}>
-              {e.propedeutico.calificacion} · {e.propedeutico.acreditado ? "acreditado" : "no acreditado"} · {fechaCorta(e.propedeutico.registradoEl)}
+            <dt className="text-gray-500">Decisión del aspirante</dt>
+            <dd className={so.decision === "examen" ? "text-gray-900" : "text-red-700"}>
+              {so.decision === "examen" ? `Presentará examen de ${so.areas.map(nombreArea).join(" y ")}` : "No presentará el examen"}
             </dd>
           </div>
         )}
-        {e.examen && (
-          <div className="flex justify-between gap-3 border-b border-gray-100 pb-2">
-            <dt className="text-gray-500">Examen</dt>
-            <dd className={e.examen.acreditado ? "text-emerald-700" : "text-red-700"}>
-              {e.examen.calificacion} · {e.examen.acreditado ? "acreditado" : "no acreditado"}
-            </dd>
-          </div>
-        )}
+        {e.examen && <Fila t={e.modalidad === "propedeutico" ? "Examen de áreas no acreditadas" : "Examen de admisión"} r={e.examen} />}
       </dl>
 
-      {esSegunda && (
+      {porPublicar ? (
         <div className="mt-4">
-          <Aviso tono="alerta" titulo="Segunda oportunidad habilitada">
+          <Aviso tono="info" titulo={`Resultados del ${porPublicar === "propedeutico" ? "curso propedéutico" : "examen"} registrados`}>
+            El aspirante aún no los ve. Al publicarlos se le notifica por correo y en SIGAP (5 · Resultados)
+            {porPublicar === "propedeutico" && !e.propedeutico!.acreditado ? " y se le pregunta si quiere presentar el examen de las áreas no acreditadas." : "."}
+          </Aviso>
+          <div className="mt-3 flex justify-end">
+            <button type="button" className={botonPrimario} onClick={publicar}>
+              <Send size={15} /> Publicar resultados
+            </button>
+          </div>
+        </div>
+      ) : e.propedeutico?.publicadoEl && !e.propedeutico.acreditado && !so ? (
+        <div className="mt-4">
+          <Aviso tono="alerta" titulo="Esperando la decisión del aspirante">
             <span className="flex items-start gap-1.5">
-              <TriangleAlert size={14} className="mt-0.5 shrink-0" /> Reprobar el propedéutico habilita el examen directo ({MODALIDADES.examen.fechas}). Reprobar ese
-              examen finaliza el proceso (RN-08).
+              <TriangleAlert size={14} className="mt-0.5 shrink-0" /> Se le preguntó en SIGAP si quiere presentar el examen de {areasReprobadas(e.propedeutico).map(nombreArea).join(" y ")} (
+              {MODALIDADES.examen.fechas}).
             </span>
           </Aviso>
+          {!a.enVivo && (
+            <div className="mt-3 flex flex-wrap justify-end gap-2">
+              <span className="w-full text-right text-xs text-gray-500">Si respondió por correo, regístralo aquí:</span>
+              <button type="button" className={botonSecundario} onClick={() => decidirPorAspirante("no")}>
+                No presentará
+              </button>
+              <button type="button" className={botonPrimario} onClick={() => decidirPorAspirante("examen")}>
+                Presentará el examen
+              </button>
+            </div>
+          )}
         </div>
-      )}
-
-      {tipo ? (
+      ) : tipo ? (
         <div className="mt-4">
-          <label className="block text-sm">
-            <span className="font-medium text-gray-900">
-              Calificación del {tipo === "propedeutico" ? "curso propedéutico" : esSegunda ? "examen directo" : "examen de admisión"} (0–10)
-            </span>
-            <input type="number" step="0.1" min={0} max={10} value={cal} onChange={(ev) => setCal(ev.target.value)} className={`${inputBase} mt-1`} />
-          </label>
-          <p className="mt-1 text-xs text-gray-500">
-            Mínima aprobatoria: {MINIMA.toFixed(1)} (ejemplo; se configura por convocatoria).{" "}
-            {valido && (valor >= MINIMA ? <b className="text-emerald-700">Acreditado</b> : <b className="text-red-700">No acreditado</b>)}
+          <p className="text-sm font-medium text-gray-900">
+            Calificaciones del {tipo === "propedeutico" ? "curso propedéutico" : esSegunda ? "examen de áreas no acreditadas" : "examen de admisión"} (0–10)
           </p>
+          {tipo === "examen" && (
+            <p className="mt-0.5 text-xs text-gray-500">
+              Examen: {fechaLargaIso(config.examen.fecha)}, {config.examen.hora} h, {config.examen.lugar}. El aspirante recibe recordatorios cada 5 días, un día antes y el mismo día.
+            </p>
+          )}
+          <div className="mt-2 grid gap-2 sm:grid-cols-2">
+            {areas.map((id) => {
+              const v = cal[id] ?? "";
+              const n = Number(v);
+              return (
+                <label key={id} className="text-sm">
+                  <span className="text-gray-700">{nombreArea(id)}</span>
+                  <input type="number" step="0.1" min={0} max={10} value={v} onChange={(ev) => setCal({ ...cal, [id]: ev.target.value })} className={`${inputBase} mt-1`} />
+                  {v !== "" && (n >= MINIMA ? <span className="text-xs text-emerald-700">Acreditada</span> : <span className="text-xs text-red-700">No acreditada</span>)}
+                </label>
+              );
+            })}
+          </div>
+          <p className="mt-1 text-xs text-gray-500">Mínima aprobatoria por área: {MINIMA.toFixed(1)} (ejemplo; se configura por convocatoria).</p>
           <div className="mt-3 flex justify-end">
-            <button type="button" className={botonPrimario} disabled={!valido} onClick={registrar}>
-              {esSegunda ? "Registrar examen directo" : "Registrar resultado"}
+            <button type="button" className={botonPrimario} disabled={!completo} onClick={registrar}>
+              Registrar calificaciones
             </button>
           </div>
         </div>

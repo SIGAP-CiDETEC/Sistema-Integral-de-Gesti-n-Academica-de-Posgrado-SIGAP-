@@ -8,15 +8,15 @@ import { PROGRAMA_INDIVIDUAL_DEMO } from "./programa-individual";
 
 export const ALUMNO_DEMO = {
   semestre: 1,
-  periodoActual: "B26 (agosto 2026 – enero 2027)",
+  periodoActual: "A27 (enero – junio 2027)",
   dedicacion: "Tiempo completo",
 };
 
 export const REINSCRIPCION = {
-  periodo: "A27 (febrero – julio 2027)",
-  abre: "18 de enero de 2027",
-  cierra: "22 de enero de 2027",
-  inicioClases: "1 de febrero de 2027",
+  periodo: "B27 (agosto – diciembre 2027)",
+  abre: "26 de julio de 2027",
+  cierra: "30 de julio de 2027",
+  inicioClases: "9 de agosto de 2027",
   estado: "proxima" as "proxima" | "abierta" | "cerrada",
   requisitos: [
     "Haber aprobado las unidades de aprendizaje del periodo actual (sin adeudos).",
@@ -31,10 +31,10 @@ export const REINSCRIPCION = {
     { titulo: "UTEyCV valida tu reinscripción", texto: "Recibirás tu confirmación y tu nuevo horario." },
   ],
   fechas: [
-    { fecha: "11 dic 2026", evento: "Fin de clases del periodo B26" },
-    { fecha: "15 dic 2026", evento: "Límite para asentar calificaciones" },
-    { fecha: "18–22 ene 2027", evento: "Reinscripción al periodo A27" },
-    { fecha: "1 feb 2027", evento: "Inicio de clases" },
+    { fecha: "25 jun 2027", evento: "Fin de clases del periodo A27" },
+    { fecha: "30 jun 2027", evento: "Límite para asentar calificaciones" },
+    { fecha: "26–30 jul 2027", evento: "Reinscripción al periodo B27" },
+    { fecha: "9 ago 2027", evento: "Inicio de clases" },
   ],
 };
 

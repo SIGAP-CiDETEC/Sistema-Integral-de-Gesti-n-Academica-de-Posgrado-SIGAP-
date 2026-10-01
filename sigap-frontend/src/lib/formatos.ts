@@ -6,8 +6,7 @@ import {
   sexoDeCurp,
 } from "./aspirante-datos";
 import type { EtapaId } from "./admision";
-import { PROGRAMA_INDIVIDUAL_DEMO, nombreAsesor } from "./programa-individual";
-import { AREAS_INVESTIGACION, type Respuestas } from "./registro-form";
+import { AREAS_INVESTIGACION, nombreUnidad, type Respuestas } from "./registro-form";
 
 /**
  * Formatos oficiales que el SISTEMA LLENA con los datos del aspirante.
@@ -81,6 +80,8 @@ export type Formato = {
   confirmaAspirante?: boolean;
   /** Páginas (base 0) que ve y descarga el aspirante; el resto lo llena otra persona */
   paginasAspirante?: number[];
+  /** No se muestra al aspirante (p. ej. MTC-EC: lo llenará el profesor del sínodo cuando exista ese actor) */
+  oculto?: boolean;
 };
 
 // ---------- Utilidades de valores automáticos ----------
@@ -94,7 +95,7 @@ const str = (v: Valor | undefined) => (Array.isArray(v) ? v.join(", ") : v ?? ""
 
 const unidadProcedencia = (r: Respuestas) =>
   r.institucion === "IPN" && r.unidadIpn && r.unidadIpn !== "Otra unidad del IPN"
-    ? `IPN — ${r.unidadIpn}`
+    ? `IPN — ${nombreUnidad(String(r.unidadIpn))}`
     : [r.institucion === "Otros" ? "" : str(r.institucion), str(r.unidadNombre)].filter(Boolean).join(" — ");
 
 const estadoCivilSip = (txt: string) => {
@@ -213,6 +214,8 @@ export const FORMATOS: Formato[] = [
   },
   {
     clave: "sip-05",
+    // Oculto por ahora: ya no se pide al aspirante en la fase de documentos (la dedicación se elige al confirmar el SIP-04)
+    oculto: true,
     destino: "Control Escolar (UTEyCV)",
     codigo: "SIP-05",
     nombre: "Carta protesta",
@@ -226,6 +229,8 @@ export const FORMATOS: Formato[] = [
   },
   {
     clave: "sip-06",
+    // Oculto por ahora: ya no se pide al aspirante en la fase de documentos (la dedicación se elige al confirmar el SIP-04)
+    oculto: true,
     destino: "Control Escolar (UTEyCV)",
     codigo: "SIP-06",
     nombre: "Carta de exposición de motivos",
@@ -250,6 +255,8 @@ export const FORMATOS: Formato[] = [
   },
   {
     clave: "mtc-ec",
+    // Oculto por ahora: el acta la llena el profesor del sínodo, no el aspirante (actor pendiente)
+    oculto: true,
     destino: "Departamento de Posgrado",
     paginasAspirante: [0],
     codigo: "MTC-EC",
@@ -312,80 +319,19 @@ export const FORMATOS: Formato[] = [
       C.apellidoMaterno,
       C.nombre,
       C.programa,
-      { ...C.estatus, id: "estatus", label: "Dedicación", ayuda: "La elegiste en tu carta protesta (SIP-05)." },
+      { ...C.estatus, id: "estatus", label: "Dedicación", ayuda: "Completo: al menos 40 h/semana; parcial: al menos 20 h/semana (REP Art. 13)." },
     ],
     firmas: [
       { rol: "comision", label: "Miembros de la Comisión de Admisión" },
       { rol: "jefe", label: "Coordinador del programa y Presidente del Colegio de Profesores" },
     ],
   },
-  {
-    clave: "sip-01",
-    destino: "Control Escolar (UTEyCV)",
-    codigo: "SIP-01",
-    nombre: "Solicitud de inscripción",
-    descripcion: "Se llena con tu registro, tu CV (SIP-02) y tu carta protesta (SIP-05). Tu foto se coloca sola.",
-    fase: "matricula",
-    llena: "aspirante",
-    plantilla: "sip-01.pdf",
-    pdf: "listo",
-    capturaOtros: "Programa semestral (cursos del 1er semestre): lo captura tu asesor académico.",
-    campos: [
-      C.apellidoPaterno, C.apellidoMaterno, C.nombre,
-      C.calle, C.numExt, C.numInt, C.colonia, C.alcaldia, C.cp, C.estadoDom, C.pais,
-      C.telCasa, C.telMovil, C.sexo, C.correo1, C.correo2,
-      C.unidad, C.programa,
-      C.licPrograma, C.licInstitucion, C.licEstado, C.licFecha,
-      C.estatus,
-      { ...C.fecha, id: "fechaInscripcion" },
-      {
-        id: "avisoPrivacidad",
-        label: "¿Aceptas el aviso de privacidad de la Dirección de Posgrado? (hoja 2 del SIP-01)",
-        tipo: "radio",
-        opciones: ["Acepto", "No acepto"],
-        ayuda: "Revísalo en la vista previa del PDF. Si no lo aceptas, no es posible continuar con tu inscripción.",
-        valido: (v) => v === "Acepto",
-        seccion: "Aviso de privacidad",
-      },
-    ],
-    firmas: [
-      { rol: "aspirante", label: "Alumno" },
-      { rol: "asesor", label: "Asesor académico" },
-      { rol: "jefe", label: "Jefe(a) de la Sección o Director(a) del Centro" },
-    ],
-  },
-  {
-    clave: "sip-08",
-    destino: "Control Escolar (UTEyCV)",
-    codigo: "SIP-08",
-    nombre: "Programa individual de actividades",
-    descripcion: "Lo prepara tu asesor académico con Control Escolar (UTEyCV); tú lo revisas, lo firmas y lo subes.",
-    fase: "matricula",
-    llena: "asesor",
-    plantilla: "sip-08.pdf",
-    pdf: "listo",
-    campos: [
-      { ...C.fecha, id: "fechaPrograma" },
-      { id: "noRegistro", label: "Número de registro", tipo: "text", sistema: true, auto: () => PROGRAMA_INDIVIDUAL_DEMO.noRegistro },
-      C.apellidoPaterno,
-      C.apellidoMaterno,
-      C.nombre,
-      C.nombreCompleto,
-      { ...C.estatus, sistema: true, auto: ({ c }) => (typeof c.estatus === "string" ? c.estatus : "Tiempo completo") },
-      C.programa,
-      C.unidad,
-      { id: "asesor", label: "Asesor académico", tipo: "text", sistema: true, auto: () => nombreAsesor() },
-    ],
-    firmas: [
-      { rol: "aspirante", label: "Interesado(a)" },
-      { rol: "asesor", label: "Asesor académico" },
-      { rol: "jefe", label: "Jefe(a) de la Sección o Director(a) del Centro" },
-    ],
-  },
 ];
 
-export const formatoPorClave = (clave: string) => FORMATOS.find((f) => f.clave === clave);
-export const formatosDeFase = (fase: EtapaId) => FORMATOS.filter((f) => f.fase === fase);
+/** Formatos que ve y trabaja el aspirante. */
+export const FORMATOS_ASPIRANTE = FORMATOS.filter((f) => !f.oculto);
+export const formatoPorClave = (clave: string) => FORMATOS_ASPIRANTE.find((f) => f.clave === clave);
+export const formatosDeFase = (fase: EtapaId) => FORMATOS_ASPIRANTE.filter((f) => f.fase === fase);
 
 // ---------- Resolución de valores ----------
 

@@ -34,20 +34,76 @@ export type Seccion = { id: string; titulo: string; descripcion?: string; pregun
 
 // ---------- Catálogos (reemplazar por los de la BD cuando exista el backend) ----------
 
-export const SEMESTRES = ["B26 (agosto 2026 - enero 2027)"];
+/** Semestres de ingreso; en el registro solo se ofrecen los de convocatorias abiertas (ver RegistroWizard). */
+export const SEMESTRES = ["A27 (enero – junio 2027)", "B27 (agosto – diciembre 2027)"];
 
+/**
+ * Unidades académicas del IPN (nivel superior y centros de investigación), según ipn.mx
+ * (oferta educativa de nivel superior y mapa de unidades 2025). Formato: "SIGLAS — Nombre oficial".
+ */
 export const UNIDADES_IPN = [
-  "ESCOM",
-  "ESIME Zacatenco",
-  "ESIME Culhuacán",
-  "ESIME Azcapotzalco",
-  "UPIITA",
-  "UPIICSA",
-  "ESFM",
-  "CIC",
-  "CIDETEC",
+  "CICS Milpa Alta — Centro Interdisciplinario de Ciencias de la Salud, Unidad Milpa Alta",
+  "CICS Santo Tomás — Centro Interdisciplinario de Ciencias de la Salud, Unidad Santo Tomás",
+  "ENBA — Escuela Nacional de Biblioteconomía y Archivonomía",
+  "ENCB Santo Tomás — Escuela Nacional de Ciencias Biológicas, Unidad Santo Tomás",
+  "ENCB Zacatenco — Escuela Nacional de Ciencias Biológicas, Unidad Zacatenco",
+  "ENMyH — Escuela Nacional de Medicina y Homeopatía",
+  "ESCA Santo Tomás — Escuela Superior de Comercio y Administración, Unidad Santo Tomás",
+  "ESCA Tepepan — Escuela Superior de Comercio y Administración, Unidad Tepepan",
+  "ESCOM — Escuela Superior de Cómputo",
+  "ESE — Escuela Superior de Economía",
+  "ESEO — Escuela Superior de Enfermería y Obstetricia",
+  "ESFM — Escuela Superior de Física y Matemáticas",
+  "ESIA Tecamachalco — Escuela Superior de Ingeniería y Arquitectura, Unidad Tecamachalco",
+  "ESIA Ticomán — Escuela Superior de Ingeniería y Arquitectura, Unidad Ticomán",
+  "ESIA Zacatenco — Escuela Superior de Ingeniería y Arquitectura, Unidad Zacatenco",
+  "ESIME Azcapotzalco — Escuela Superior de Ingeniería Mecánica y Eléctrica, Unidad Azcapotzalco",
+  "ESIME Culhuacán — Escuela Superior de Ingeniería Mecánica y Eléctrica, Unidad Culhuacán",
+  "ESIME Ticomán — Escuela Superior de Ingeniería Mecánica y Eléctrica, Unidad Ticomán",
+  "ESIME Zacatenco — Escuela Superior de Ingeniería Mecánica y Eléctrica, Unidad Zacatenco",
+  "ESIQIE — Escuela Superior de Ingeniería Química e Industrias Extractivas",
+  "ESIT — Escuela Superior de Ingeniería Textil",
+  "ESM — Escuela Superior de Medicina",
+  "EST — Escuela Superior de Turismo",
+  "UPIBI — Unidad Profesional Interdisciplinaria de Biotecnología",
+  "UPIEM — Unidad Profesional Interdisciplinaria de Energía y Movilidad",
+  "UPIIAP — Unidad Profesional Interdisciplinaria de Ingeniería \"Alejo Peralta\", Campus Puebla",
+  "UPIIC — Unidad Profesional Interdisciplinaria de Ingeniería, Campus Coahuila",
+  "UPIICSA — Unidad Profesional Interdisciplinaria de Ingeniería y Ciencias Sociales y Administrativas",
+  "UPIIG — Unidad Profesional Interdisciplinaria de Ingeniería, Campus Guanajuato",
+  "UPIIH — Unidad Profesional Interdisciplinaria de Ingeniería, Campus Hidalgo",
+  "UPIIP — Unidad Profesional Interdisciplinaria de Ingeniería, Campus Palenque",
+  "UPIIT — Unidad Profesional Interdisciplinaria de Ingeniería, Campus Tlaxcala",
+  "UPIITA — Unidad Profesional Interdisciplinaria en Ingeniería y Tecnologías Avanzadas",
+  "UPIIZ — Unidad Profesional Interdisciplinaria de Ingeniería, Campus Zacatecas",
+  // Centros de investigación y posgrado
+  "CBG — Centro de Biotecnología Genómica",
+  "CDA — Centro de Desarrollo Aeroespacial",
+  "CEPROBI — Centro de Desarrollo de Productos Bióticos",
+  "CIBA Tlaxcala — Centro de Investigación en Biotecnología Aplicada, Unidad Tlaxcala",
+  "CIC — Centro de Investigación en Computación",
+  "CICATA Altamira — Centro de Investigación en Ciencia Aplicada y Tecnología Avanzada, Unidad Altamira",
+  "CICATA Legaria — Centro de Investigación en Ciencia Aplicada y Tecnología Avanzada, Unidad Legaria",
+  "CICATA Morelos — Centro de Investigación en Ciencia Aplicada y Tecnología Avanzada, Unidad Morelos",
+  "CICATA Querétaro — Centro de Investigación en Ciencia Aplicada y Tecnología Avanzada, Unidad Querétaro",
+  "CICIMAR — Centro Interdisciplinario de Ciencias Marinas",
+  "CIDETEC — Centro de Innovación y Desarrollo Tecnológico en Cómputo",
+  "CIECAS — Centro de Investigaciones Económicas, Administrativas y Sociales",
+  "CIIDIR Durango — Centro Interdisciplinario de Investigación para el Desarrollo Integral Regional, Unidad Durango",
+  "CIIDIR Michoacán — Centro Interdisciplinario de Investigación para el Desarrollo Integral Regional, Unidad Michoacán",
+  "CIIDIR Oaxaca — Centro Interdisciplinario de Investigación para el Desarrollo Integral Regional, Unidad Oaxaca",
+  "CIIDIR Sinaloa — Centro Interdisciplinario de Investigación para el Desarrollo Integral Regional, Unidad Sinaloa",
+  "CIIEMAD — Centro Interdisciplinario de Investigaciones y Estudios sobre Medio Ambiente y Desarrollo",
+  "CIITEC — Centro de Investigación e Innovación Tecnológica",
+  "CITEDI — Centro de Investigación y Desarrollo de Tecnología Digital",
+  "CMP+L — Centro Mexicano para la Producción más Limpia",
+  "CNMN — Centro de Nanociencias y Micro y Nanotecnologías",
   "Otra unidad del IPN",
 ];
+
+/** "ESCOM — Escuela Superior de Cómputo" → siglas ("ESCOM") y nombre ("Escuela Superior de Cómputo"). */
+export const siglasUnidad = (v: string) => v.split(" — ")[0];
+export const nombreUnidad = (v: string) => v.split(" — ")[1] ?? v;
 
 export const AREAS_INVESTIGACION = [
   "Procesamiento Paralelo",

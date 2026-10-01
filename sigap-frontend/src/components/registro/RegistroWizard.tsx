@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { AlertTriangle, ArrowLeft, ArrowRight, Check, CloudCheck, Pencil, RotateCcw, ShieldCheck, Wand2 } from "lucide-react";
 import { REGISTRO_DEMO } from "@/lib/aspirante-datos";
+import type { IdConvocatoria } from "@/lib/config";
+import { useConvocatorias } from "@/lib/convocatoria";
 import { Campo } from "./Campo";
 import {
   CURPS_REGISTRADAS,
@@ -37,8 +39,12 @@ function leerBorrador(): Borrador | null {
   }
 }
 
-export function RegistroWizard() {
+export function RegistroWizard({ convocatoria }: { convocatoria?: IdConvocatoria }) {
   const router = useRouter();
+  // Solo se puede elegir el semestre de una convocatoria abierta (A: enero–junio, B: agosto–diciembre)
+  const { activas } = useConvocatorias();
+  const semestresAbiertos = activas.map((c) => c.semestre);
+  const semestreElegido = activas.find((c) => c.id === convocatoria)?.semestre ?? (activas.length === 1 ? activas[0].semestre : undefined);
   const [respuestas, setRespuestas] = useState<Respuestas>(VALORES_FIJOS);
   const [paso, setPaso] = useState(0);
   const [completados, setCompletados] = useState<number[]>([]);
@@ -60,6 +66,20 @@ export function RegistroWizard() {
     }
     setCargado(true);
   }, []);
+
+  // Semestre preseleccionado según la convocatoria elegida en el inicio; se descarta si ya no está abierta
+  useEffect(() => {
+    if (!cargado) return;
+    setRespuestas((r) => {
+      const actual = String(r.semestre ?? "");
+      if (semestreElegido && (convocatoria || !semestresAbiertos.includes(actual))) {
+        return actual === semestreElegido ? r : { ...r, semestre: semestreElegido };
+      }
+      if (actual && !semestresAbiertos.includes(actual)) return { ...r, semestre: "" };
+      return r;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- solo al cargar o si cambian las convocatorias abiertas
+  }, [cargado, semestreElegido, semestresAbiertos.join("|")]);
 
   // Guardado automático
   useEffect(() => {
@@ -125,7 +145,7 @@ export function RegistroWizard() {
     const id = `ASP-2026-${String(Math.floor(Math.random() * 900) + 100)}`;
     try {
       localStorage.removeItem(STORAGE_KEY);
-      // Las respuestas alimentan los formatos del expediente (SIP-02, SIP-05, SIP-06, MTC-EC, SIP-01)
+      // Las respuestas alimentan los formatos del expediente (SIP-02 y SIP-04)
       localStorage.setItem("sigap-aspirante-registro", JSON.stringify(respuestas));
       localStorage.removeItem("sigap-expediente");
     } catch {
@@ -136,7 +156,7 @@ export function RegistroWizard() {
 
   // Solo cascarón: llena todo con datos de ejemplo válidos y salta a la revisión
   const simularLlenado = () => {
-    setRespuestas({ ...REGISTRO_DEMO, ...VALORES_FIJOS });
+    setRespuestas({ ...REGISTRO_DEMO, ...VALORES_FIJOS, semestre: semestreElegido ?? semestresAbiertos[0] ?? String(REGISTRO_DEMO.semestre) });
     setCompletados(SECCIONES.map((_, i) => i));
     setAceptaPrivacidad(true);
     setErrorPrivacidad(false);
@@ -144,7 +164,7 @@ export function RegistroWizard() {
   };
 
   const limpiarFormulario = () => {
-    setRespuestas(VALORES_FIJOS);
+    setRespuestas(semestreElegido ? { ...VALORES_FIJOS, semestre: semestreElegido } : VALORES_FIJOS);
     setCompletados([]);
     setAceptaPrivacidad(false);
     setErrorPrivacidad(false);
@@ -246,7 +266,7 @@ export function RegistroWizard() {
                 .map((p) => (
                   <Campo
                     key={p.id}
-                    pregunta={p}
+                    pregunta={p.id === "semestre" ? { ...p, opciones: semestresAbiertos } : p}
                     valor={respuestas[p.id]}
                     error={errores[p.id]}
                     onChange={(v) => cambiar(p.id, v)}

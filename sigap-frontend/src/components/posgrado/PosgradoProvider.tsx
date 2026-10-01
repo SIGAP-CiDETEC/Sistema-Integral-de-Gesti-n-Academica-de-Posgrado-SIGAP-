@@ -10,10 +10,10 @@ import {
   type DocAspirante,
   type EstadoDoc,
   type ResolucionColegio,
+  type SegundaOportunidad,
   type UteycvP,
 } from "@/lib/posgrado/datos";
-import { guardarCuenta, ID_TEMPORAL_DEMO, type CuentaAlumno } from "@/lib/cuenta-alumno";
-import type { Respuestas } from "@/lib/registro-form";
+import { siglasUnidad, type Respuestas } from "@/lib/registro-form";
 import { useSesion } from "@/lib/sesion";
 
 /**
@@ -74,7 +74,7 @@ type Api = {
   guardarActa: (acta: Omit<ActaColegio, "registradaEl">, accion: string) => void;
   /** Aviso a uno o varios aspirantes (p. ej. cambio de horario o de entrevista) */
   enviarAviso: (aspirantes: string[], canal: Canal, asunto: string, mensaje: string) => void;
-  /** Registra el trabajo de UTEyCV (SIP-04, SIP-08, matrícula). Lo que toca al aspirante de este navegador se refleja en su sesión. */
+  /** Registra el trabajo de UTEyCV (dictamen SIP-04). Lo que toca al aspirante de este navegador se refleja en su sesión. */
   actualizarUteycv: (id: string, patch: Partial<UteycvP>, accion: string) => void;
   /** Deja constancia en bitácora de un cambio general (p. ej. fechas de evaluación) */
   registrarEnBitacora: (accion: string) => void;
@@ -93,7 +93,7 @@ type ExpedienteLocal = {
   confirmados?: Record<string, string>;
   recibidos?: Record<string, { nombre: string; fecha: string }>;
   capturas?: Record<string, unknown>;
-  evaluacion?: { modalidad?: ModalidadId; grupos?: Record<string, string>; confirmadaEl?: string };
+  evaluacion?: { modalidad?: ModalidadId; grupos?: Record<string, string>; confirmadaEl?: string; segundaOportunidad?: SegundaOportunidad };
 };
 
 function leerLocal<T>(clave: string): T | null {
@@ -107,7 +107,7 @@ function leerLocal<T>(clave: string): T | null {
 
 export function PosgradoProvider({ children }: { children: React.ReactNode }) {
   const [estado, setEstado] = useState<Estado>(VACIO);
-  const [vivo, setVivo] = useState<{ registro: Respuestas; exp: ExpedienteLocal; cuenta: CuentaAlumno | null }>({ registro: REGISTRO_DEMO, exp: {}, cuenta: null });
+  const [vivo, setVivo] = useState<{ registro: Respuestas; exp: ExpedienteLocal }>({ registro: REGISTRO_DEMO, exp: {} });
   const [cargado, setCargado] = useState(false);
   const { sesion } = useSesion();
   const usuario = sesion?.nombre ?? "Departamento de Posgrado";
@@ -119,7 +119,6 @@ export function PosgradoProvider({ children }: { children: React.ReactNode }) {
     setVivo({
       registro: leerLocal<Respuestas>("sigap-aspirante-registro") ?? REGISTRO_DEMO,
       exp: leerLocal<ExpedienteLocal>("sigap-expediente") ?? {},
-      cuenta: leerLocal<CuentaAlumno>("sigap-cuenta-alumno"),
     });
     setCargado(true);
   }, []);
@@ -153,11 +152,11 @@ export function PosgradoProvider({ children }: { children: React.ReactNode }) {
           curp: String(r.curp ?? a.curp),
           correo: String(r.correo ?? a.correo),
           telefono: String(r.telefono ?? a.telefono),
-          procedencia: r.institucion === "IPN" && r.unidadIpn ? `IPN — ${String(r.unidadIpn)}` : String(r.institucion ?? a.procedencia),
+          procedencia: r.institucion === "IPN" && r.unidadIpn ? `IPN — ${siglasUnidad(String(r.unidadIpn))}` : String(r.institucion ?? a.procedencia),
           promedio: String(r.promedio ?? a.promedio),
           documentos,
           formatos: Object.fromEntries(Object.keys(vivo.exp.firmados ?? {}).map((k) => [k, true])),
-          evaluacion: ev?.confirmadaEl ? { modalidad: ev.modalidad, grupos: ev.grupos ?? {} } : { grupos: {} },
+          evaluacion: ev?.confirmadaEl ? { modalidad: ev.modalidad, grupos: ev.grupos ?? {}, segundaOportunidad: ev.segundaOportunidad } : { grupos: {} },
           // Su último movimiento es el último archivo que subió
           ultimoMovimiento:
             Object.values(vivo.exp.documentos ?? {})
@@ -168,23 +167,21 @@ export function PosgradoProvider({ children }: { children: React.ReactNode }) {
       }
       const cambios = estado.cambios[base.id] ?? {};
       a = { ...a, ...cambios, evaluacion: { ...a.evaluacion, ...(cambios.evaluacion ?? {}) }, uteycv: { ...base.uteycv, ...cambios.uteycv } };
+      // La decisión de la segunda oportunidad la toma el aspirante en su sesión
+      if (base.enVivo && vivo.exp.evaluacion?.segundaOportunidad) a.evaluacion = { ...a.evaluacion, segundaOportunidad: vivo.exp.evaluacion.segundaOportunidad };
+      if (!a.concluido && a.etapa === "evaluacion" && a.evaluacion.segundaOportunidad?.decision === "no" && !a.evaluacion.examen)
+        a.concluido = "Decidió no presentar el examen de las áreas no acreditadas (RN-08)";
       if (base.enVivo) {
-        // Lo que hizo el aspirante en su sesión (confirmar SIP-04, subir firmados y foto) y lo publicado para él
+        // Lo que hizo el aspirante en su sesión (confirmar SIP-04) y lo publicado para él
         const x = vivo.exp;
         const est = x.capturas?.estatus;
-        // La dedicación la elige el aspirante en su SIP-05
+        // La dedicación la elige el aspirante al revisar su SIP-04
         a.dedicacion = est === "Tiempo completo" || est === "Tiempo parcial" ? est : undefined;
         a.uteycv = {
           ...a.uteycv,
           confirmoSip04: !!x.confirmados?.["sip-04"],
-          sip01Firmado: !!x.firmados?.["sip-01"],
-          sip08Firmado: !!x.firmados?.["sip-08"],
-          foto: !!x.documentos?.foto,
           sip04PublicadoEl: x.recibidos?.["sip-04"]?.fecha,
           sip04Archivo: x.recibidos?.["sip-04"]?.nombre,
-          sip08PublicadoEl: x.recibidos?.["sip-08"]?.fecha,
-          sicep: vivo.cuenta?.numeroRegistro ?? a.uteycv?.sicep,
-          formalizadoEl: vivo.cuenta?.asignadoEl ?? (vivo.cuenta ? a.uteycv?.formalizadoEl : undefined),
         };
       }
       const docs = estado.docs[base.id];
@@ -239,7 +236,6 @@ export function PosgradoProvider({ children }: { children: React.ReactNode }) {
           aprobado: "Aprobó",
           observado: "Observó",
           pendiente: "Regresó a revisión",
-          aval: "Turnó a UTEyCV para aval de la DFLE",
           prorroga: `Dio prórroga hasta el ${prorrogaHasta ? new Date(`${prorrogaHasta}T12:00:00`).toLocaleDateString("es-MX", { day: "numeric", month: "long", year: "numeric" }) : ""} para`,
           falta: "Marcó como faltante",
         };
@@ -312,8 +308,7 @@ export function PosgradoProvider({ children }: { children: React.ReactNode }) {
           const recibidos = { ...(exp.recibidos ?? {}) };
           const ahora = new Date().toISOString();
           if (patch.sip04PublicadoEl) recibidos["sip-04"] = { nombre: patch.sip04Archivo ?? "SIP-04_firmado.pdf", fecha: ahora };
-          if (patch.sip08PublicadoEl) recibidos["sip-08"] = { nombre: "SIP-08_programa.pdf", fecha: ahora };
-          if (patch.sip04PublicadoEl || patch.sip08PublicadoEl) {
+          if (patch.sip04PublicadoEl) {
             const nuevo = { ...exp, recibidos: Object.fromEntries(Object.entries(recibidos).map(([k, v]) => [k, { bytes: 240_000, ...v }])) };
             try {
               localStorage.setItem("sigap-expediente", JSON.stringify(nuevo));
@@ -321,11 +316,6 @@ export function PosgradoProvider({ children }: { children: React.ReactNode }) {
               /* ignorar */
             }
             setVivo((v) => ({ ...v, exp: { ...v.exp, recibidos } }));
-          }
-          if (patch.formalizadoEl && patch.sicep) {
-            const cuenta: CuentaAlumno = { numeroRegistro: patch.sicep, idTemporal: ID_TEMPORAL_DEMO, asignadoEl: patch.formalizadoEl };
-            guardarCuenta(cuenta);
-            setVivo((v) => ({ ...v, cuenta }));
           }
         }
         guardar((e) =>

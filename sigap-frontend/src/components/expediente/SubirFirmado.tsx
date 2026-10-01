@@ -9,7 +9,7 @@ const kb = (b: number) => (b > 1024 * 1024 ? `${(b / 1024 / 1024).toFixed(1)} MB
 
 /** Carga del PDF firmado a mano (escaneado). */
 export function SubirFirmado({ clave, habilitado, destino }: { clave: string; habilitado: boolean; destino: string }) {
-  const MAX_MB = useConvocatoria().config.limiteMB;
+  const MAX_MB = useConvocatoria().limiteMB;
   const { firmados, subirFirmado } = useExpediente();
   const input = useRef<HTMLInputElement>(null);
   const [error, setError] = useState("");

@@ -3,6 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { REGISTRO_DEMO } from "@/lib/aspirante-datos";
 import type { Capturas, Contexto, Valor } from "@/lib/formatos";
+import type { SegundaOportunidad } from "@/lib/posgrado/datos";
 import type { Respuestas } from "@/lib/registro-form";
 
 /**
@@ -18,6 +19,8 @@ export type EleccionEvaluacion = {
   modalidad?: "propedeutico" | "examen";
   grupos: Record<string, string>;
   confirmadaEl?: string;
+  /** Si no acreditó áreas del propedéutico: si quiere presentar el examen de esas áreas (RN-08) */
+  segundaOportunidad?: SegundaOportunidad;
 };
 
 type Estado = {

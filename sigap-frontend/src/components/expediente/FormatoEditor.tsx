@@ -29,7 +29,6 @@ import {
 import { faseDe } from "@/lib/fases";
 import { generarPdfFormato } from "@/lib/pdf/cliente";
 import { useExpediente } from "./ExpedienteProvider";
-import { DocumentoAsesor } from "./DocumentoAsesor";
 import { FirmasOtros } from "./FirmasOtros";
 import { RevisarDictamen } from "./RevisarDictamen";
 import { SubirFirmado } from "./SubirFirmado";
@@ -110,8 +109,6 @@ export function FormatoEditor({ clave }: { clave: string }) {
         <FormatoBloqueado motivo={bloqueo} />
       ) : f.confirmaAspirante ? (
         <RevisarDictamen formato={f} />
-      ) : f.llena === "asesor" ? (
-        <DocumentoAsesor formato={f} />
       ) : !editable ? (
         <section className="rounded-xl border border-gray-200 bg-white p-5 text-sm text-gray-700">
           <p className="flex items-center gap-2 font-medium text-gray-900">
@@ -177,9 +174,6 @@ export function FormatoEditor({ clave }: { clave: string }) {
                     <p className="text-sm text-amber-700">{f.notaPlantilla ?? "La generación del PDF de este formato está pendiente."} Tus datos ya quedan guardados.</p>
                   ) : (
                     <>
-                      {f.clave === "sip-01" && !foto && (
-                        <p className="mb-2 text-xs text-amber-700">Sube tu fotografía en la fase de Matrícula para que aparezca en el formato.</p>
-                      )}
                       <div className="grid grid-cols-2 gap-2">
                         <button
                           type="button"

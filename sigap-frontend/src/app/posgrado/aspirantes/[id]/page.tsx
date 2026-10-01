@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { use, useState } from "react";
-import { CalendarClock, CheckCircle2, Circle, FileText, History, Mail, Send, ShieldAlert, Wand2, XCircle } from "lucide-react";
+import { CalendarClock, CheckCircle2, Circle, FileText, History, Mail, ShieldAlert, Wand2, XCircle } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { usePosgrado } from "@/components/posgrado/PosgradoProvider";
 import { Aviso, EtiquetaBandeja, EtiquetaDoc, Migas, Tarjeta, botonPeligro, botonPrimario, botonSecundario, inputBase } from "@/components/posgrado/ui";
@@ -17,14 +17,10 @@ import {
   fechaHora,
   nombreProfesor,
   resultadoFinal,
-  totalPuntaje,
 } from "@/lib/posgrado/datos";
 
 const FORMATOS = [
   { id: "sip-02", t: "SIP-02 · Currículum" },
-  { id: "sip-05", t: "SIP-05 · Carta protesta" },
-  { id: "sip-06", t: "SIP-06 · Carta compromiso" },
-  { id: "mtc-ec", t: "MTC-EC · Acta de entrevista" },
 ];
 
 /** Solo el inglés y el título pueden tener prórroga (el resto se entrega completo). */
@@ -150,7 +146,7 @@ export default function RevisionExpediente({ params }: PageProps<"/posgrado/aspi
                     {doc.id === "ingles" && (
                       <div className="mt-3">
                         <Aviso tono="info" titulo="Control obligatorio (RN-09)">
-                          Constancia de CELEX o CENLEX: se aprueba directo. Cualquier otra requiere aval de la DFLE, que tramita UTEyCV. Si aún no la tiene,
+                          La constancia de inglés la valida el Departamento de Posgrado: revisa que acredite el nivel requerido. Si es distinta a la del CENLEX, debe validarse ante la DFLE (puede tardar más de 40 días). Si aún no la tiene,
                           dale prórroga para que continúe su proceso de admisión.
                         </Aviso>
                       </div>
@@ -169,25 +165,14 @@ export default function RevisionExpediente({ params }: PageProps<"/posgrado/aspi
                             setObs(e.target.value);
                             setErrorObs(false);
                           }}
-                          placeholder={doc.id === "ingles" ? "Ej. La constancia no es de CELEX/CENLEX" : "Ej. El reverso no es legible"}
+                          placeholder={doc.id === "ingles" ? "Ej. La constancia no acredita el nivel requerido" : "Ej. El reverso no es legible"}
                           className={`${inputBase} mt-1 ${errorObs ? "border-red-400" : ""}`}
                         />
                         {doc.archivo && (
                           <div className="mt-3 flex flex-wrap gap-2">
-                            {doc.id === "ingles" && doc.estado === "aval" ? (
-                              <button type="button" className={botonSecundario} onClick={() => marcarDoc(a.id, doc.id, "aprobado", "Aval DFLE registrado por UTEyCV")}>
-                                <Wand2 size={15} /> Simular: UTEyCV registró el aval DFLE
-                              </button>
-                            ) : (
-                              <button type="button" className={botonPrimario} onClick={() => decidir("aprobado")}>
-                                <CheckCircle2 size={15} /> {doc.id === "ingles" ? "Aprobar: es de CELEX/CENLEX" : "Aprobar"}
-                              </button>
-                            )}
-                            {doc.id === "ingles" && doc.estado !== "aval" && (
-                              <button type="button" className={botonSecundario} onClick={() => marcarDoc(a.id, doc.id, "aval", obs.trim() || undefined)}>
-                                <Send size={15} /> Turnar a UTEyCV (aval DFLE)
-                              </button>
-                            )}
+                            <button type="button" className={botonPrimario} onClick={() => decidir("aprobado")}>
+                              <CheckCircle2 size={15} /> {doc.id === "ingles" ? "Validar constancia" : "Aprobar"}
+                            </button>
                             <button type="button" className={botonPeligro} onClick={() => decidir("observado")}>
                               <XCircle size={15} /> Observar
                             </button>
@@ -322,7 +307,6 @@ export default function RevisionExpediente({ params }: PageProps<"/posgrado/aspi
                 </li>
               ))}
             </ul>
-            <p className="mt-2 text-xs text-gray-400">SIP-05 y SIP-06 los recibe UTEyCV; aquí solo se consultan.</p>
           </Tarjeta>
 
           <Tarjeta titulo="Seguimiento">
@@ -340,7 +324,7 @@ export default function RevisionExpediente({ params }: PageProps<"/posgrado/aspi
                   )}
                   {a.dictamen && (
                     <span className="block text-xs">
-                      Dictamen: <b>{a.dictamen.resolucion}</b> · {totalPuntaje(a.dictamen.puntajes)}/100
+                      Dictamen: <b>{a.dictamen.resolucion}</b>
                     </span>
                   )}
                 </dd>
@@ -356,13 +340,10 @@ export default function RevisionExpediente({ params }: PageProps<"/posgrado/aspi
                 <dt className="text-gray-500">Resolución del Colegio</dt>
                 <dd className="text-gray-900">{a.resolucion ?? "Pendiente"}</dd>
               </div>
-              {a.etapa === "matricula" && (
+              {a.turnadoUteycv && (
                 <div>
-                  <dt className="text-gray-500">Control Escolar (UTEyCV)</dt>
-                  <dd className="text-gray-900">
-                    {estadoUteycv(a)}
-                    {a.uteycv?.sicep && a.uteycv.formalizadoEl && <span className="block font-mono text-xs">Boleta {a.uteycv.sicep}</span>}
-                  </dd>
+                  <dt className="text-gray-500">Dictamen SIP-04 (UTEyCV)</dt>
+                  <dd className="text-gray-900">{estadoUteycv(a)}</dd>
                 </div>
               )}
             </dl>

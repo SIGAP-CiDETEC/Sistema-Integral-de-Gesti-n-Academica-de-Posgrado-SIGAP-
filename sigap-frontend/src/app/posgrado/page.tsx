@@ -11,13 +11,13 @@ import { bandejaDe, diasPara, fechaCorta, nombreProfesor, prioridadDe, prorrogas
 const BANDEJAS: { b: Bandeja; accion: string; href: string }[] = [
   { b: "Por revisar", accion: "Revisar", href: "/posgrado/aspirantes?bandeja=Por revisar" },
   { b: "Con observaciones", accion: "Dar seguimiento", href: "/posgrado/aspirantes?bandeja=Con observaciones" },
-  { b: "Pendiente aval DFLE", accion: "Consultar", href: "/posgrado/aspirantes?bandeja=Pendiente aval DFLE" },
   { b: "Sin cita", accion: "Programar", href: "/posgrado/entrevistas" },
   { b: "Entrevista programada", accion: "Registrar dictamen", href: "/posgrado/entrevistas" },
   { b: "En evaluación", accion: "Gestionar", href: "/posgrado/evaluacion" },
   { b: "Segunda oportunidad", accion: "Gestionar", href: "/posgrado/evaluacion" },
   { b: "Esperando resolución del Colegio", accion: "Registrar resolución", href: "/posgrado/comision" },
   { b: "Turnado a UTEyCV", accion: "Ver", href: "/posgrado/aspirantes?bandeja=Turnado a UTEyCV" },
+  { b: "Dictamen publicado", accion: "Ver", href: "/posgrado/aspirantes?bandeja=Dictamen publicado" },
 ];
 
 /** Operación de admisión: vista general de la convocatoria (mockup "Operación de admisión"). */
@@ -31,7 +31,6 @@ export default function PosgradoInicio() {
     .flatMap((a) => prorrogasDe(a).map((d) => ({ a, d, dias: diasPara(d.prorrogaHasta!) })))
     .sort((x, y) => x.dias - y.dias);
   const altas = aspirantes.filter((a) => prioridadDe(a).nivel === "Alta").length;
-  const inglesAval = aspirantes.filter((a) => !a.concluido && a.documentos.some((d) => d.id === "ingles" && d.estado === "aval"));
   const proximas = aspirantes
     .filter((a) => a.entrevista && !a.dictamen)
     .sort((x, y) => `${x.entrevista!.fecha}${x.entrevista!.hora}`.localeCompare(`${y.entrevista!.fecha}${y.entrevista!.hora}`));
@@ -45,7 +44,7 @@ export default function PosgradoInicio() {
         <Kpi valor={cuenta("Por revisar")} etiqueta="Expedientes por revisar" color="text-amber-600" href="/posgrado/aspirantes?bandeja=Por revisar" />
         <Kpi valor={cuenta("Sin cita") + cuenta("Entrevista programada")} etiqueta="En entrevista" color="text-primary" href="/posgrado/entrevistas" />
         <Kpi
-          valor={aspirantes.filter((a) => a.etapa === "dictamen" || a.etapa === "matricula").length}
+          valor={aspirantes.filter((a) => a.etapa === "dictamen").length}
           etiqueta="Acreditados (comisión / UTEyCV)"
           color="text-emerald-700"
           href="/posgrado/comision"
@@ -106,23 +105,6 @@ export default function PosgradoInicio() {
             )}
           </Tarjeta>
 
-          {inglesAval.length > 0 && (
-            <Aviso tono="alerta" titulo={`Alerta operativa · ${inglesAval.length} constancia(s) de inglés sin aval`}>
-              <p className="flex items-start gap-1.5">
-                <TriangleAlert size={14} className="mt-0.5 shrink-0" />
-                UTEyCV las envió a la DFLE; no se puede aprobar el expediente hasta recibir el aval (RN-09), salvo que se dé prórroga.
-              </p>
-              <ul className="mt-1 list-disc pl-5">
-                {inglesAval.map((a) => (
-                  <li key={a.id}>
-                    <Link href={`/posgrado/aspirantes/${a.id}`} className="underline">
-                      {a.nombre}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </Aviso>
-          )}
           {prorrogas.length > 0 && (
             <Aviso tono="alerta" titulo={`Documentos con prórroga · ${prorrogas.length}`}>
               <p className="flex items-start gap-1.5">

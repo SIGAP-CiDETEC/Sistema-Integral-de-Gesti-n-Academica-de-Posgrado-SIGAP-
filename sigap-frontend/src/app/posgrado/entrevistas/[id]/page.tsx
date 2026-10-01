@@ -2,22 +2,19 @@
 
 import Link from "next/link";
 import { use, useState } from "react";
-import { CalendarCheck, CheckCircle2, Pencil, TriangleAlert } from "lucide-react";
+import { BellRing, CalendarCheck, CheckCircle2, Pencil, TriangleAlert } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
+import { fechaRecordatorio, recordatoriosEntrevista } from "@/lib/recordatorios";
 import { usePosgrado } from "@/components/posgrado/PosgradoProvider";
 import { Aviso, Etiqueta, Migas, Tarjeta, botonPrimario, botonSecundario, inputBase } from "@/components/posgrado/ui";
 import { AvisoAspirante } from "@/components/posgrado/AvisoAspirante";
 import {
-  ETIQUETA_PUNTAJE,
-  MAX_PUNTAJE,
   PROFESORES_SINODO,
   fechaCorta,
   nombreProfesor,
   profesorValido,
-  totalPuntaje,
   type AspiranteP,
   type Entrevista,
-  type Puntajes,
   type Resolucion,
 } from "@/lib/posgrado/datos";
 
@@ -67,6 +64,18 @@ export default function EntrevistaAspirante({ params }: PageProps<"/posgrado/ent
               <Dato k="Sala / enlace" v={a.entrevista.sala} />
             </dl>
             <p className="mt-3 text-sm text-gray-600">Sínodo: {a.entrevista.sinodo.map(nombreProfesor).join(" · ")}</p>
+            {!a.dictamen && (
+              <p className="mt-3 flex items-start gap-1.5 rounded-lg bg-indigo-50 px-3 py-2 text-sm text-navy-800">
+                <BellRing size={15} className="mt-0.5 shrink-0" />
+                <span>
+                  Recordatorios automáticos al aspirante, por correo y en SIGAP:{" "}
+                  {recordatoriosEntrevista(a.entrevista, a.nombre.split(" ")[0])
+                    .map((r, i) => `${i === 0 ? "un día antes" : "una hora antes"} (${fechaRecordatorio(r.cuando)})`)
+                    .join(" y ")}
+                  .
+                </span>
+              </p>
+            )}
           </Tarjeta>
           {!a.dictamen && <AvisoAspirante aspirante={a.id} nombre={a.nombre} plantillas={plantillasEntrevista(a)} />}
           {a.dictamen ? <DictamenRegistrado a={a} /> : <CapturarDictamen a={a} />}
@@ -258,26 +267,21 @@ const TONO_RES: Record<Resolucion, string> = {
 
 function CapturarDictamen({ a }: { a: AspiranteP }) {
   const { actualizar, enviarAviso } = usePosgrado();
-  const [p, setP] = useState<Record<keyof Puntajes, string>>({ trayectoria: "", proyecto: "", conocimientos: "", motivacion: "" });
   const [res, setRes] = useState<Resolucion | null>(null);
   const [comentarios, setComentarios] = useState("");
-  const num = Object.fromEntries(Object.entries(p).map(([k, v]) => [k, Number(v) || 0])) as Puntajes;
-  const fuera = (Object.keys(MAX_PUNTAJE) as (keyof Puntajes)[]).filter((k) => p[k] !== "" && (Number(p[k]) < 0 || Number(p[k]) > MAX_PUNTAJE[k]));
-  const completos = Object.values(p).every((v) => v !== "");
-  const listo = completos && !fuera.length && res && comentarios.trim();
+  const listo = res && comentarios.trim();
 
   const registrar = () => {
     if (!res) return;
-    const total = totalPuntaje(num);
     actualizar(
       a.id,
       {
-        dictamen: { puntajes: num, resolucion: res, comentarios: comentarios.trim(), registradoEl: new Date().toISOString() },
+        dictamen: { resolucion: res, comentarios: comentarios.trim(), registradoEl: new Date().toISOString() },
         ...(res === "Rechazado" ? { concluido: "Rechazado en la entrevista colegiada (RN-05)" } : { etapa: "evaluacion" as const }),
       },
-      `Registró el dictamen de entrevista: ${res} (${total}/100)${res === "Rechazado" ? ". El proceso queda concluido" : "; pasa a evaluación"}`,
+      `Registró el dictamen de entrevista: ${res}${res === "Rechazado" ? ". El proceso queda concluido" : "; pasa a evaluación"}`,
     );
-    // Al aspirante solo se le comunica si continúa o no; nunca los puntajes. RN-05: correo general si no continúa
+    // Al aspirante solo se le comunica si continúa o no. RN-05: correo general si no continúa
     const nombre = a.nombre.split(" ")[0];
     if (res === "Rechazado")
       enviarAviso([a.id], "ambos", "Resultado de tu proceso de admisión", `Estimado(a) ${nombre}:\n\nAgradecemos tu interés en la Maestría en Tecnología de Cómputo. Te informamos que tu proceso de admisión en esta convocatoria ha concluido.\n\nAtentamente,\nDepartamento de Posgrado · CIDETEC`);
@@ -287,22 +291,8 @@ function CapturarDictamen({ a }: { a: AspiranteP }) {
 
   return (
     <>
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        {(Object.keys(MAX_PUNTAJE) as (keyof Puntajes)[]).map((k) => (
-          <Campo key={k} label={`${ETIQUETA_PUNTAJE[k]} / ${MAX_PUNTAJE[k]}`}>
-            <input
-              type="number"
-              min={0}
-              max={MAX_PUNTAJE[k]}
-              value={p[k]}
-              onChange={(e) => setP({ ...p, [k]: e.target.value })}
-              className={`${inputBase} ${fuera.includes(k) ? "border-red-400" : ""}`}
-            />
-          </Campo>
-        ))}
-      </div>
-
-      <Tarjeta titulo="Resolución">
+      <Tarjeta titulo="Resolución del sínodo">
+        <p className="mb-3 text-sm text-gray-600">La entrevista no lleva ponderación: el sínodo solo determina si el aspirante es aprobado, aprobado con reservas o rechazado.</p>
         <div className="flex flex-wrap gap-2">
           {(["Aprobado", "Con reservas", "Rechazado"] as Resolucion[]).map((r) => (
             <button
@@ -319,15 +309,13 @@ function CapturarDictamen({ a }: { a: AspiranteP }) {
           Comentarios del sínodo
         </label>
         <textarea id="comentarios" rows={2} value={comentarios} onChange={(e) => setComentarios(e.target.value)} className={`${inputBase} mt-1`} />
-        <p className={`mt-4 text-2xl font-semibold ${completos ? "text-emerald-700" : "text-gray-400"}`}>Puntaje total: {totalPuntaje(num)} / 100</p>
-        {fuera.length > 0 && <p className="mt-1 text-sm text-red-600">Hay puntajes fuera del rango permitido.</p>}
       </Tarjeta>
 
       {res === "Rechazado" && (
         <Aviso tono="error" titulo="Efecto de una resolución rechazada">
           <span className="flex items-start gap-1.5">
             <TriangleAlert size={14} className="mt-0.5 shrink-0" /> Rechazado finaliza y bloquea el proceso (RN-05). No se habilitan evaluación ni
-            matrícula; la decisión queda registrada en la bitácora.
+            dictamen; la decisión queda registrada en la bitácora.
           </span>
         </Aviso>
       )}
@@ -346,19 +334,8 @@ function DictamenRegistrado({ a }: { a: AspiranteP }) {
   const d = a.dictamen!;
   return (
     <Tarjeta titulo="Dictamen registrado">
-      <div className="grid gap-3 sm:grid-cols-4">
-        {(Object.keys(MAX_PUNTAJE) as (keyof Puntajes)[]).map((k) => (
-          <div key={k} className="rounded-lg bg-gray-50 p-3 text-sm">
-            <p className="text-gray-500">{ETIQUETA_PUNTAJE[k]}</p>
-            <p className="font-semibold text-gray-900">
-              {d.puntajes[k]} / {MAX_PUNTAJE[k]}
-            </p>
-          </div>
-        ))}
-      </div>
-      <p className="mt-4 text-sm">
-        Resolución: <span className={`rounded-full border px-2.5 py-0.5 ${TONO_RES[d.resolucion]}`}>{d.resolucion}</span> · Puntaje total{" "}
-        <b>{totalPuntaje(d.puntajes)}/100</b>
+      <p className="text-sm">
+        Resolución: <span className={`rounded-full border px-2.5 py-0.5 ${TONO_RES[d.resolucion]}`}>{d.resolucion}</span>
       </p>
       <p className="mt-2 text-sm text-gray-700">“{d.comentarios}”</p>
       <p className="mt-2 text-xs text-gray-500">Registrado el {fechaCorta(d.registradoEl)}</p>

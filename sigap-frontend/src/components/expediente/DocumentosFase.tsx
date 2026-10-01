@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { CheckCircle2, FileUp, Info, Paperclip, Send, Trash2, Upload } from "lucide-react";
+import { CheckCircle2, FileUp, Info, Paperclip, Send, Trash2, Upload, Wand2 } from "lucide-react";
 import { documentosDeFase, esRequerido, type Documento } from "@/lib/documentos";
 import type { EtapaId } from "@/lib/admision";
 import { useRevisionDocs } from "@/lib/posgrado/revision";
@@ -29,10 +29,10 @@ function reducirImagen(file: File): Promise<string> {
 }
 
 export function DocumentosFase({ fase, conEnvio = false }: { fase: EtapaId; conEnvio?: boolean }) {
-  const { registro, documentos, enviadoRevision, enviarRevision } = useExpediente();
+  const { registro, documentos, enviadoRevision, enviarRevision, guardarDocumento } = useExpediente();
   const lista = documentosDeFase(fase, registro);
   // Límite por archivo configurado por el Administrador en la convocatoria (RF-81)
-  const limiteMB = useConvocatoria().config.limiteMB;
+  const limiteMB = useConvocatoria().limiteMB;
   const requeridos = lista.filter((d) => esRequerido(d, registro));
   const listos = requeridos.filter((d) => documentos[d.id]).length;
   const usados = lista.reduce((t, d) => t + (documentos[d.id]?.bytes ?? 0), 0);
@@ -81,6 +81,22 @@ export function DocumentosFase({ fase, conEnvio = false }: { fase: EtapaId; conE
           </button>
         </footer>
       )}
+      {conEnvio && listos < requeridos.length && (
+        <div className="border-t border-dashed border-gray-300 px-5 py-3">
+          <p className="text-xs text-gray-500">Vista de prueba (solo cascarón):</p>
+          <button
+            type="button"
+            onClick={() =>
+              requeridos
+                .filter((d) => !documentos[d.id])
+                .forEach((d) => guardarDocumento(d.id, { nombre: `${d.id}_ejemplo.pdf`, bytes: 250_000, fecha: new Date().toISOString() }))
+            }
+            className="mt-1.5 inline-flex items-center gap-1.5 rounded-full border border-gray-300 bg-white px-3 py-1 text-xs text-gray-700 hover:bg-gray-50"
+          >
+            <Wand2 size={12} /> Simular que ya subí mis documentos
+          </button>
+        </div>
+      )}
     </section>
   );
 }
@@ -90,7 +106,7 @@ function FilaDocumento({ doc, requerido }: { doc: Documento; requerido: boolean 
   const input = useRef<HTMLInputElement>(null);
   const [error, setError] = useState("");
   const archivo = documentos[doc.id];
-  const maxMB = Math.min(doc.maxMB, useConvocatoria().config.limiteMB);
+  const maxMB = Math.min(doc.maxMB, useConvocatoria().limiteMB);
   const rev = useRevisionDocs()[doc.id];
   // Si volvió a subir el archivo después de la revisión, esa revisión ya no aplica
   const revision = rev && !(archivo && rev.el && archivo.fecha > rev.el && rev.estado !== "prorroga") ? rev : undefined;
@@ -114,11 +130,7 @@ function FilaDocumento({ doc, requerido }: { doc: Documento; requerido: boolean 
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
           <p className="font-medium text-gray-900">{doc.nombre}</p>
-          {requerido ? (
-            <span className="rounded bg-guinda-soft px-1.5 py-0.5 text-[11px] font-medium text-guinda">Obligatorio</span>
-          ) : (
-            <span className="rounded bg-gray-100 px-1.5 py-0.5 text-[11px] text-gray-600">Si aplica</span>
-          )}
+          {!requerido && <span className="rounded bg-gray-100 px-1.5 py-0.5 text-[11px] text-gray-600">Si aplica</span>}
         </div>
         <p className="mt-0.5 text-sm text-gray-600">{doc.descripcion}</p>
         {doc.nota && (
@@ -133,11 +145,7 @@ function FilaDocumento({ doc, requerido }: { doc: Documento; requerido: boolean 
               ? " · Aprobado por Posgrado"
               : revision?.estado === "observado"
                 ? ""
-                : revision?.estado === "aval"
-                  ? " · UTEyCV la envió a la DFLE para su aval"
-                  : doc.id === "ingles"
-                    ? " · En revisión (aval DFLE, salvo CELEX/CENLEX)"
-                    : " · En revisión"}
+                : " · En revisión por el Departamento de Posgrado"}
           </p>
         )}
         {revision?.estado === "observado" && (

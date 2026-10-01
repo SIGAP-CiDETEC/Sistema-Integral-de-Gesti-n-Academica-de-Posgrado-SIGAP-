@@ -23,7 +23,10 @@ export type IconName =
   | "tesis"
   | "comunicados"
   | "idiomas"
-  | "cartas";
+  | "cartas"
+  | "resultados"
+  | "contenido"
+  | "calendario";
 
 export type NavItem = { label: string; href: string; icon: IconName };
 
@@ -43,11 +46,11 @@ export const NAV: Record<Rol, NavItem[]> = {
     { label: "2. Documentos", href: "/aspirante/documentos", icon: "expedientes" },
     { label: "3. Entrevista", href: "/aspirante/entrevista", icon: "entrevistas" },
     { label: "4. Evaluación", href: "/aspirante/evaluacion", icon: "evaluacion" },
-    { label: "5. Dictamen final", href: "/aspirante/dictamen", icon: "dictamen" },
-    { label: "6. Matrícula", href: "/aspirante/matricula", icon: "matricula" },
+    { label: "5. Resultados", href: "/aspirante/resultados", icon: "resultados" },
+    { label: "6. Dictamen final", href: "/aspirante/dictamen", icon: "dictamen" },
     { label: "Notificaciones", href: "/aspirante/notificaciones", icon: "notificaciones" },
   ],
-  // Al tener número SICEP ya no aparecen las pestañas del proceso de admisión
+  // Vistas del alumno: fuera del alcance actual (el proceso de admisión termina con el dictamen SIP-04)
   alumno: [
     { label: "Inicio", href: "/alumno", icon: "home" },
     { label: "Horario y profesores", href: "/alumno/horario", icon: "horario" },
@@ -60,15 +63,14 @@ export const NAV: Record<Rol, NavItem[]> = {
     { label: "Evaluación", href: "/posgrado/evaluacion", icon: "evaluacion" },
     { label: "Comisión y dictamen", href: "/posgrado/comision", icon: "dictamen" },
     { label: "Comunicados", href: "/posgrado/comunicados", icon: "comunicados" },
+    { label: "Inicio del aspirante", href: "/posgrado/inicio-aspirante", icon: "contenido" },
+    { label: "Calendario de convocatorias", href: "/posgrado/calendario", icon: "calendario" },
     { label: "Bitácora", href: "/posgrado/bitacora", icon: "bitacora" },
   ],
   // Control Escolar: solo lo que le toca del proceso de admisión
   uteycv: [
     { label: "Inicio", href: "/uteycv", icon: "home" },
-    { label: "Aval de inglés (DFLE)", href: "/uteycv/ingles", icon: "idiomas" },
-    { label: "Cartas SIP-05 y SIP-06", href: "/uteycv/cartas", icon: "cartas" },
     { label: "Dictamen SIP-04", href: "/uteycv/dictamen", icon: "dictamen" },
-    { label: "Matrícula", href: "/uteycv/matricula", icon: "matricula" },
     { label: "Bitácora", href: "/uteycv/bitacora", icon: "bitacora" },
   ],
   admin: [

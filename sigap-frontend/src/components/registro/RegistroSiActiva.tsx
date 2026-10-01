@@ -2,13 +2,13 @@
 
 import Link from "next/link";
 import { Lock } from "lucide-react";
-import { useConvocatoria } from "@/lib/convocatoria";
+import { useConvocatorias } from "@/lib/convocatoria";
 
-/** El registro solo se habilita con la convocatoria activa (precondición CU-ADM-01, RF-81). */
+/** El registro solo se habilita con alguna convocatoria (A o B) activa (precondición CU-ADM-01, RF-81). */
 export function RegistroSiActiva({ children }: { children: React.ReactNode }) {
-  const { conv, cargada } = useConvocatoria();
+  const { activas, cargada } = useConvocatorias();
   if (!cargada) return null;
-  if (!conv.activa)
+  if (!activas.length)
     return (
       <div className="mx-auto max-w-md rounded-xl border border-gray-200 bg-white p-6 text-center">
         <Lock size={26} className="mx-auto text-gray-400" />
@@ -22,6 +22,10 @@ export function RegistroSiActiva({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-export function NombreConvocatoria() {
-  return <>{useConvocatoria().conv.nombre}</>;
+/** Nombre de la convocatoria elegida en el inicio (o de las que estén abiertas). */
+export function NombreConvocatoria({ id }: { id?: string }) {
+  const { activas } = useConvocatorias();
+  const elegida = activas.find((c) => c.id === id);
+  if (elegida) return <>{elegida.nombre}</>;
+  return <>{activas.map((c) => c.nombre).join(" y ") || "Registro de aspirantes"}</>;
 }

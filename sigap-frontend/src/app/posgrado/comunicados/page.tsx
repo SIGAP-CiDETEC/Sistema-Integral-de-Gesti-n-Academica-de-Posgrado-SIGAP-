@@ -4,7 +4,7 @@ import { useState } from "react";
 import { CheckCircle2, Paperclip, Send } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { usePosgrado } from "@/components/posgrado/PosgradoProvider";
-import { Tarjeta, botonPrimario, inputBase } from "@/components/posgrado/ui";
+import { Tarjeta, botonPrimario, inputBase, Regresar } from "@/components/posgrado/ui";
 import { CORREO_POSGRADO, convocatoriaActual } from "@/lib/config";
 import { useConfigEvaluacion } from "@/lib/evaluacion-config";
 import { bandejaDe, fechaHora, type AspiranteP } from "@/lib/posgrado/datos";
@@ -32,9 +32,9 @@ const plantillasDe = (MODALIDADES: Mods): Record<string, { t: string; asunto: st
   },
   idiomas: {
     t: "Requisitos de idiomas (RF-51)",
-    asunto: "Requisito de inglés: constancia con aval DFLE o de CELEX/CENLEX",
+    asunto: "Requisito de inglés: constancia de inglés",
     cuerpo:
-      "Estimado(a) aspirante:\n\nTu constancia de inglés debe contar con el aval de la DFLE o haber sido emitida por CELEX o CENLEX. Si tu constancia es de otra institución, Control Escolar (UTEyCV) la enviará a la DFLE para su aval. Si aún no la tienes, solicita prórroga al Departamento de Posgrado para continuar con tu proceso.\n\nAtentamente,\nDepartamento de Posgrado · CIDETEC",
+      "Estimado(a) aspirante:\n\nTu constancia de inglés debe acreditar el nivel B1 en dos habilidades con calificación mínima de 8 (por ejemplo, de CELEX o CENLEX). El Departamento de Posgrado la revisará y validará. Si aún no la tienes, solicita prórroga al Departamento de Posgrado para continuar con tu proceso.\n\nAtentamente,\nDepartamento de Posgrado · CIDETEC",
   },
   libre: { t: "Mensaje libre", asunto: "", cuerpo: "" },
 });
@@ -57,6 +57,7 @@ export default function Comunicados() {
 
   return (
     <>
+      <Regresar href="/posgrado" t="Inicio" />
       <PageHeader titulo="Comunicados" subtitulo="Envío de instrucciones, instructivos y fechas a los aspirantes" />
 
       <div className="grid gap-6 xl:grid-cols-[1fr_360px]">

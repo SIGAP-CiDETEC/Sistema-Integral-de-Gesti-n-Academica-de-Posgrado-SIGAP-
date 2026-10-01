@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
 import { CheckCircle2, Clock, Download, Eye, FileCheck2, Loader2, Mail, RotateCcw } from "lucide-react";
 import { correoDeArea } from "@/lib/config";
@@ -17,9 +16,9 @@ const fechaCorta = (iso: string) =>
  * Con backend: POST /formatos/:clave/confirmacion y el documento firmado lo publica UTEyCV (Control Escolar).
  */
 export function RevisarDictamen({ formato: f }: { formato: Formato }) {
-  const { ctx, confirmados, recibidos, confirmarDatos, recibir, registro } = useExpediente();
+  const { ctx, confirmados, recibidos, confirmarDatos, recibir, registro, capturas, capturar } = useExpediente();
   const confirmado = confirmados[f.clave];
-  // La dedicación la elige el aspirante en su SIP-05; sin ella no se puede elaborar el dictamen
+  // La dedicación la elige el aspirante aquí mismo; sin ella no se puede elaborar el dictamen
   const campoDedicacion = f.campos.find((c) => c.id === "estatus");
   const sinDedicacion = !!campoDedicacion && esVacio(resolver(campoDedicacion, ctx));
   const recibido = recibidos[f.clave];
@@ -92,17 +91,24 @@ export function RevisarDictamen({ formato: f }: { formato: Formato }) {
                     {!esVacio(v) ? (
                       <span className="font-medium">{Array.isArray(v) ? v.join(", ") : v}</span>
                     ) : c.id === "estatus" ? (
-                      <span className="text-amber-700">
-                        Aún no la indicas.{" "}
-                        <Link href="/aspirante/formatos/sip-05" className="underline">
-                          Indícala en tu carta protesta (SIP-05)
-                        </Link>
-                        {" "}para que aparezca en tu dictamen.
-                      </span>
+                      <span className="text-amber-700">Elígela abajo para que aparezca en tu dictamen.</span>
                     ) : (
                       "—"
                     )}
                     {c.ayuda && !esVacio(v) && <span className="mt-0.5 block text-xs text-gray-500">{c.ayuda}</span>}
+                    {c.id === "estatus" && !confirmado && (
+                      <span className="mt-2 flex flex-wrap gap-2">
+                        {(c.opciones ?? []).map((o) => (
+                          <label
+                            key={o}
+                            className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-1.5 text-sm ${capturas.estatus === o ? "border-primary bg-indigo-50 text-primary" : "border-gray-300 hover:bg-gray-50"}`}
+                          >
+                            <input type="radio" name="dedicacion" checked={capturas.estatus === o} onChange={() => capturar("estatus", o)} className="accent-[var(--color-primary)]" />
+                            {o}
+                          </label>
+                        ))}
+                      </span>
+                    )}
                   </dd>
                 </div>
               );
@@ -134,15 +140,7 @@ export function RevisarDictamen({ formato: f }: { formato: Formato }) {
               >
                 <CheckCircle2 size={16} /> Sí, mis datos son correctos
               </button>
-              {sinDedicacion && (
-                <p className="mt-2 text-xs text-amber-700">
-                  Antes elige tu dedicación (tiempo completo o parcial) en tu{" "}
-                  <Link href="/aspirante/formatos/sip-05" className="underline">
-                    carta protesta (SIP-05)
-                  </Link>
-                  .
-                </p>
-              )}
+              {sinDedicacion && <p className="mt-2 text-xs text-amber-700">Antes elige tu dedicación (tiempo completo o parcial) en “Tus datos en el dictamen”.</p>}
               <a
                 href={`mailto:${correo}?subject=${asunto}`}
                 className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
@@ -174,6 +172,7 @@ export function RevisarDictamen({ formato: f }: { formato: Formato }) {
               <p className="flex items-center gap-2 text-sm font-medium text-emerald-700">
                 <FileCheck2 size={16} /> Tu dictamen firmado ya está disponible
               </p>
+              <p className="mt-2 text-sm text-gray-700">Con tu dictamen concluye tu proceso de admisión.</p>
               <p className="mt-1 text-xs text-gray-500">
                 {recibido.nombre} · publicado el {fechaCorta(recibido.fecha)}
               </p>

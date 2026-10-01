@@ -4,8 +4,8 @@ import Link from "next/link";
 import { useState } from "react";
 import { PageHeader } from "@/components/PageHeader";
 import { usePosgrado } from "@/components/posgrado/PosgradoProvider";
-import { Etiqueta } from "@/components/posgrado/ui";
-import { fechaCorta, nombreProfesor, totalPuntaje, type AspiranteP } from "@/lib/posgrado/datos";
+import { Etiqueta, Regresar } from "@/components/posgrado/ui";
+import { fechaCorta, nombreProfesor, type AspiranteP } from "@/lib/posgrado/datos";
 
 type Pestana = "sin-cita" | "programadas" | "dictaminadas";
 
@@ -28,6 +28,7 @@ export default function Entrevistas() {
 
   return (
     <>
+      <Regresar href="/posgrado" t="Inicio" />
       <PageHeader titulo="Entrevistas colegiadas" subtitulo="Programación de citas, sínodo y dictamen" />
 
       <div className="mb-4 flex flex-wrap gap-2" role="tablist">
@@ -71,7 +72,7 @@ export default function Entrevistas() {
                   <td className="px-3 py-3">
                     {a.dictamen ? (
                       <Etiqueta tono={tono(a.dictamen.resolucion)}>
-                        {a.dictamen.resolucion} · {totalPuntaje(a.dictamen.puntajes)}/100
+                        {a.dictamen.resolucion}
                       </Etiqueta>
                     ) : (
                       <Etiqueta tono="bg-emerald-50 text-emerald-700">Aprobado</Etiqueta>

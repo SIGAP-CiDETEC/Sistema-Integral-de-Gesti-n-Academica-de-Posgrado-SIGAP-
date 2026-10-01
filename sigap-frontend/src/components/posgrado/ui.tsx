@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ChevronRight } from "lucide-react";
+import { ArrowLeft, ChevronRight } from "lucide-react";
 import { TONO_BANDEJA, fechaCorta, type Bandeja, type EstadoDoc } from "@/lib/posgrado/datos";
 
 export function Etiqueta({ children, tono = "bg-gray-100 text-gray-700" }: { children: React.ReactNode; tono?: string }) {
@@ -13,7 +13,6 @@ const DOC: Record<EstadoDoc, { t: string; c: string }> = {
   pendiente: { t: "Por revisar", c: "bg-amber-50 text-amber-800" },
   aprobado: { t: "Aprobado", c: "bg-emerald-50 text-emerald-700" },
   observado: { t: "Observado", c: "bg-orange-50 text-orange-800" },
-  aval: { t: "Pendiente aval DFLE", c: "bg-yellow-50 text-yellow-800" },
   prorroga: { t: "Con prórroga", c: "bg-sky-50 text-sky-800" },
 };
 export const EtiquetaDoc = ({ e, hasta }: { e: EstadoDoc; hasta?: string }) => (
@@ -61,9 +60,32 @@ export function Progreso({ pct, texto }: { pct: number; texto: string }) {
   );
 }
 
+/** Flecha para regresar a la pantalla anterior del módulo. */
+export function Regresar({ href, t }: { href: string; t: string }) {
+  return (
+    <Link
+      href={href}
+      className="mb-3 inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-gray-900"
+    >
+      <ArrowLeft size={15} /> Regresar a {t}
+    </Link>
+  );
+}
+
 export function Migas({ items }: { items: { t: string; href?: string }[] }) {
+  const anterior = [...items].reverse().find((x) => x.href);
   return (
     <nav className="mb-3 flex flex-wrap items-center gap-1 text-sm text-gray-500">
+      {anterior?.href && (
+        <Link
+          href={anterior.href}
+          aria-label={`Regresar a ${anterior.t}`}
+          title={`Regresar a ${anterior.t}`}
+          className="mr-1.5 flex h-7 w-7 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900"
+        >
+          <ArrowLeft size={15} />
+        </Link>
+      )}
       {items.map((x, i) => (
         <span key={x.t} className="flex items-center gap-1">
           {i > 0 && <ChevronRight size={14} />}

@@ -1,35 +1,50 @@
 "use client";
 
 import { useMemo, useSyncExternalStore } from "react";
-import { convocatoriaActual, type Convocatoria } from "./config";
+import { CONVOCATORIAS_INFO, convocatoriaActual, type Convocatoria, type IdConvocatoria } from "./config";
 
 /**
- * Convocatoria vigente, editable por el Administrador (RF-81, US-AD-03).
- * SOLO CASCARÓN: se guarda en el navegador. Con backend: GET/PUT /convocatorias/activa.
+ * Convocatorias de admisión, editables por el Administrador (RF-81, US-AD-03).
+ * Hay dos por ciclo: A (ingreso enero–junio) y B (ingreso agosto–diciembre);
+ * cada una se abre o se cierra por separado.
+ * SOLO CASCARÓN: se guarda en el navegador. Con backend: GET/PUT /convocatorias.
  */
 export type ConfigConvocatoria = {
   nombre: string;
   inicio: string; // AAAA-MM-DD
   cierre: string;
   activa: boolean;
-  /** Límite por archivo que suben los aspirantes */
+};
+
+export type ConfigConvocatorias = {
+  A: ConfigConvocatoria;
+  B: ConfigConvocatoria;
+  /** Límite por archivo que suben los aspirantes (aplica a ambas) */
   limiteMB: number;
   actualizadoEl?: string;
   actualizadoPor?: string;
 };
 
-export const CONVOCATORIA_DEFECTO: ConfigConvocatoria = {
-  nombre: convocatoriaActual.nombre,
-  inicio: "2026-01-12",
-  cierre: "2026-02-27",
-  activa: convocatoriaActual.activa,
+export const IDS_CONVOCATORIA: IdConvocatoria[] = ["A", "B"];
+
+export const CONVOCATORIAS_DEFECTO: ConfigConvocatorias = {
+  A: { nombre: "Convocatoria de admisión A-27", inicio: "2026-10-05", cierre: "2026-11-20", activa: true },
+  B: { nombre: "Convocatoria de admisión B-27", inicio: "2027-04-05", cierre: "2027-05-21", activa: false },
   limiteMB: 5,
+};
+
+/** Convocatoria lista para mostrarse en las páginas públicas. */
+export type ConvocatoriaVista = Convocatoria & {
+  id: IdConvocatoria;
+  periodo: string;
+  semestre: string;
+  inicioISO: string;
 };
 
 const CLAVE = "sigap-convocatoria";
 const EVENTO = "sigap-convocatoria";
 const MES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
-const corta = (f: string, conAnio: boolean) => {
+export const fechaCorta = (f: string, conAnio = true) => {
   const [a, m, d] = f.split("-").map(Number);
   return `${d} ${MES[m - 1]}${conAnio ? ` ${a}` : ""}`;
 };
@@ -50,7 +65,7 @@ const suscribir = (cb: () => void) => {
   };
 };
 
-export function guardarConvocatoria(c: ConfigConvocatoria | null) {
+export function guardarConvocatorias(c: ConfigConvocatorias | null) {
   try {
     if (c) localStorage.setItem(CLAVE, JSON.stringify(c));
     else localStorage.removeItem(CLAVE);
@@ -60,24 +75,60 @@ export function guardarConvocatoria(c: ConfigConvocatoria | null) {
   window.dispatchEvent(new Event(EVENTO));
 }
 
-/** Configuración vigente y la forma en que la muestran las páginas públicas. */
-export function useConvocatoria(): { config: ConfigConvocatoria; conv: Convocatoria; cargada: boolean } {
+function interpretar(raw: string | null): ConfigConvocatorias {
+  const d = CONVOCATORIAS_DEFECTO;
+  if (!raw) return d;
+  try {
+    const g = JSON.parse(raw) as Partial<ConfigConvocatorias>;
+    // Nombres anteriores del cascarón ("2027-A") pasan a la nomenclatura A-27 / B-27
+    for (const id of IDS_CONVOCATORIA) {
+      const c = g[id];
+      if (c?.nombre === `Convocatoria de admisión 2027-${id}`) g[id] = { ...c, nombre: d[id].nombre };
+    }
+    // Formato anterior (una sola convocatoria): solo se conserva el límite de MB
+    return { ...d, ...g, A: { ...d.A, ...g.A }, B: { ...d.B, ...g.B }, limiteMB: g.limiteMB ?? d.limiteMB };
+  } catch {
+    return d;
+  }
+}
+
+function vista(id: IdConvocatoria, c: ConfigConvocatoria): ConvocatoriaVista {
+  const info = CONVOCATORIAS_INFO[id];
+  return {
+    ...convocatoriaActual,
+    id,
+    nombre: c.nombre,
+    activa: c.activa,
+    periodo: info.periodo,
+    semestre: info.semestre,
+    fechasClave: info.fechasClave,
+    inicioISO: c.inicio,
+    inicio: fechaCorta(c.inicio, c.inicio.slice(0, 4) !== c.cierre.slice(0, 4)),
+    cierre: fechaCorta(c.cierre),
+  };
+}
+
+/** Las dos convocatorias (A y B) y sus parámetros comunes. */
+export function useConvocatorias() {
   const raw = useSyncExternalStore(suscribir, leer, () => null);
   const cargada = useSyncExternalStore(suscribir, () => true, () => false);
   return useMemo(() => {
-    let config = CONVOCATORIA_DEFECTO;
-    try {
-      if (raw) config = { ...CONVOCATORIA_DEFECTO, ...(JSON.parse(raw) as ConfigConvocatoria) };
-    } catch {
-      /* usar la de ejemplo */
-    }
-    const conv: Convocatoria = {
-      ...convocatoriaActual,
-      nombre: config.nombre,
-      activa: config.activa,
-      inicio: corta(config.inicio, config.inicio.slice(0, 4) !== config.cierre.slice(0, 4)),
-      cierre: corta(config.cierre, true),
-    };
-    return { config, conv, cargada };
+    const config = interpretar(raw);
+    const lista = IDS_CONVOCATORIA.map((id) => vista(id, config[id]));
+    return { config, lista, activas: lista.filter((c) => c.activa), cargada };
   }, [raw, cargada]);
+}
+
+/**
+ * Resumen para las pantallas que solo necesitan saber si hay registro abierto
+ * y el límite de archivos.
+ */
+export function useConvocatoria() {
+  const { config, activas, cargada } = useConvocatorias();
+  return {
+    cargada,
+    limiteMB: config.limiteMB,
+    hayActiva: activas.length > 0,
+    nombres: activas.map((c) => c.nombre).join(" y ") || "Sin convocatoria activa",
+  };
 }
