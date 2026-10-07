@@ -115,6 +115,8 @@ export default function Usuarios() {
               >
                 <option value="posgrado">{NOMBRE_AREA.posgrado}</option>
                 <option value="uteycv">{NOMBRE_AREA.uteycv}</option>
+                    <option value="subdireccion">{NOMBRE_AREA.subdireccion}</option>
+                    <option value="profesor">{NOMBRE_AREA.profesor}</option>
               </select>
             </label>
             <label className="block text-sm">

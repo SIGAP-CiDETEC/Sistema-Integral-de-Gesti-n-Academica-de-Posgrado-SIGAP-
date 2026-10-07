@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import { CheckCircle2, FileUp, Info, Paperclip, Send, Trash2, Upload, Wand2 } from "lucide-react";
 import { documentosDeFase, esRequerido, type Documento } from "@/lib/documentos";
-import type { EtapaId } from "@/lib/admision";
+import type { FaseId } from "@/lib/fases";
 import { useRevisionDocs } from "@/lib/posgrado/revision";
 import { useConvocatoria } from "@/lib/convocatoria";
 import { useExpediente, type ArchivoCargado } from "./ExpedienteProvider";
@@ -28,7 +28,7 @@ function reducirImagen(file: File): Promise<string> {
   });
 }
 
-export function DocumentosFase({ fase, conEnvio = false }: { fase: EtapaId; conEnvio?: boolean }) {
+export function DocumentosFase({ fase, conEnvio = false }: { fase: FaseId; conEnvio?: boolean }) {
   const { registro, documentos, enviadoRevision, enviarRevision, guardarDocumento } = useExpediente();
   const lista = documentosDeFase(fase, registro);
   // Límite por archivo configurado por el Administrador en la convocatoria (RF-81)

@@ -1,0 +1,87 @@
+"use client";
+
+import Link from "next/link";
+import { CalendarClock, ClipboardPenLine, PenLine } from "lucide-react";
+import { PageHeader } from "@/components/PageHeader";
+import { usePosgrado } from "@/components/posgrado/PosgradoProvider";
+import { Etiqueta, Kpi, Tarjeta } from "@/components/posgrado/ui";
+import { fechaCorta, nombreArea } from "@/lib/posgrado/datos";
+import { TONO_ENTREVISTA_PROF, capturasPendientes, entrevistasDe, estadoEntrevistaProf, useProfesorActual } from "@/lib/profesor";
+
+/** Inicio del profesor: lo que le toca del proceso de admisión. */
+export default function ProfesorInicio() {
+  const { aspirantes, cargado } = usePosgrado();
+  const { profesor } = useProfesorActual();
+  if (!cargado) return null;
+  const yo = profesor?.id ?? "";
+  const mias = entrevistasDe(aspirantes, yo);
+  const estados = mias.map((a) => ({ a, e: estadoEntrevistaProf(a, yo) }));
+  const porHacer = estados.filter((x) => x.e === "Por realizar" || x.e === "Por firmar");
+  const calif = capturasPendientes(aspirantes, yo).filter((c) => !c.capturada);
+
+  return (
+    <>
+      <PageHeader titulo="Profesor" subtitulo="Tu participación en el proceso de admisión a la Maestría en Tecnología de Cómputo" />
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <Kpi valor={estados.filter((x) => x.e === "Por realizar").length} etiqueta="Entrevistas por realizar" color="text-primary" href="/profesor/entrevistas" />
+        <Kpi valor={estados.filter((x) => x.e === "Por firmar").length} etiqueta="Actas MTC-EC por firmar" color="text-amber-700" href="/profesor/entrevistas" />
+        <Kpi valor={calif.length} etiqueta="Calificaciones por capturar" color="text-violet-700" href="/profesor/evaluacion" />
+        <Kpi valor={estados.filter((x) => x.e === "Dictaminada").length} etiqueta="Entrevistas dictaminadas" color="text-emerald-700" href="/profesor/entrevistas" />
+      </div>
+
+      <div className="mt-6 grid gap-6 lg:grid-cols-2">
+        <Tarjeta titulo={<span className="flex items-center gap-2"><CalendarClock size={17} className="text-primary" /> Entrevistas pendientes</span>}>
+          {porHacer.length ? (
+            <ul className="divide-y divide-gray-100 text-sm">
+              {porHacer.map(({ a, e }) => (
+                <li key={a.id} className="flex flex-wrap items-center justify-between gap-2 py-2.5">
+                  <span>
+                    <span className="font-medium text-gray-900">{a.nombre}</span>
+                    <span className="block text-xs text-gray-500">
+                      {fechaCorta(a.entrevista!.fecha)} · {a.entrevista!.hora} h · {a.entrevista!.sala}
+                    </span>
+                  </span>
+                  <span className="flex items-center gap-2">
+                    <Etiqueta tono={TONO_ENTREVISTA_PROF[e]}>{e}</Etiqueta>
+                    <Link href={`/profesor/entrevistas/${a.id}`} className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline">
+                      <PenLine size={14} /> {e === "Por firmar" ? "Firmar acta" : "Llenar acta"}
+                    </Link>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-sm text-gray-500">No tienes entrevistas pendientes.</p>
+          )}
+        </Tarjeta>
+
+        <Tarjeta titulo={<span className="flex items-center gap-2"><ClipboardPenLine size={17} className="text-primary" /> Calificaciones por capturar</span>}>
+          {calif.length ? (
+            <ul className="divide-y divide-gray-100 text-sm">
+              {calif.map((c) => (
+                <li key={`${c.a.id}-${c.area}`} className="flex flex-wrap items-center justify-between gap-2 py-2.5">
+                  <span>
+                    <span className="font-medium text-gray-900">{c.a.nombre}</span>
+                    <span className="block text-xs text-gray-500">
+                      {nombreArea(c.area)} · {c.tipo === "propedeutico" ? `propedéutico, grupo ${c.a.evaluacion.grupos[c.area] ?? "—"}` : c.esSegunda ? "examen de área no acreditada" : "examen de admisión"}
+                    </span>
+                  </span>
+                  <Link href="/profesor/evaluacion" className="text-sm font-medium text-primary hover:underline">
+                    Capturar
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-sm text-gray-500">No tienes calificaciones pendientes.</p>
+          )}
+        </Tarjeta>
+      </div>
+
+      <p className="mt-6 text-xs text-gray-500">
+        Posgrado programa las entrevistas y publica los resultados; tú llenas y firmas el acta del sínodo y capturas las calificaciones de tu área.
+      </p>
+    </>
+  );
+}

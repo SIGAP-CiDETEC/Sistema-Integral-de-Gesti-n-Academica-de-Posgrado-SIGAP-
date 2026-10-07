@@ -12,7 +12,7 @@ const BANDEJAS: { b: Bandeja; accion: string; href: string }[] = [
   { b: "Por revisar", accion: "Revisar", href: "/posgrado/aspirantes?bandeja=Por revisar" },
   { b: "Con observaciones", accion: "Dar seguimiento", href: "/posgrado/aspirantes?bandeja=Con observaciones" },
   { b: "Sin cita", accion: "Programar", href: "/posgrado/entrevistas" },
-  { b: "Entrevista programada", accion: "Registrar dictamen", href: "/posgrado/entrevistas" },
+  { b: "Entrevista programada", accion: "Ver acta del sínodo", href: "/posgrado/entrevistas" },
   { b: "En evaluación", accion: "Gestionar", href: "/posgrado/evaluacion" },
   { b: "Segunda oportunidad", accion: "Gestionar", href: "/posgrado/evaluacion" },
   { b: "Esperando resolución del Colegio", accion: "Registrar resolución", href: "/posgrado/comision" },
@@ -101,7 +101,7 @@ export default function PosgradoInicio() {
                 ))}
               </ul>
             ) : (
-              <p className="text-sm text-gray-500">No hay entrevistas pendientes de dictamen.</p>
+              <p className="text-sm text-gray-500">No hay entrevistas pendientes del acta del sínodo.</p>
             )}
           </Tarjeta>
 

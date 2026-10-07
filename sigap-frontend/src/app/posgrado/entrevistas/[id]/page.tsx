@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { use, useState } from "react";
-import { BellRing, CalendarCheck, CheckCircle2, Pencil, TriangleAlert } from "lucide-react";
+import { BellRing, CalendarCheck, CheckCircle2, Pencil } from "lucide-react";
+import { ActaVista, FirmasActa, TONO_RESOLUCION } from "@/components/profesor/ActaVista";
 import { PageHeader } from "@/components/PageHeader";
 import { fechaRecordatorio, recordatoriosEntrevista } from "@/lib/recordatorios";
 import { usePosgrado } from "@/components/posgrado/PosgradoProvider";
@@ -11,14 +12,14 @@ import { AvisoAspirante } from "@/components/posgrado/AvisoAspirante";
 import {
   PROFESORES_SINODO,
   fechaCorta,
+  firmasActa,
   nombreProfesor,
   profesorValido,
   type AspiranteP,
   type Entrevista,
-  type Resolucion,
 } from "@/lib/posgrado/datos";
 
-/** Programar entrevista y registrar su dictamen (mockups "Programar entrevista" y "Dictamen de entrevista"). */
+/** Programar entrevista y dar seguimiento al acta del sínodo (el dictamen lo registran los profesores). */
 export default function EntrevistaAspirante({ params }: PageProps<"/posgrado/entrevistas/[id]">) {
   const { id } = use(params);
   const { porId, cargado } = usePosgrado();
@@ -78,7 +79,7 @@ export default function EntrevistaAspirante({ params }: PageProps<"/posgrado/ent
             )}
           </Tarjeta>
           {!a.dictamen && <AvisoAspirante aspirante={a.id} nombre={a.nombre} plantillas={plantillasEntrevista(a)} />}
-          {a.dictamen ? <DictamenRegistrado a={a} /> : <CapturarDictamen a={a} />}
+          {a.dictamen ? <DictamenRegistrado a={a} /> : a.concluido ? null : <EsperandoActa a={a} />}
         </div>
       )}
     </>
@@ -259,73 +260,26 @@ function Campo({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-const TONO_RES: Record<Resolucion, string> = {
-  Aprobado: "border-emerald-400 bg-emerald-50 text-emerald-800",
-  "Con reservas": "border-amber-400 bg-amber-50 text-amber-800",
-  Rechazado: "border-red-400 bg-red-50 text-red-700",
-};
-
-function CapturarDictamen({ a }: { a: AspiranteP }) {
-  const { actualizar, enviarAviso } = usePosgrado();
-  const [res, setRes] = useState<Resolucion | null>(null);
-  const [comentarios, setComentarios] = useState("");
-  const listo = res && comentarios.trim();
-
-  const registrar = () => {
-    if (!res) return;
-    actualizar(
-      a.id,
-      {
-        dictamen: { resolucion: res, comentarios: comentarios.trim(), registradoEl: new Date().toISOString() },
-        ...(res === "Rechazado" ? { concluido: "Rechazado en la entrevista colegiada (RN-05)" } : { etapa: "evaluacion" as const }),
-      },
-      `Registró el dictamen de entrevista: ${res}${res === "Rechazado" ? ". El proceso queda concluido" : "; pasa a evaluación"}`,
-    );
-    // Al aspirante solo se le comunica si continúa o no. RN-05: correo general si no continúa
-    const nombre = a.nombre.split(" ")[0];
-    if (res === "Rechazado")
-      enviarAviso([a.id], "ambos", "Resultado de tu proceso de admisión", `Estimado(a) ${nombre}:\n\nAgradecemos tu interés en la Maestría en Tecnología de Cómputo. Te informamos que tu proceso de admisión en esta convocatoria ha concluido.\n\nAtentamente,\nDepartamento de Posgrado · CIDETEC`);
-    else
-      enviarAviso([a.id], "ambos", "Tu entrevista colegiada fue aprobada", `Estimado(a) ${nombre}:\n\nTu entrevista colegiada fue aprobada. Ingresa a SIGAP (fase 4 · Evaluación) para elegir tu modalidad de evaluación.\n\nAtentamente,\nDepartamento de Posgrado · CIDETEC`);
-  };
-
+/** El dictamen lo registra el sínodo en su sesión de Profesor (acta MTC-EC firmada por los 3). */
+function EsperandoActa({ a }: { a: AspiranteP }) {
+  const n = firmasActa(a);
   return (
     <>
-      <Tarjeta titulo="Resolución del sínodo">
-        <p className="mb-3 text-sm text-gray-600">La entrevista no lleva ponderación: el sínodo solo determina si el aspirante es aprobado, aprobado con reservas o rechazado.</p>
-        <div className="flex flex-wrap gap-2">
-          {(["Aprobado", "Con reservas", "Rechazado"] as Resolucion[]).map((r) => (
-            <button
-              key={r}
-              type="button"
-              onClick={() => setRes(r)}
-              className={`rounded-full border px-3.5 py-1 text-sm ${res === r ? TONO_RES[r] : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50"}`}
-            >
-              {r}
-            </button>
-          ))}
+      <Tarjeta titulo="Acta del sínodo (MTC-EC)">
+        <p className="text-sm text-gray-600">
+          Los profesores del sínodo llenan y firman el acta en su sesión de Profesor. Cuando firman los 3, el dictamen se aplica solo y se avisa al aspirante.
+        </p>
+        <p className="mt-3 text-sm">
+          Estado:{" "}
+          <Etiqueta tono={a.actaEntrevista ? "bg-sky-50 text-sky-800" : "bg-gray-100 text-gray-700"}>
+            {a.actaEntrevista ? `Acta llenada · ${n} de 3 firmas` : "El sínodo aún no llena el acta"}
+          </Etiqueta>
+        </p>
+        <div className="mt-3">
+          <FirmasActa a={a} />
         </div>
-        <label htmlFor="comentarios" className="mt-4 block text-sm font-medium text-gray-900">
-          Comentarios del sínodo
-        </label>
-        <textarea id="comentarios" rows={2} value={comentarios} onChange={(e) => setComentarios(e.target.value)} className={`${inputBase} mt-1`} />
       </Tarjeta>
-
-      {res === "Rechazado" && (
-        <Aviso tono="error" titulo="Efecto de una resolución rechazada">
-          <span className="flex items-start gap-1.5">
-            <TriangleAlert size={14} className="mt-0.5 shrink-0" /> Rechazado finaliza y bloquea el proceso (RN-05). No se habilitan evaluación ni
-            dictamen; la decisión queda registrada en la bitácora.
-          </span>
-        </Aviso>
-      )}
-
-      <div className="flex justify-end">
-        <button type="button" className={botonPrimario} disabled={!listo} onClick={registrar}>
-          <CheckCircle2 size={15} /> Registrar dictamen
-        </button>
-      </div>
-      <p className="text-right text-xs text-gray-500">El acta firmada por el sínodo (MTC-EC) se adjunta al expediente.</p>
+      {a.actaEntrevista && <ActaVista a={a} titulo="Acta capturada (pendiente de firmas)" />}
     </>
   );
 }
@@ -333,12 +287,15 @@ function CapturarDictamen({ a }: { a: AspiranteP }) {
 function DictamenRegistrado({ a }: { a: AspiranteP }) {
   const d = a.dictamen!;
   return (
-    <Tarjeta titulo="Dictamen registrado">
-      <p className="text-sm">
-        Resolución: <span className={`rounded-full border px-2.5 py-0.5 ${TONO_RES[d.resolucion]}`}>{d.resolucion}</span>
-      </p>
-      <p className="mt-2 text-sm text-gray-700">“{d.comentarios}”</p>
-      <p className="mt-2 text-xs text-gray-500">Registrado el {fechaCorta(d.registradoEl)}</p>
-    </Tarjeta>
+    <>
+      <Tarjeta titulo="Dictamen registrado">
+        <p className="text-sm">
+          Resolución: <span className={`rounded-full border px-2.5 py-0.5 ${TONO_RESOLUCION[d.resolucion]}`}>{d.resolucion}</span>
+        </p>
+        {d.comentarios && <p className="mt-2 text-sm text-gray-700">“{d.comentarios}”</p>}
+        <p className="mt-2 text-xs text-gray-500">Registrado el {fechaCorta(d.registradoEl)}</p>
+      </Tarjeta>
+      {a.actaEntrevista && <ActaVista a={a} />}
+    </>
   );
 }

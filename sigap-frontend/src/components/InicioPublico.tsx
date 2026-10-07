@@ -195,7 +195,7 @@ export function InicioPublico({ forzarCerrada }: { forzarCerrada: boolean }) {
           <div>
             <h2 className="text-lg font-semibold">¿Ya tienes cuenta?</h2>
             <p className="mt-1 text-sm text-white/75">
-              Aspirantes con su ID temporal y personal del CIDETEC.
+              Aspirantes con su ID temporal, alumnos con su número de registro y personal del CIDETEC.
             </p>
           </div>
           <Link

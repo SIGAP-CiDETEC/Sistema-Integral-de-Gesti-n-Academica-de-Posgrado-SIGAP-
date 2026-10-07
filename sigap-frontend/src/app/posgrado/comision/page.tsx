@@ -4,7 +4,7 @@ import { useState } from "react";
 import { ArrowRight, CheckCircle2, Download, FileText, Paperclip, Send } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { usePosgrado } from "@/components/posgrado/PosgradoProvider";
-import { Aviso, Etiqueta, Tarjeta, botonPrimario, botonSecundario, inputBase, Regresar } from "@/components/posgrado/ui";
+import { Etiqueta, Tarjeta, botonPrimario, botonSecundario, inputBase, Regresar } from "@/components/posgrado/ui";
 import { convocatoriaActual } from "@/lib/config";
 import { MODALIDADES } from "@/lib/evaluacion";
 import { fechaCorta, prorrogasDe, resultadoFinal, type AspiranteP, type ResolucionColegio } from "@/lib/posgrado/datos";
@@ -26,7 +26,6 @@ export default function Comision() {
 
   const enComision = aspirantes.filter((a) => a.etapa === "dictamen" && !a.concluido && !a.turnadoUteycv);
   const sinResolucion = enComision.filter((a) => !a.resolucion);
-  const porTurnar = enComision.filter((a) => a.resolucion && a.resolucion !== "No aceptado");
   const turnados = aspirantes.filter((a) => !!a.turnadoUteycv);
   const informeListo = !!acta?.informeGeneradoEl;
   const resolucionDe = (a: AspiranteP) => res[a.id] ?? "Aceptado";
@@ -180,7 +179,14 @@ export default function Comision() {
                 );
                 sinResolucion.forEach((a) => {
                   const r = resolucionDe(a);
-                  actualizar(a.id, { resolucion: r, ...(r === "No aceptado" ? { concluido: "No aceptado por el Colegio de Profesores" } : {}) }, `Resolución del Colegio (acta ${numero.trim()}): ${r}`);
+                  // Si es admitido, pasa automáticamente a UTEyCV para que elabore el SIP-04
+                  actualizar(
+                    a.id,
+                    r === "No aceptado"
+                      ? { resolucion: r, concluido: "No aceptado por el Colegio de Profesores" }
+                      : { resolucion: r, turnadoUteycv: new Date().toISOString() },
+                    `Resolución del Colegio (acta ${numero.trim()}): ${r}${r === "No aceptado" ? "" : " · enviado automáticamente a UTEyCV para el dictamen SIP-04"}`,
+                  );
                   const nom = a.nombre.split(" ")[0];
                   enviarAviso(
                     [a.id],
@@ -203,46 +209,30 @@ export default function Comision() {
           )}
         </Tarjeta>
 
-        <Tarjeta titulo="3. Turnar a Control Escolar (UTEyCV)">
-          <p className="text-sm text-gray-600">UTEyCV elabora el dictamen SIP-04, recaba firmas y lo publica al aspirante. Con eso concluye su proceso de admisión.</p>
-          <p className="mt-1 text-xs text-gray-500">Si tiene documentos en prórroga, se turna igual y UTEyCV verá la fecha límite.</p>
-          {porTurnar.length ? (
+        <Tarjeta titulo={<span className="flex items-center gap-2"><Send size={16} className="text-primary" /> 3. Enviados a Control Escolar (UTEyCV)</span>}>
+          <p className="text-sm text-gray-600">
+            Al registrar la resolución, los aspirantes admitidos pasan <b>automáticamente</b> a UTEyCV, que elabora el dictamen SIP-04, recaba firmas y lo publica al aspirante.
+            Con eso concluye su proceso de admisión.
+          </p>
+          <p className="mt-1 text-xs text-gray-500">Si tienen documentos en prórroga, pasan igual y UTEyCV ve la fecha límite.</p>
+          {turnados.length ? (
             <ul className="mt-3 divide-y divide-gray-100 text-sm">
-              {porTurnar.map((a) => (
-                <li key={a.id} className="flex flex-wrap items-center justify-between gap-2 py-2.5">
-                  <span>
-                    <span className="font-medium text-gray-900">{a.nombre}</span> <Etiqueta tono={TONO[a.resolucion!]}>{a.resolucion}</Etiqueta>{" "}
-                    {prorrogasDe(a).map((d) => (
-                      <Etiqueta key={d.id} tono="bg-sky-50 text-sky-800">
-                        {d.nombre} en prórroga al {fechaCorta(d.prorrogaHasta!)}
-                      </Etiqueta>
-                    ))}
-                  </span>
-                  <button
-                    type="button"
-                    className={botonSecundario}
-                    onClick={() => actualizar(a.id, { turnadoUteycv: new Date().toISOString() }, "Turnó a UTEyCV para el dictamen SIP-04")}
-                  >
-                    <Send size={14} /> Turnar
-                  </button>
+              {turnados.map((a) => (
+                <li key={a.id} className="flex flex-wrap items-center gap-2 py-2.5">
+                  <ArrowRight size={13} className="text-emerald-600" />
+                  <span className="font-medium text-gray-900">{a.nombre}</span>
+                  {a.resolucion && <Etiqueta tono={TONO[a.resolucion]}>{a.resolucion}</Etiqueta>}
+                  {prorrogasDe(a).map((d) => (
+                    <Etiqueta key={d.id} tono="bg-sky-50 text-sky-800">
+                      {d.nombre} en prórroga al {fechaCorta(d.prorrogaHasta!)}
+                    </Etiqueta>
+                  ))}
+                  {a.turnadoUteycv && <span className="text-xs text-gray-500">· enviado el {fechaCorta(a.turnadoUteycv)}</span>}
                 </li>
               ))}
             </ul>
           ) : (
-            <p className="mt-3 text-sm text-gray-500">No hay aspirantes con resolución pendientes de turnar.</p>
-          )}
-          {turnados.length > 0 && (
-            <div className="mt-4">
-              <Aviso tono="exito" titulo={`${turnados.length} aspirante(s) en UTEyCV`}>
-                <ul className="mt-1 space-y-0.5">
-                  {turnados.map((a) => (
-                    <li key={a.id} className="flex items-center gap-1.5">
-                      <ArrowRight size={12} /> {a.nombre} {a.turnadoUteycv && <span className="text-xs">· {fechaCorta(a.turnadoUteycv)}</span>}
-                    </li>
-                  ))}
-                </ul>
-              </Aviso>
-            </div>
+            <p className="mt-3 text-sm text-gray-500">Aún no hay aspirantes admitidos enviados a UTEyCV.</p>
           )}
         </Tarjeta>
       </div>

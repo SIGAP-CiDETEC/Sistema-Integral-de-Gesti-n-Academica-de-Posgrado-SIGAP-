@@ -15,8 +15,9 @@ import { useSesion } from "@/lib/sesion";
 export function BitacoraVista({ subtitulo }: { subtitulo: string }) {
   const { bitacora, cargado, porId, reiniciar } = usePosgrado();
   const { sesion } = useSesion();
-  // Posgrado abre el expediente; UTEyCV abre su pantalla del dictamen SIP-04
-  const enlace = (id: string) => (sesion?.rol === "uteycv" ? `/uteycv/dictamen?id=${id}` : `/posgrado/aspirantes/${id}`);
+  // Posgrado abre el expediente; UTEyCV su pantalla del dictamen SIP-04; la Subdirección su vista de consulta
+  const rol = sesion?.rol ?? "posgrado";
+  const enlace = (id: string) => (rol === "uteycv" ? `/uteycv/dictamen?id=${id}` : rol === "subdireccion" ? `/subdireccion/aspirantes/${id}` : `/posgrado/aspirantes/${id}`);
   const [usuario, setUsuario] = useState("");
   if (!cargado) return null;
   const usuarios = [...new Set(bitacora.map((b) => b.usuario))];
@@ -24,7 +25,7 @@ export function BitacoraVista({ subtitulo }: { subtitulo: string }) {
 
   return (
     <>
-      <Regresar href={sesion?.rol === "uteycv" ? "/uteycv" : "/posgrado"} t="Inicio" />
+      <Regresar href={`/${rol}`} t="Inicio" />
       <PageHeader titulo="Bitácora" subtitulo={subtitulo} />
       <label className="mb-4 block max-w-xs text-sm">
         <span className="font-medium text-gray-900">Usuario</span>
@@ -76,6 +77,7 @@ export function BitacoraVista({ subtitulo }: { subtitulo: string }) {
       </section>
       <p className="mt-3 text-xs text-gray-400">Con backend cada registro guarda además la IP y no se puede modificar ni borrar.</p>
 
+      {rol !== "subdireccion" && (
       <div className="mt-10 border-t border-dashed border-gray-300 pt-4">
         <p className="text-xs text-gray-500">Vista de prueba (solo cascarón):</p>
         <button
@@ -89,6 +91,7 @@ export function BitacoraVista({ subtitulo }: { subtitulo: string }) {
           <RotateCcw size={12} /> Reiniciar lo hecho por Posgrado (aspirantes de ejemplo, avisos, fechas y horarios, acta y bitácora)
         </button>
       </div>
+      )}
     </>
   );
 }

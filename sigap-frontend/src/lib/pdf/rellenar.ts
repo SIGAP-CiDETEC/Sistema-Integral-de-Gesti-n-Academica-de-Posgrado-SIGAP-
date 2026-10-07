@@ -363,9 +363,30 @@ async function mtcEc(doc: PDFDocument, d: DatosPdf) {
   arg.enableMultiline();
   arg.setText(v("argumentacion"));
   arg.setFontSize(8);
-  // Sección del sínodo (hoja 2): se deja en blanco; la llena el sínodo el día de la entrevista
-  ["Proyección a futuro", "Observaciones generales", "Motivo", "ProfesoraRow1", "ProfesoraRow2", "ProfesoraRow3"].forEach((f) => txt(f, ""));
-  ["formación académica", "conocimiento programa", "condiciones personales", "entorno familiar", "continuar estudios", "experiencias profesionales", "Continuar"].forEach((g) => radio(g, undefined));
+  // Hoja 2 (Conclusiones): la llena el sínodo en su sesión de Profesor; si no viene, queda en blanco
+  const SINODO_TXT: Record<string, string> = { proyeccion: "Proyección a futuro", observaciones: "Observaciones generales", motivo: "Motivo", prof1: "ProfesoraRow1", prof2: "ProfesoraRow2", prof3: "ProfesoraRow3" };
+  Object.entries(SINODO_TXT).forEach(([k, campo]) => {
+    txt(campo, v(k));
+    try {
+      const f = form.getTextField(campo);
+      if (campo === "Observaciones generales") f.enableMultiline();
+      f.setFontSize(campo.startsWith("ProfesoraRow") ? 9 : 10);
+    } catch {
+      /* ignorar */
+    }
+  });
+  const CRITERIOS: Record<string, string> = {
+    c_formacion: "formación académica",
+    c_programa: "conocimiento programa",
+    c_personales: "condiciones personales",
+    c_familiar: "entorno familiar",
+    c_laborales: "continuar estudios",
+    c_experiencia: "experiencias profesionales",
+  };
+  Object.entries(CRITERIOS).forEach(([k, g]) => radio(g, v(k) || undefined));
+  // En la plantilla, las opciones de "Continuar" quedaron con otros nombres: Sí = Matutino, No = Vespertino, Con reservas = Indistinto
+  const CONTINUAR: Record<string, string> = { Aprobado: "Matutino", Rechazado: "Vespertino", "Con reservas": "Indistinto" };
+  radio("Continuar", CONTINUAR[v("continuar")]);
   form.updateFieldAppearances();
 }
 

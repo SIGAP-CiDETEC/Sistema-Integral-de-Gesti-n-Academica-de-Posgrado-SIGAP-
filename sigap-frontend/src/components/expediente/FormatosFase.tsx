@@ -3,13 +3,13 @@
 import Link from "next/link";
 import { ArrowRight, FileSignature, Send, Sparkles } from "lucide-react";
 import { formatosDeFase, type Formato } from "@/lib/formatos";
-import type { EtapaId } from "@/lib/admision";
+import type { FaseId } from "@/lib/fases";
 import { useExpediente } from "./ExpedienteProvider";
 import { TONOS, estadoFormato } from "./estadoFormato";
 import { useBloqueoFormato } from "./bloqueos";
 
 /** Formatos oficiales de una fase que el sistema llena con los datos del aspirante. */
-export function FormatosFase({ fase }: { fase: EtapaId }) {
+export function FormatosFase({ fase }: { fase: FaseId }) {
   const lista = formatosDeFase(fase);
   if (!lista.length) return null;
 

@@ -155,7 +155,7 @@ function Pasos({ a }: { a: AspiranteP }) {
             <CheckCircle2 size={15} /> El aspirante revisó y confirmó sus datos.
           </p>
         ) : a.enVivo ? (
-          <p className="text-sm text-gray-600">Esperando que confirme sus datos en su sesión (fase 5 · Dictamen final).</p>
+          <p className="text-sm text-gray-600">Esperando que confirme sus datos en su sesión (fase 6 · Dictamen final).</p>
         ) : (
           <div className="flex flex-wrap items-center gap-3 text-sm text-gray-600">
             Esperando que confirme sus datos en su sesión.
@@ -216,7 +216,7 @@ function Pasos({ a }: { a: AspiranteP }) {
                 disabled={!u.firmasEl || !archivo}
                 onClick={() => {
                   actualizarUteycv(a.id, { sip04PublicadoEl: new Date().toISOString(), sip04Archivo: archivo }, `Publicó el SIP-04 firmado (${archivo})`);
-                  enviarAviso([a.id], "ambos", "Tu dictamen SIP-04 ya está disponible", `Estimado(a) ${a.nombre.split(" ")[0]}:\n\nTu dictamen del proceso de admisión (SIP-04) ya está firmado y disponible en SIGAP (fase 5 · Dictamen final). Con este dictamen concluye tu proceso de admisión.\n\nAtentamente,\nControl Escolar (UTEyCV) · CIDETEC`);
+                  enviarAviso([a.id], "ambos", "Tu dictamen SIP-04 ya está disponible", `Estimado(a) ${a.nombre.split(" ")[0]}:\n\nTu dictamen del proceso de admisión (SIP-04) ya está firmado y disponible en SIGAP (fase 6 · Dictamen final). Con este dictamen concluye tu proceso de admisión. Ya puedes iniciar tu inscripción en SIGAP (Inscripción).\n\nAtentamente,\nControl Escolar (UTEyCV) · CIDETEC`);
                 }}
               >
                 Publicar y notificar

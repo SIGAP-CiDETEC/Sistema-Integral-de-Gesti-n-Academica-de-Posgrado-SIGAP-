@@ -5,7 +5,8 @@ import {
   rfcBaseDeCurp,
   sexoDeCurp,
 } from "./aspirante-datos";
-import type { EtapaId } from "./admision";
+import type { FaseId } from "./fases";
+import { PROGRAMA_INDIVIDUAL_DEMO, nombreAsesor } from "./programa-individual";
 import { AREAS_INVESTIGACION, nombreUnidad, type Respuestas } from "./registro-form";
 
 /**
@@ -61,7 +62,7 @@ export type Formato = {
   codigo: string;
   nombre: string;
   descripcion: string;
-  fase: EtapaId;
+  fase: FaseId;
   /** Quién captura el formato */
   /** Quién lo llena: el aspirante, un área de CIDETEC (lo emite) o el asesor */
   llena: "aspirante" | "area" | "asesor";
@@ -214,13 +215,11 @@ export const FORMATOS: Formato[] = [
   },
   {
     clave: "sip-05",
-    // Oculto por ahora: ya no se pide al aspirante en la fase de documentos (la dedicación se elige al confirmar el SIP-04)
-    oculto: true,
     destino: "Control Escolar (UTEyCV)",
     codigo: "SIP-05",
     nombre: "Carta protesta",
     descripcion: "Declaras conocer la normatividad del IPN. Solo eliges tu estatus, la imprimes y la firmas.",
-    fase: "documentos",
+    fase: "inscripcion",
     llena: "aspirante",
     plantilla: "sip-05.pdf",
     pdf: "listo",
@@ -229,13 +228,11 @@ export const FORMATOS: Formato[] = [
   },
   {
     clave: "sip-06",
-    // Oculto por ahora: ya no se pide al aspirante en la fase de documentos (la dedicación se elige al confirmar el SIP-04)
-    oculto: true,
     destino: "Control Escolar (UTEyCV)",
     codigo: "SIP-06",
     nombre: "Carta de exposición de motivos",
     descripcion: "Se redacta con lo que respondiste en “Motivos de la solicitud”. Puedes ajustarla antes de imprimirla.",
-    fase: "documentos",
+    fase: "inscripcion",
     llena: "aspirante",
     plantilla: "sip-06.pdf",
     pdf: "listo",
@@ -326,12 +323,75 @@ export const FORMATOS: Formato[] = [
       { rol: "jefe", label: "Coordinador del programa y Presidente del Colegio de Profesores" },
     ],
   },
+  {
+    clave: "sip-01",
+    destino: "Control Escolar (UTEyCV)",
+    codigo: "SIP-01",
+    nombre: "Solicitud de inscripción",
+    descripcion: "Se llena con tu registro, tu CV (SIP-02) y tu carta protesta (SIP-05). Tu foto se coloca sola.",
+    fase: "inscripcion",
+    llena: "aspirante",
+    plantilla: "sip-01.pdf",
+    pdf: "listo",
+    capturaOtros: "Programa semestral (cursos del 1er semestre): lo captura tu asesor académico.",
+    campos: [
+      C.apellidoPaterno, C.apellidoMaterno, C.nombre,
+      C.calle, C.numExt, C.numInt, C.colonia, C.alcaldia, C.cp, C.estadoDom, C.pais,
+      C.telCasa, C.telMovil, C.sexo, C.correo1, C.correo2,
+      C.unidad, C.programa,
+      C.licPrograma, C.licInstitucion, C.licEstado, C.licFecha,
+      C.estatus,
+      { ...C.fecha, id: "fechaInscripcion" },
+      {
+        id: "avisoPrivacidad",
+        label: "¿Aceptas el aviso de privacidad de la Dirección de Posgrado? (hoja 2 del SIP-01)",
+        tipo: "radio",
+        opciones: ["Acepto", "No acepto"],
+        ayuda: "Revísalo en la vista previa del PDF. Si no lo aceptas, no es posible continuar con tu inscripción.",
+        valido: (v) => v === "Acepto",
+        seccion: "Aviso de privacidad",
+      },
+    ],
+    firmas: [
+      { rol: "aspirante", label: "Alumno" },
+      { rol: "asesor", label: "Asesor académico" },
+      { rol: "jefe", label: "Jefe(a) de la Sección o Director(a) del Centro" },
+    ],
+  },
+  {
+    clave: "sip-08",
+    destino: "Control Escolar (UTEyCV)",
+    codigo: "SIP-08",
+    nombre: "Programa individual de actividades",
+    descripcion: "Lo prepara tu asesor académico con Control Escolar (UTEyCV); tú lo revisas, lo firmas y lo subes.",
+    fase: "inscripcion",
+    llena: "asesor",
+    plantilla: "sip-08.pdf",
+    pdf: "listo",
+    campos: [
+      { ...C.fecha, id: "fechaPrograma" },
+      { id: "noRegistro", label: "Número de registro", tipo: "text", sistema: true, auto: () => PROGRAMA_INDIVIDUAL_DEMO.noRegistro },
+      C.apellidoPaterno,
+      C.apellidoMaterno,
+      C.nombre,
+      C.nombreCompleto,
+      { ...C.estatus, sistema: true, auto: ({ c }) => (typeof c.estatus === "string" ? c.estatus : "Tiempo completo") },
+      C.programa,
+      C.unidad,
+      { id: "asesor", label: "Asesor académico", tipo: "text", sistema: true, auto: () => nombreAsesor() },
+    ],
+    firmas: [
+      { rol: "aspirante", label: "Interesado(a)" },
+      { rol: "asesor", label: "Asesor académico" },
+      { rol: "jefe", label: "Jefe(a) de la Sección o Director(a) del Centro" },
+    ],
+  },
 ];
 
 /** Formatos que ve y trabaja el aspirante. */
 export const FORMATOS_ASPIRANTE = FORMATOS.filter((f) => !f.oculto);
 export const formatoPorClave = (clave: string) => FORMATOS_ASPIRANTE.find((f) => f.clave === clave);
-export const formatosDeFase = (fase: EtapaId) => FORMATOS_ASPIRANTE.filter((f) => f.fase === fase);
+export const formatosDeFase = (fase: FaseId) => FORMATOS_ASPIRANTE.filter((f) => f.fase === fase).sort((a, b) => a.codigo.localeCompare(b.codigo));
 
 // ---------- Resolución de valores ----------
 

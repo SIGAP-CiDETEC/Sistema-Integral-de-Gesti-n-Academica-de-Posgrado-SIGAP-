@@ -35,6 +35,52 @@ export type Resolucion = "Aprobado" | "Con reservas" | "Rechazado";
 /** La entrevista colegiada no lleva ponderación: solo Aprobado, Con reservas o Rechazado (RF-12). */
 export type DictamenEntrevista = { resolucion: Resolucion; comentarios: string; registradoEl: string };
 
+/** Calificación cualitativa de la hoja de Conclusiones del acta MTC-EC. */
+export type Valoracion = "MB" | "B" | "R" | "M" | "NA";
+export const VALORACION_TEXTO: Record<Valoracion, string> = { MB: "Muy buena", B: "Buena", R: "Regular", M: "Mala", NA: "No aplica" };
+/** Criterios de la hoja 2 del acta MTC-EC (campo del PDF, texto y si admite "No aplica"). */
+export const CRITERIOS_ACTA = [
+  { id: "formacion", pdf: "formación académica", grupo: "Consideraciones académicas", t: "Congruencia de formación académica" },
+  { id: "programa", pdf: "conocimiento programa", grupo: "Consideraciones académicas", t: "Motivación y conocimiento del programa" },
+  { id: "experiencia", pdf: "experiencias profesionales", grupo: "Consideraciones laborales", t: "Congruencia de experiencias profesionales", na: true },
+  { id: "laborales", pdf: "continuar estudios", grupo: "Consideraciones laborales", t: "Condiciones laborales para continuar los estudios", na: true },
+  { id: "personales", pdf: "condiciones personales", grupo: "Consideraciones personales", t: "Condiciones personales (actitudes, anímicas, emocionales)" },
+  { id: "familiar", pdf: "entorno familiar", grupo: "Consideraciones personales", t: "Condiciones del entorno familiar" },
+] as const;
+export type CriterioActa = (typeof CRITERIOS_ACTA)[number]["id"];
+
+/**
+ * Acta de entrevista colegiada (MTC-EC) que llena el sínodo en la sesión de Profesor.
+ * Hoja 1: lo que responde el aspirante en la entrevista. Hoja 2: conclusiones del sínodo.
+ * El dictamen se aplica cuando firman los 3 profesores del sínodo.
+ */
+export type ActaEntrevista = {
+  hoja1: {
+    areas: string[];
+    becaSecihti?: "Sí" | "No";
+    sinBeca?: "Sí" | "No";
+    profesorInteres?: "Sí" | "No";
+    profesorNombre?: string;
+    horario?: "Matutino" | "Vespertino" | "Indistinto";
+    ingles2?: "Sí" | "No";
+    inglesSituacion?: string;
+    certificado?: "Sí" | "No";
+    certificadoSituacion?: string;
+    argumentacion?: string;
+  };
+  criterios: Partial<Record<CriterioActa, Valoracion>>;
+  proyeccion: string;
+  observaciones: string;
+  resolucion: Resolucion;
+  motivo: string;
+  capturadaPor: string;
+  capturadaEl: string;
+  /** id de profesor → fecha de firma */
+  firmas: Record<string, string>;
+};
+export const firmasActa = (a: { actaEntrevista?: ActaEntrevista; entrevista?: Entrevista }) =>
+  (a.entrevista?.sinodo ?? []).filter((p) => !!a.actaEntrevista?.firmas[p]).length;
+
 /** Áreas que se califican en el propedéutico y en el examen de admisión. */
 export type AreaEvalId = "matematicas" | "programacion";
 export const AREAS_EVAL: { id: AreaEvalId; nombre: string }[] = [
@@ -61,7 +107,34 @@ export type EvaluacionP = {
   propedeutico?: ResultadoEval;
   examen?: ResultadoEval;
   segundaOportunidad?: SegundaOportunidad;
+  /** Calificaciones que captura cada profesor por área antes de integrar el resultado */
+  capturas?: Partial<Record<"propedeutico" | "examen", Partial<Record<AreaEvalId, CapturaArea>>>>;
 };
+export type CapturaArea = { calificacion: number; por: string; el: string };
+
+/** Calificación mínima aprobatoria por área (ejemplo; se configura por convocatoria). */
+export const MINIMA_AREA = 8;
+
+/** Qué evaluación falta calificar y de qué áreas (null = nada pendiente de captura). */
+export function evaluacionPendiente(e: EvaluacionP): { tipo: "propedeutico" | "examen"; areas: AreaEvalId[]; esSegunda: boolean } | null {
+  if (!e.modalidad) return null;
+  if (e.modalidad === "propedeutico" && !e.propedeutico) return { tipo: "propedeutico", areas: AREAS_EVAL.map((x) => x.id), esSegunda: false };
+  if (e.modalidad === "examen" && !e.examen) return { tipo: "examen", areas: AREAS_EVAL.map((x) => x.id), esSegunda: false };
+  if (e.segundaOportunidad?.decision === "examen" && !e.examen) return { tipo: "examen", areas: e.segundaOportunidad.areas, esSegunda: true };
+  return null;
+}
+
+/** Integra el resultado cuando ya se capturaron todas las áreas pendientes. */
+export function integrarResultado(capturas: Partial<Record<AreaEvalId, CapturaArea>>, areas: AreaEvalId[]): ResultadoEval | null {
+  if (!areas.every((id) => capturas[id])) return null;
+  const vals = areas.map((id) => ({ id, v: capturas[id]!.calificacion }));
+  return {
+    calificacion: Math.round((vals.reduce((t, x) => t + x.v, 0) / vals.length) * 10) / 10,
+    acreditado: vals.every((x) => x.v >= MINIMA_AREA),
+    registradoEl: new Date().toISOString(),
+    areas: Object.fromEntries(vals.map((x) => [x.id, { calificacion: x.v, acreditado: x.v >= MINIMA_AREA }])) as ResultadoEval["areas"],
+  };
+}
 
 /** En qué punto va la evaluación de un aspirante (vista de Posgrado). */
 export function estadoEvaluacion(e: EvaluacionP): { t: string; tono: string } {
@@ -101,6 +174,19 @@ export type UteycvP = {
   firmasEl?: string;
   sip04PublicadoEl?: string;
   sip04Archivo?: string;
+  // ---- Inscripción (proceso posterior a la admisión; Módulos 6, 7, 8 y 19) ----
+  /** SIP-08 que preparó el asesor académico, publicado para que el admitido lo firme */
+  sip08PublicadoEl?: string;
+  foto?: boolean;
+  sip01Firmado?: boolean;
+  sip05Firmado?: boolean;
+  sip06Firmado?: boolean;
+  sip08Firmado?: boolean;
+  /** RF-28: versiones con todas las firmas físicas que carga Control Escolar (por clave de formato) */
+  firmadosFinales?: Record<string, { nombre: string; el: string }>;
+  /** RF-29: número de registro asignado por SICEP */
+  sicep?: string;
+  formalizadoEl?: string;
 };
 
 /** Fecha ISO de hace n días (para que los ejemplos tengan tiempos de espera realistas). */
@@ -128,6 +214,8 @@ export type AspiranteP = {
   documentos: DocAspirante[];
   entrevista?: Entrevista;
   dictamen?: DictamenEntrevista;
+  /** Acta MTC-EC que llena y firma el sínodo (módulo de Profesores) */
+  actaEntrevista?: ActaEntrevista;
   evaluacion: EvaluacionP;
   resolucion?: ResolucionColegio;
   /** Fecha en que se turnó a UTEyCV para el dictamen SIP-04 */
@@ -144,17 +232,20 @@ export type AspiranteP = {
 
 // ---------- Profesores para el sínodo (RN-07: 3 colegiados vigentes) ----------
 
-export type ProfesorP = { id: string; nombre: string; colegiado: boolean; vigencia: string; linea: string };
+export type ProfesorP = { id: string; nombre: string; correo: string; colegiado: boolean; vigencia: string; linea: string };
 
 export const PROFESORES_SINODO: ProfesorP[] = [
-  { id: "lh", nombre: "Dra. Laura Hernández Ruiz", colegiado: true, vigencia: "2027", linea: "Computación inteligente" },
-  { id: "mt", nombre: "Dr. Miguel Torres Díaz", colegiado: true, vigencia: "2026", linea: "Redes de computadoras" },
-  { id: "er", nombre: "Dra. Elena Ruiz Campos", colegiado: true, vigencia: "2028", linea: "Realidad virtual" },
-  { id: "ac", nombre: "Dra. Adriana Castillo Ramos", colegiado: true, vigencia: "2027", linea: "Procesamiento paralelo" },
-  { id: "rm", nombre: "Dr. Ricardo Morales Vega", colegiado: true, vigencia: "2029", linea: "Computación inteligente" },
-  { id: "jp", nombre: "Dr. Jorge Pérez Luna", colegiado: false, vigencia: "Vencida", linea: "Mecatrónica" },
-  { id: "js", nombre: "Dr. Jorge Salinas Ortega", colegiado: false, vigencia: "Asignatura", linea: "Seguridad informática" },
+  { id: "lh", nombre: "Dra. Laura Hernández Ruiz", correo: "lhernandez@ipn.mx", colegiado: true, vigencia: "2027", linea: "Computación inteligente" },
+  { id: "mt", nombre: "Dr. Miguel Torres Díaz", correo: "mtorres@ipn.mx", colegiado: true, vigencia: "2026", linea: "Redes de computadoras" },
+  { id: "er", nombre: "Dra. Elena Ruiz Campos", correo: "eruiz@ipn.mx", colegiado: true, vigencia: "2028", linea: "Realidad virtual" },
+  { id: "ac", nombre: "Dra. Adriana Castillo Ramos", correo: "acastillo@ipn.mx", colegiado: true, vigencia: "2027", linea: "Procesamiento paralelo" },
+  { id: "rm", nombre: "Dr. Ricardo Morales Vega", correo: "rmorales@ipn.mx", colegiado: true, vigencia: "2029", linea: "Computación inteligente" },
+  { id: "jp", nombre: "Dr. Jorge Pérez Luna", correo: "jperez@ipn.mx", colegiado: false, vigencia: "Vencida", linea: "Mecatrónica" },
+  { id: "js", nombre: "Dr. Jorge Salinas Ortega", correo: "jsalinas@ipn.mx", colegiado: false, vigencia: "Asignatura", linea: "Seguridad informática" },
 ];
+
+/** Profesor que califica cada área del propedéutico y del examen (ejemplo; con backend lo asigna Posgrado por convocatoria). */
+export const PROFESOR_AREA: Record<AreaEvalId, string> = { matematicas: "ac", programacion: "rm" };
 
 export const profesorValido = (p: ProfesorP) => p.colegiado && /^\d{4}$/.test(p.vigencia) && Number(p.vigencia) >= 2026;
 export const nombreProfesor = (id: string) => PROFESORES_SINODO.find((p) => p.id === id)?.nombre ?? id;
@@ -295,7 +386,7 @@ export const ASPIRANTES_BASE: AspiranteP[] = [
     registradoEl: "2026-02-12",
     etapa: "entrevista",
     documentos: docs({}),
-    entrevista: entrevistaDe("2026-03-18", "12:00", ["mt", "er", "ac"]),
+    entrevista: entrevistaDe("2026-03-18", "12:00", ["mt", "ac", "rm"]),
     evaluacion: { grupos: {} },
     formatos: F(["sip-02", "sip-05", "sip-06", "mtc-ec"]),
   },
@@ -314,7 +405,12 @@ export const ASPIRANTES_BASE: AspiranteP[] = [
     documentos: docs({}),
     entrevista: entrevistaDe("2026-03-17", "10:30"),
     dictamen: dictamenDe("Aprobado", "Perfil sólido; se recomienda fortalecer metodología."),
-    evaluacion: { modalidad: "propedeutico", grupos: PROPEDEUTICO_AB },
+    evaluacion: {
+      modalidad: "propedeutico",
+      grupos: PROPEDEUTICO_AB,
+      // La Dra. Castillo ya capturó Matemáticas; falta Programación
+      capturas: { propedeutico: { matematicas: { calificacion: 9.0, por: "ac", el: hace(1) } } },
+    },
     formatos: F(["sip-02", "sip-05", "sip-06", "mtc-ec"]),
   },
   {
@@ -465,6 +561,11 @@ export const ASPIRANTES_BASE: AspiranteP[] = [
       firmasEl: hace(6),
       sip04PublicadoEl: hace(5),
       sip04Archivo: "SIP-04_MEDINA_firmado.pdf",
+      // Ya avanzó con su inscripción: foto y SIP-01 entregados
+      sip08PublicadoEl: hace(3),
+      foto: true,
+      sip01Firmado: true,
+      sip05Firmado: true,
     },
   },
 ];
@@ -507,7 +608,10 @@ export function leTocaAPosgrado(a: AspiranteP): boolean {
   if (!a.concluido && !a.turnadoUteycv && a.documentos.some((d) => d.estado === "pendiente")) return true;
   if (b === "Registro incompleto" || b === "Con observaciones" || b === "Turnado a UTEyCV" || b === "Dictamen publicado" || b === "No admitido") return false;
   if (b === "En evaluación" && !a.evaluacion.modalidad) return false;
-  if (b === "Entrevista programada") return !!a.entrevista && diasPara(a.entrevista.fecha) < 0;
+  // Las calificaciones las capturan los profesores; a Posgrado le toca cuando hay que publicarlas
+  if ((b === "En evaluación" || b === "Segunda oportunidad") && evaluacionPendiente(a.evaluacion)) return false;
+  // El acta de la entrevista la llena y firma el sínodo (sesión de Profesor)
+  if (b === "Entrevista programada") return false;
   return true;
 }
 
@@ -599,6 +703,45 @@ export const TONO_UTEYCV: Record<EstadoUteycv, string> = {
   "Por publicar SIP-04": "bg-amber-50 text-amber-800",
   "Dictamen publicado": "bg-emerald-50 text-emerald-700",
 };
+
+// ---------- Inscripción (Control Escolar) ----------
+
+/** Formatos de inscripción que el admitido entrega firmados (RF-24, RF-26). */
+export const FORMATOS_INSCRIPCION = [
+  { clave: "sip-01", t: "SIP-01 · Solicitud de inscripción", campo: "sip01Firmado" },
+  { clave: "sip-05", t: "SIP-05 · Carta protesta", campo: "sip05Firmado" },
+  { clave: "sip-06", t: "SIP-06 · Exposición de motivos", campo: "sip06Firmado" },
+  { clave: "sip-08", t: "SIP-08 · Programa individual", campo: "sip08Firmado" },
+] as const;
+
+/** Admitidos cuyo dictamen SIP-04 ya se publicó: pueden inscribirse. */
+export const puedeInscribirse = (a: AspiranteP) => !a.concluido && !!a.uteycv?.sip04PublicadoEl && a.resolucion !== "No aceptado";
+
+/** Qué falta para formalizar la inscripción. */
+export function pendientesInscripcion(a: AspiranteP) {
+  const u = a.uteycv ?? {};
+  return [
+    { t: "Fotografía", ok: !!u.foto },
+    ...FORMATOS_INSCRIPCION.map((f) => ({ t: `${f.t.split(" · ")[0]} firmado`, ok: !!u[f.campo] || !!u.firmadosFinales?.[f.clave] })),
+    { t: "Dedicación elegida (RN-10)", ok: !!a.dedicacion },
+  ];
+}
+
+export type EstadoInscripcion = "Pendiente de dictamen" | "SIP-08 por publicar" | "Integrando expediente" | "Listo para formalizar" | "Inscrito";
+export const TONO_INSCRIPCION: Record<EstadoInscripcion, string> = {
+  "Pendiente de dictamen": "bg-gray-100 text-gray-600",
+  "SIP-08 por publicar": "bg-amber-50 text-amber-800",
+  "Integrando expediente": "bg-sky-50 text-sky-800",
+  "Listo para formalizar": "bg-violet-50 text-violet-800",
+  Inscrito: "bg-emerald-50 text-emerald-700",
+};
+export function estadoInscripcion(a: AspiranteP): EstadoInscripcion {
+  const u = a.uteycv ?? {};
+  if (!puedeInscribirse(a)) return "Pendiente de dictamen";
+  if (u.formalizadoEl) return "Inscrito";
+  if (!u.sip08PublicadoEl) return "SIP-08 por publicar";
+  return pendientesInscripcion(a).every((p) => p.ok) ? "Listo para formalizar" : "Integrando expediente";
+}
 
 export function estadoUteycv(a: AspiranteP): EstadoUteycv {
   const u = a.uteycv ?? {};

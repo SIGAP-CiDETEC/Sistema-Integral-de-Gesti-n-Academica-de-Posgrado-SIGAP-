@@ -33,6 +33,20 @@ export const USUARIOS_DEMO: Usuario[] = [
     puesto: "Analista · UTEyCV (Control Escolar)",
     rol: "uteycv",
   },
+  {
+    correo: "subdireccion.academica@ipn.mx",
+    contrasena: "Subdireccion#2026",
+    nombre: "Subdirección Académica",
+    puesto: "Subdirección Académica · solo consulta",
+    rol: "subdireccion",
+  },
+  {
+    correo: "rmorales@ipn.mx",
+    contrasena: "Profesor#2026",
+    nombre: "Dr. Ricardo Morales Vega",
+    puesto: "Profesor colegiado · CIDETEC",
+    rol: "profesor",
+  },
   { correo: "admin.sigap@ipn.mx", contrasena: "Admin#2026", nombre: "Admin CIDETEC", puesto: "Administrador del sistema", rol: "admin" },
 ];
 
@@ -71,6 +85,8 @@ export function iniciarSesion(u: Usuario) {
   const s: Sesion = { correo: u.correo, nombre: u.nombre, puesto: u.puesto, rol: u.rol, desde: new Date().toISOString() };
   try {
     localStorage.setItem(CLAVE, JSON.stringify(s));
+    // Vista de prueba del profesor: cada sesión empieza actuando como el dueño de la cuenta
+    localStorage.removeItem("sigap-profesor-como");
   } catch {
     /* ignorar */
   }
@@ -111,7 +127,7 @@ export function usePermisos(): Set<string> | null {
   const { sesion } = useSesion();
   const acc = useAccesos();
   return useMemo(() => {
-    if (!sesion || (sesion.rol !== "posgrado" && sesion.rol !== "uteycv")) return null;
+    if (!sesion || (sesion.rol !== "posgrado" && sesion.rol !== "uteycv" && sesion.rol !== "subdireccion" && sesion.rol !== "profesor")) return null;
     return new Set(rolDeCuenta(acc, sesion.correo)?.permisos ?? []);
   }, [sesion, acc]);
 }

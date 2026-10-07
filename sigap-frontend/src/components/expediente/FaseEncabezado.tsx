@@ -8,14 +8,15 @@ import { FASES, faseDe, type FaseId } from "@/lib/fases";
 export function FaseEncabezado({ id }: { id: FaseId }) {
   const f = faseDe(id);
   const areas = [...new Set(f.areasHacen.map((x) => x.area))];
-  const titulo = areas.length === 1 ? `Lo que hace ${AREAS[areas[0]].corto}` : `Lo que hacen ${areas.map((a) => AREAS[a].corto).join(" y ")}`;
+  const titulo = areas.length === 1 ? `Lo que hace ${AREAS[areas[0]].corto}` : `Lo que hacen ${areas.map((a) => AREAS[a].corto).join(", ").replace(/, ([^,]*)$/, " y $1")}`;
+  const admision = FASES.filter((x) => !x.aparte);
   return (
     <>
-      <PageHeader titulo={f.titulo} subtitulo={`Fase ${f.numero} de ${FASES.length} · ${f.resumen}`} />
+      <PageHeader titulo={f.titulo} subtitulo={f.aparte ? f.resumen : `Fase ${f.numero} de ${admision.length} · ${f.resumen}`} />
 
       {/* Mini barra de fases */}
       <nav aria-label="Fases del proceso" className="mb-6 flex gap-1.5 overflow-x-auto pb-1">
-        {FASES.map((e) => {
+        {(f.aparte ? [f] : admision).map((e) => {
           const actual = e.id === id;
           return (
             <Link
@@ -53,7 +54,7 @@ export function FaseEncabezado({ id }: { id: FaseId }) {
                 <span
                   title={AREAS[area].nombre}
                   className={`mt-0.5 w-[62px] shrink-0 rounded px-1.5 py-0.5 text-center text-[10px] font-semibold ${
-                    area === "uteycv" ? "bg-amber-50 text-amber-800" : "bg-rose-50 text-guinda"
+                    area === "uteycv" ? "bg-amber-50 text-amber-800" : area === "profesores" ? "bg-indigo-50 text-primary" : "bg-rose-50 text-guinda"
                   }`}
                 >
                   {AREAS[area].corto}

@@ -19,6 +19,7 @@ export const PROGRAMA = "Maestría en Tecnología de Cómputo";
 export const AREAS = {
   posgrado: { corto: "Posgrado", nombre: "Departamento de Posgrado" },
   uteycv: { corto: "UTEyCV", nombre: "Control Escolar (UTEyCV)" },
+  profesores: { corto: "Profesores", nombre: "Profesores del Colegio (sínodo y evaluación)" },
 } as const;
 export type Area = keyof typeof AREAS;
 

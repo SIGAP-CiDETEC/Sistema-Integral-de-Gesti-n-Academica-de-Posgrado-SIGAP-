@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { CheckCircle2, Clock, Download, Eye, FileCheck2, Loader2, Mail, RotateCcw } from "lucide-react";
 import { correoDeArea } from "@/lib/config";
@@ -173,6 +174,9 @@ export function RevisarDictamen({ formato: f }: { formato: Formato }) {
                 <FileCheck2 size={16} /> Tu dictamen firmado ya está disponible
               </p>
               <p className="mt-2 text-sm text-gray-700">Con tu dictamen concluye tu proceso de admisión.</p>
+              <Link href="/aspirante/inscripcion" className="mt-2 inline-block text-sm font-medium text-primary underline">
+                Continuar con tu inscripción
+              </Link>
               <p className="mt-1 text-xs text-gray-500">
                 {recibido.nombre} · publicado el {fechaCorta(recibido.fecha)}
               </p>

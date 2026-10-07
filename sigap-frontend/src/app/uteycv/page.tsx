@@ -6,7 +6,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { usePosgrado } from "@/components/posgrado/PosgradoProvider";
 import { Aviso, Etiqueta, Kpi, Tarjeta } from "@/components/posgrado/ui";
 import { convocatoriaActual } from "@/lib/config";
-import { TONO_UTEYCV, diasPara, estadoUteycv, fechaCorta, prorrogasDe } from "@/lib/posgrado/datos";
+import { TONO_INSCRIPCION, TONO_UTEYCV, diasPara, estadoInscripcion, estadoUteycv, fechaCorta, prorrogasDe, puedeInscribirse } from "@/lib/posgrado/datos";
 
 /** Inicio de Control Escolar (UTEyCV) en el proceso de admisión. */
 export default function UteycvInicio() {
@@ -14,19 +14,22 @@ export default function UteycvInicio() {
   if (!cargado) return null;
   const turnados = aspirantes.filter((a) => !!a.turnadoUteycv);
   const estados = turnados.map((a) => estadoUteycv(a));
+  const inscripcion = turnados.filter(puedeInscribirse).map((a) => estadoInscripcion(a));
   const prorrogas = turnados.flatMap((a) => prorrogasDe(a).map((d) => ({ a, d, dias: diasPara(d.prorrogaHasta!) })));
 
   return (
     <>
-      <PageHeader titulo="Control Escolar · Admisión" subtitulo={`${convocatoriaActual.nombre} · Hola, ${usuario}`} />
+      <PageHeader titulo="Control Escolar · Admisión e inscripción" subtitulo={`${convocatoriaActual.nombre} · Hola, ${usuario}`} />
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Kpi valor={estados.filter((e) => e !== "Dictamen publicado").length} etiqueta="Dictámenes SIP-04 en proceso" color="text-guinda" href="/uteycv/dictamen" />
         <Kpi valor={estados.filter((e) => e === "Dictamen publicado").length} etiqueta={`Dictámenes publicados de ${turnados.length}`} color="text-emerald-700" href="/uteycv/dictamen" />
+        <Kpi valor={inscripcion.filter((e) => e !== "Inscrito").length} etiqueta="Inscripciones por formalizar" color="text-primary" href="/uteycv/inscripciones" />
+        <Kpi valor={inscripcion.filter((e) => e === "Inscrito").length} etiqueta="Inscritos con número SICEP" color="text-emerald-700" href="/uteycv/inscripciones" />
       </div>
 
       <div className="mt-6 grid gap-6 xl:grid-cols-[1fr_340px]">
-        <Tarjeta titulo="Aspirantes turnados por Posgrado">
+        <Tarjeta titulo="Aspirantes admitidos por el Colegio">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[520px] text-left text-sm">
               <thead className="border-b border-gray-100 text-xs uppercase tracking-wide text-gray-500">
@@ -40,6 +43,7 @@ export default function UteycvInicio() {
               <tbody className="divide-y divide-gray-100">
                 {turnados.map((a) => {
                   const e = estadoUteycv(a);
+                  const ins = puedeInscribirse(a) ? estadoInscripcion(a) : null;
                   return (
                     <tr key={a.id}>
                       <td className="py-2.5">
@@ -50,11 +54,11 @@ export default function UteycvInicio() {
                       </td>
                       <td className="py-2.5 text-gray-700">{a.resolucion}</td>
                       <td className="py-2.5">
-                        <Etiqueta tono={TONO_UTEYCV[e]}>{e}</Etiqueta>
+                        {ins ? <Etiqueta tono={TONO_INSCRIPCION[ins]}>{ins === "Inscrito" ? `Inscrito · ${a.uteycv?.sicep}` : `Inscripción: ${ins.toLowerCase()}`}</Etiqueta> : <Etiqueta tono={TONO_UTEYCV[e]}>{e}</Etiqueta>}
                       </td>
                       <td className="py-2.5 text-right">
-                        <Link href={`/uteycv/dictamen?id=${a.id}`} className="text-primary hover:underline">
-                          {e === "Dictamen publicado" ? "Ver" : "SIP-04"}
+                        <Link href={ins ? `/uteycv/inscripciones?id=${a.id}` : `/uteycv/dictamen?id=${a.id}`} className="text-primary hover:underline">
+                          {ins ? "Inscripción" : "SIP-04"}
                         </Link>
                       </td>
                     </tr>

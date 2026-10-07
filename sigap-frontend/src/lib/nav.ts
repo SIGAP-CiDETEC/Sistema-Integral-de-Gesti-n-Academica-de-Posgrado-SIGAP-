@@ -3,7 +3,7 @@
  * y crear su carpeta con page.tsx dentro de src/app/<rol>/.
  */
 
-export type Rol = "aspirante" | "alumno" | "posgrado" | "uteycv" | "admin";
+export type Rol = "aspirante" | "alumno" | "posgrado" | "uteycv" | "subdireccion" | "profesor" | "admin";
 
 export type IconName =
   | "home"
@@ -26,7 +26,8 @@ export type IconName =
   | "cartas"
   | "resultados"
   | "contenido"
-  | "calendario";
+  | "calendario"
+  | "panorama";
 
 export type NavItem = { label: string; href: string; icon: IconName };
 
@@ -35,6 +36,8 @@ export const ROL_LABEL: Record<Rol, string> = {
   alumno: "Alumno",
   posgrado: "Depto. de Posgrado",
   uteycv: "UTEyCV · Control Escolar",
+  subdireccion: "Subdirección Académica",
+  profesor: "Profesor · Colegio",
   admin: "Administrador",
 };
 
@@ -48,6 +51,8 @@ export const NAV: Record<Rol, NavItem[]> = {
     { label: "4. Evaluación", href: "/aspirante/evaluacion", icon: "evaluacion" },
     { label: "5. Resultados", href: "/aspirante/resultados", icon: "resultados" },
     { label: "6. Dictamen final", href: "/aspirante/dictamen", icon: "dictamen" },
+    // Proceso aparte, después de la admisión (Módulos 6, 7, 8 y 19)
+    { label: "Inscripción", href: "/aspirante/inscripcion", icon: "matricula" },
     { label: "Notificaciones", href: "/aspirante/notificaciones", icon: "notificaciones" },
   ],
   // Vistas del alumno: fuera del alcance actual (el proceso de admisión termina con el dictamen SIP-04)
@@ -71,7 +76,20 @@ export const NAV: Record<Rol, NavItem[]> = {
   uteycv: [
     { label: "Inicio", href: "/uteycv", icon: "home" },
     { label: "Dictamen SIP-04", href: "/uteycv/dictamen", icon: "dictamen" },
+    { label: "Inscripciones", href: "/uteycv/inscripciones", icon: "matricula" },
     { label: "Bitácora", href: "/uteycv/bitacora", icon: "bitacora" },
+  ],
+  // Subdirección Académica: solo consulta (no interviene en el proceso)
+  subdireccion: [
+    { label: "Inicio", href: "/subdireccion", icon: "panorama" },
+    { label: "Aspirantes", href: "/subdireccion/aspirantes", icon: "expedientes" },
+    { label: "Bitácora", href: "/subdireccion/bitacora", icon: "bitacora" },
+  ],
+  // Profesores del Colegio: sínodo de entrevistas (acta MTC-EC) y calificaciones de su área
+  profesor: [
+    { label: "Inicio", href: "/profesor", icon: "home" },
+    { label: "Mis entrevistas", href: "/profesor/entrevistas", icon: "entrevistas" },
+    { label: "Calificaciones", href: "/profesor/evaluacion", icon: "evaluacion" },
   ],
   admin: [
     { label: "Inicio", href: "/admin", icon: "home" },
@@ -88,5 +106,7 @@ export const USUARIO_DEMO: Record<Rol, string> = {
   alumno: "María González",
   posgrado: "Laura Hernández",
   uteycv: "Control Escolar",
+  subdireccion: "Subdirección Académica",
+  profesor: "Dr. Ricardo Morales Vega",
   admin: "Admin CIDETEC",
 };

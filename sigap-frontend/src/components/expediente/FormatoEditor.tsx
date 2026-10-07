@@ -30,6 +30,7 @@ import { faseDe } from "@/lib/fases";
 import { generarPdfFormato } from "@/lib/pdf/cliente";
 import { useExpediente } from "./ExpedienteProvider";
 import { FirmasOtros } from "./FirmasOtros";
+import { DocumentoAsesor } from "./DocumentoAsesor";
 import { RevisarDictamen } from "./RevisarDictamen";
 import { SubirFirmado } from "./SubirFirmado";
 import { useBloqueoFormato, useDocumentosFaltantes } from "./bloqueos";
@@ -93,7 +94,7 @@ export function FormatoEditor({ clave }: { clave: string }) {
   return (
     <>
       <Link href={fase.href} className="mb-4 inline-flex items-center gap-1.5 text-sm text-gray-600 hover:text-gray-900">
-        <ArrowLeft size={15} /> Fase {fase.numero}: {fase.titulo}
+        <ArrowLeft size={15} /> {fase.aparte ? fase.titulo : `Fase ${fase.numero}: ${fase.titulo}`}
       </Link>
 
       <header className="mb-6 flex flex-wrap items-start justify-between gap-3">
@@ -109,6 +110,8 @@ export function FormatoEditor({ clave }: { clave: string }) {
         <FormatoBloqueado motivo={bloqueo} />
       ) : f.confirmaAspirante ? (
         <RevisarDictamen formato={f} />
+      ) : f.llena === "asesor" ? (
+        <DocumentoAsesor formato={f} />
       ) : !editable ? (
         <section className="rounded-xl border border-gray-200 bg-white p-5 text-sm text-gray-700">
           <p className="flex items-center gap-2 font-medium text-gray-900">

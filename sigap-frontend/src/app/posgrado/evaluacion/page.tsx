@@ -11,8 +11,11 @@ import { fechaLargaIso, useConfigEvaluacion } from "@/lib/evaluacion-config";
 import { AvisoAspirante } from "@/components/posgrado/AvisoAspirante";
 import { EditarCalendario } from "@/components/posgrado/EditarCalendario";
 import {
-  AREAS_EVAL,
+  MINIMA_AREA,
+  PROFESOR_AREA,
   areasReprobadas,
+  evaluacionPendiente,
+  nombreProfesor,
   estadoEvaluacion,
   fechaCorta,
   nombreArea,
@@ -21,9 +24,6 @@ import {
   type ResultadoArea,
   type ResultadoEval,
 } from "@/lib/posgrado/datos";
-
-/** Calificación mínima aprobatoria de ejemplo (se configura por convocatoria). */
-const MINIMA = 8;
 
 /** Evaluación: elecciones, cambios a solicitud del aspirante y resultados (RF-15 a RF-18, RF-58, RN-08). */
 export default function EvaluacionPosgrado() {
@@ -267,32 +267,11 @@ function Resultados({ a }: { a: AspiranteP }) {
   const nom = a.nombre.split(" ")[0];
   const firma = "\n\nAtentamente,\nDepartamento de Posgrado · CIDETEC";
 
-  // Qué toca registrar (y de qué áreas)
-  const tipo: TipoResultado | null = !e.modalidad
-    ? null
-    : e.modalidad === "propedeutico" && !e.propedeutico
-      ? "propedeutico"
-      : (e.modalidad === "examen" && !e.examen) || (so?.decision === "examen" && !e.examen)
-        ? "examen"
-        : null;
-  const esSegunda = tipo === "examen" && e.modalidad === "propedeutico";
-  const areas: AreaEvalId[] = esSegunda ? so!.areas : AREAS_EVAL.map((x) => x.id);
-  const [cal, setCal] = useState<Record<string, string>>({});
-  const valores = areas.map((id) => ({ id, v: Number(cal[id]), ok: cal[id] !== undefined && cal[id] !== "" && Number(cal[id]) >= 0 && Number(cal[id]) <= 10 }));
-  const completo = valores.every((x) => x.ok);
+  // Qué falta calificar (lo capturan los profesores de cada área)
+  const pend = evaluacionPendiente(e);
 
   // Resultado registrado que falta publicar
   const porPublicar: TipoResultado | null = e.examen && !e.examen.publicadoEl ? "examen" : e.propedeutico && !e.propedeutico.publicadoEl ? "propedeutico" : null;
-
-  const registrar = () => {
-    if (!tipo || !completo) return;
-    const porArea = Object.fromEntries(valores.map((x) => [x.id, { calificacion: x.v, acreditado: x.v >= MINIMA }])) as ResultadoEval["areas"];
-    const promedio = Math.round((valores.reduce((t, x) => t + x.v, 0) / valores.length) * 10) / 10;
-    const r: ResultadoEval = { calificacion: promedio, acreditado: valores.every((x) => x.v >= MINIMA), registradoEl: new Date().toISOString(), areas: porArea };
-    const nombre = tipo === "propedeutico" ? "curso propedéutico" : esSegunda ? "examen de áreas no acreditadas" : "examen de admisión";
-    actualizar(a.id, { evaluacion: { ...e, [tipo]: r } }, `Registró ${nombre}: ${valores.map((x) => `${nombreArea(x.id)} ${x.v}`).join(", ")} (sin publicar)`);
-    setCal({});
-  };
 
   const publicar = () => {
     if (!porPublicar) return;
@@ -378,35 +357,35 @@ function Resultados({ a }: { a: AspiranteP }) {
             </div>
           )}
         </div>
-      ) : tipo ? (
+      ) : pend ? (
         <div className="mt-4">
           <p className="text-sm font-medium text-gray-900">
-            Calificaciones del {tipo === "propedeutico" ? "curso propedéutico" : esSegunda ? "examen de áreas no acreditadas" : "examen de admisión"} (0–10)
+            Calificaciones del {pend.tipo === "propedeutico" ? "curso propedéutico" : pend.esSegunda ? "examen de áreas no acreditadas" : "examen de admisión"}
           </p>
-          {tipo === "examen" && (
-            <p className="mt-0.5 text-xs text-gray-500">
-              Examen: {fechaLargaIso(config.examen.fecha)}, {config.examen.hora} h, {config.examen.lugar}. El aspirante recibe recordatorios cada 5 días, un día antes y el mismo día.
-            </p>
-          )}
-          <div className="mt-2 grid gap-2 sm:grid-cols-2">
-            {areas.map((id) => {
-              const v = cal[id] ?? "";
-              const n = Number(v);
+          <p className="mt-0.5 text-xs text-gray-500">
+            Las captura el profesor de cada área en su sesión de Profesor. Al completarse, aquí podrás publicarlas.
+            {pend.tipo === "examen" && ` Examen: ${fechaLargaIso(config.examen.fecha)}, ${config.examen.hora} h, ${config.examen.lugar}.`}
+          </p>
+          <ul className="mt-2 divide-y divide-gray-100 text-sm">
+            {pend.areas.map((id) => {
+              const c = e.capturas?.[pend.tipo]?.[id];
               return (
-                <label key={id} className="text-sm">
-                  <span className="text-gray-700">{nombreArea(id)}</span>
-                  <input type="number" step="0.1" min={0} max={10} value={v} onChange={(ev) => setCal({ ...cal, [id]: ev.target.value })} className={`${inputBase} mt-1`} />
-                  {v !== "" && (n >= MINIMA ? <span className="text-xs text-emerald-700">Acreditada</span> : <span className="text-xs text-red-700">No acreditada</span>)}
-                </label>
+                <li key={id} className="flex flex-wrap items-center justify-between gap-2 py-2">
+                  <span>
+                    <span className="text-gray-800">{nombreArea(id)}</span>
+                    <span className="block text-xs text-gray-500">{nombreProfesor(PROFESOR_AREA[id])}</span>
+                  </span>
+                  {c ? (
+                    <Etiqueta tono={c.calificacion >= MINIMA_AREA ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"}>
+                      {c.calificacion} · capturada {fechaCorta(c.el)}
+                    </Etiqueta>
+                  ) : (
+                    <Etiqueta tono="bg-gray-100 text-gray-600">Pendiente de captura</Etiqueta>
+                  )}
+                </li>
               );
             })}
-          </div>
-          <p className="mt-1 text-xs text-gray-500">Mínima aprobatoria por área: {MINIMA.toFixed(1)} (ejemplo; se configura por convocatoria).</p>
-          <div className="mt-3 flex justify-end">
-            <button type="button" className={botonPrimario} disabled={!completo} onClick={registrar}>
-              Registrar calificaciones
-            </button>
-          </div>
+          </ul>
         </div>
       ) : (
         <p className="mt-4 text-sm text-gray-500">{e.modalidad ? "No hay resultados pendientes." : "Asigna primero una modalidad."}</p>

@@ -15,13 +15,13 @@ export function useDocumentosFaltantes() {
 
 /**
  * Por qué un formato todavía no se puede llenar (null = habilitado).
- * - RN-11: SIP-05 y SIP-06 bloqueados mientras falten documentos.
+ * - RN-11: los formatos de inscripción (SIP-01, SIP-05 y SIP-06) bloqueados mientras falten documentos.
  * - RF-22: el SIP-04 solo se habilita a quien acreditó la evaluación.
  */
 export function useBloqueoFormato(clave: string): string | null {
   const faltan = useDocumentosFaltantes();
   const estado = useEstadoAdmision();
-  if (["sip-05", "sip-06"].includes(clave) && faltan.length)
+  if (["sip-01", "sip-05", "sip-06"].includes(clave) && faltan.length)
     return `Se habilita cuando subas todos tus documentos obligatorios (RN-11). Faltan: ${faltan.map((d) => d.nombre.toLowerCase()).join(", ")}.`;
   if (clave === "sip-04" && estado.etapa !== "dictamen")
     return "Se habilita cuando acredites tu evaluación (RF-22).";

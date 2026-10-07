@@ -70,7 +70,7 @@ export function MiAdmisionVivo() {
         ? { titulo: "Decide si presentas el examen", texto: "De las áreas que no acreditaste en el propedéutico.", href: "/aspirante/resultados", accion: "Ver resultados" }
         : { titulo: "Consulta tus resultados", texto: "Se publican al terminar el propedéutico o el examen.", href: "/aspirante/resultados", accion: "Ir a resultados" },
     dictamen: dictamenPublicado
-      ? { titulo: "Descarga tu dictamen", texto: "Tu dictamen firmado ya está disponible.", href: "/aspirante/formatos/sip-04", accion: "Ver dictamen" }
+      ? { titulo: "Inicia tu inscripción", texto: "Tu dictamen ya está publicado: integra tu expediente de inscripción.", href: "/aspirante/inscripcion", accion: "Ir a inscripción" }
       : { titulo: "Revisa tu dictamen", texto: "Confirma tus datos del SIP-04.", href: "/aspirante/formatos/sip-04", accion: "Revisar SIP-04" },
   };
 

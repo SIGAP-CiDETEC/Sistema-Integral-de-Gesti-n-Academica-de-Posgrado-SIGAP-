@@ -5,7 +5,7 @@ import { useState } from "react";
 import { PageHeader } from "@/components/PageHeader";
 import { usePosgrado } from "@/components/posgrado/PosgradoProvider";
 import { Etiqueta, Regresar } from "@/components/posgrado/ui";
-import { fechaCorta, nombreProfesor, type AspiranteP } from "@/lib/posgrado/datos";
+import { fechaCorta, firmasActa, nombreProfesor, type AspiranteP } from "@/lib/posgrado/datos";
 
 type Pestana = "sin-cita" | "programadas" | "dictaminadas";
 
@@ -74,13 +74,17 @@ export default function Entrevistas() {
                       <Etiqueta tono={tono(a.dictamen.resolucion)}>
                         {a.dictamen.resolucion}
                       </Etiqueta>
+                    ) : a.actaEntrevista ? (
+                      <Etiqueta tono="bg-sky-50 text-sky-800">Acta · {firmasActa(a)} de 3 firmas</Etiqueta>
+                    ) : a.entrevista ? (
+                      <Etiqueta tono="bg-gray-100 text-gray-700">Esperando acta del sínodo</Etiqueta>
                     ) : (
                       <Etiqueta tono="bg-emerald-50 text-emerald-700">Aprobado</Etiqueta>
                     )}
                   </td>
                   <td className="px-5 py-3 text-right">
                     <Link href={`/posgrado/entrevistas/${a.id}`} className="font-medium text-primary hover:underline">
-                      {tab === "sin-cita" ? "Programar" : tab === "programadas" ? "Registrar dictamen" : "Ver"}
+                      {tab === "sin-cita" ? "Programar" : tab === "programadas" ? "Seguimiento" : "Ver"}
                     </Link>
                   </td>
                 </tr>

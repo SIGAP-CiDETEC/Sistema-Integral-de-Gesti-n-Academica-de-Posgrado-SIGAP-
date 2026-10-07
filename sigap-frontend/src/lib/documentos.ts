@@ -1,5 +1,5 @@
 import type { Respuestas } from "./registro-form";
-import type { EtapaId } from "./admision";
+import type { FaseId } from "./fases";
 
 /**
  * Documentos que el aspirante SUBE (escaneados). Los formatos SIP que el sistema
@@ -13,7 +13,7 @@ export type Documento = {
   id: string;
   nombre: string;
   descripcion: string;
-  fase: EtapaId;
+  fase: FaseId;
   /** true = siempre; función = depende de las respuestas del registro */
   requerido: boolean | ((r: Respuestas) => boolean);
   /** Si devuelve false, el documento no aplica y no se muestra */
@@ -121,9 +121,19 @@ export const DOCUMENTOS: Documento[] = [
     maxMB: 5,
     fuente: "REP Art. 11",
   },
+  {
+    id: "foto",
+    nombre: "Fotografía tamaño infantil",
+    descripcion: "Fondo blanco, de frente. Se coloca automáticamente en tu SIP-01.",
+    fase: "inscripcion",
+    requerido: true,
+    formatos: "imagen",
+    maxMB: 2,
+    fuente: "SIP-01",
+  },
 ];
 
-export const documentosDeFase = (fase: EtapaId, r: Respuestas) =>
+export const documentosDeFase = (fase: FaseId, r: Respuestas) =>
   DOCUMENTOS.filter((d) => d.fase === fase && (d.aplica ? d.aplica(r) : true));
 
 export const esRequerido = (d: Documento, r: Respuestas) =>

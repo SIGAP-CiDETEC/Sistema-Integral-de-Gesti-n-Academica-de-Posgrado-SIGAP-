@@ -13,8 +13,10 @@ import {
   type SegundaOportunidad,
   type UteycvP,
 } from "@/lib/posgrado/datos";
+import { guardarCuenta, ID_TEMPORAL_DEMO, type CuentaAlumno } from "@/lib/cuenta-alumno";
 import { siglasUnidad, type Respuestas } from "@/lib/registro-form";
 import { useSesion } from "@/lib/sesion";
+import { useProfesorActual } from "@/lib/profesor";
 
 /**
  * Estado compartido del proceso de admisión para el personal: lo usan el Departamento de Posgrado
@@ -74,7 +76,7 @@ type Api = {
   guardarActa: (acta: Omit<ActaColegio, "registradaEl">, accion: string) => void;
   /** Aviso a uno o varios aspirantes (p. ej. cambio de horario o de entrevista) */
   enviarAviso: (aspirantes: string[], canal: Canal, asunto: string, mensaje: string) => void;
-  /** Registra el trabajo de UTEyCV (dictamen SIP-04). Lo que toca al aspirante de este navegador se refleja en su sesión. */
+  /** Registra el trabajo de UTEyCV (dictamen SIP-04 e inscripción). Lo que toca al aspirante de este navegador se refleja en su sesión. */
   actualizarUteycv: (id: string, patch: Partial<UteycvP>, accion: string) => void;
   /** Deja constancia en bitácora de un cambio general (p. ej. fechas de evaluación) */
   registrarEnBitacora: (accion: string) => void;
@@ -107,10 +109,12 @@ function leerLocal<T>(clave: string): T | null {
 
 export function PosgradoProvider({ children }: { children: React.ReactNode }) {
   const [estado, setEstado] = useState<Estado>(VACIO);
-  const [vivo, setVivo] = useState<{ registro: Respuestas; exp: ExpedienteLocal }>({ registro: REGISTRO_DEMO, exp: {} });
+  const [vivo, setVivo] = useState<{ registro: Respuestas; exp: ExpedienteLocal; cuenta: CuentaAlumno | null }>({ registro: REGISTRO_DEMO, exp: {}, cuenta: null });
   const [cargado, setCargado] = useState(false);
   const { sesion } = useSesion();
-  const usuario = sesion?.nombre ?? "Departamento de Posgrado";
+  const { profesor } = useProfesorActual();
+  // En la sesión de Profesor, la bitácora queda a nombre del profesor con el que se actúa
+  const usuario = (sesion?.rol === "profesor" && profesor ? profesor.nombre : sesion?.nombre) ?? "Departamento de Posgrado";
 
   useEffect(() => {
     // Carga única desde el navegador (no existe en el servidor)
@@ -119,6 +123,7 @@ export function PosgradoProvider({ children }: { children: React.ReactNode }) {
     setVivo({
       registro: leerLocal<Respuestas>("sigap-aspirante-registro") ?? REGISTRO_DEMO,
       exp: leerLocal<ExpedienteLocal>("sigap-expediente") ?? {},
+      cuenta: leerLocal<CuentaAlumno>("sigap-cuenta-alumno"),
     });
     setCargado(true);
   }, []);
@@ -182,6 +187,15 @@ export function PosgradoProvider({ children }: { children: React.ReactNode }) {
           confirmoSip04: !!x.confirmados?.["sip-04"],
           sip04PublicadoEl: x.recibidos?.["sip-04"]?.fecha,
           sip04Archivo: x.recibidos?.["sip-04"]?.nombre,
+          // Inscripción: lo que subió en su sesión y lo que Control Escolar le publicó
+          foto: !!x.documentos?.foto,
+          sip01Firmado: !!x.firmados?.["sip-01"],
+          sip05Firmado: !!x.firmados?.["sip-05"],
+          sip06Firmado: !!x.firmados?.["sip-06"],
+          sip08Firmado: !!x.firmados?.["sip-08"],
+          sip08PublicadoEl: x.recibidos?.["sip-08"]?.fecha,
+          sicep: vivo.cuenta?.numeroRegistro ?? a.uteycv?.sicep,
+          formalizadoEl: vivo.cuenta?.asignadoEl ?? (vivo.cuenta ? a.uteycv?.formalizadoEl : undefined),
         };
       }
       const docs = estado.docs[base.id];
@@ -308,7 +322,8 @@ export function PosgradoProvider({ children }: { children: React.ReactNode }) {
           const recibidos = { ...(exp.recibidos ?? {}) };
           const ahora = new Date().toISOString();
           if (patch.sip04PublicadoEl) recibidos["sip-04"] = { nombre: patch.sip04Archivo ?? "SIP-04_firmado.pdf", fecha: ahora };
-          if (patch.sip04PublicadoEl) {
+          if (patch.sip08PublicadoEl) recibidos["sip-08"] = { nombre: "SIP-08_programa_individual.pdf", fecha: ahora };
+          if (patch.sip04PublicadoEl || patch.sip08PublicadoEl) {
             const nuevo = { ...exp, recibidos: Object.fromEntries(Object.entries(recibidos).map(([k, v]) => [k, { bytes: 240_000, ...v }])) };
             try {
               localStorage.setItem("sigap-expediente", JSON.stringify(nuevo));
@@ -316,6 +331,12 @@ export function PosgradoProvider({ children }: { children: React.ReactNode }) {
               /* ignorar */
             }
             setVivo((v) => ({ ...v, exp: { ...v.exp, recibidos } }));
+          }
+          // RF-30: el número de registro sustituye al ID temporal en la sesión del aspirante de este navegador
+          if (patch.formalizadoEl && patch.sicep) {
+            const cuenta: CuentaAlumno = { numeroRegistro: patch.sicep, idTemporal: ID_TEMPORAL_DEMO, asignadoEl: patch.formalizadoEl };
+            guardarCuenta(cuenta);
+            setVivo((v) => ({ ...v, cuenta }));
           }
         }
         guardar((e) =>

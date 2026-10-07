@@ -3,7 +3,7 @@ import type { Area } from "./config";
 
 /** Qué pasa en cada fase del proceso, desde el punto de vista del aspirante. */
 /** Fases que ve el aspirante: las etapas del proceso más la publicación de resultados (entre evaluación y dictamen). */
-export type FaseId = EtapaId | "resultados";
+export type FaseId = EtapaId | "resultados" | "inscripcion";
 export type Fase = {
   id: FaseId;
   numero: number;
@@ -15,6 +15,8 @@ export type Fase = {
   areasHacen: { area: Area; texto: string }[];
   requisito?: string;
   fuente: string;
+  /** Proceso aparte del de admisión (no aparece en la barra de fases de admisión) */
+  aparte?: boolean;
 };
 
 export const FASES: Fase[] = [
@@ -55,8 +57,8 @@ export const FASES: Fase[] = [
     tuHaces: ["Consultar tu cita y presentarte a tu entrevista"],
     areasHacen: [
       { area: "posgrado", texto: "Programa la cita y el sínodo de 3 profesores (RF-55, RF-56, RN-07)" },
-      { area: "posgrado", texto: "Los profesores del sínodo llenan el acta de entrevista (MTC-EC)" },
-      { area: "posgrado", texto: "Registra el dictamen: Aprobado, Con reservas o Rechazado (RF-12)" },
+      { area: "profesores", texto: "El sínodo llena el acta de entrevista (MTC-EC) y la firman los 3 profesores" },
+      { area: "profesores", texto: "Con las 3 firmas queda el dictamen: Aprobado, Con reservas o Rechazado (RF-12)" },
     ],
     requisito: "Se habilita cuando tu expediente está validado.",
     fuente: "CU-ADM-04, CU-ADM-05 · RF-10 a RF-12, RN-07",
@@ -71,7 +73,7 @@ export const FASES: Fase[] = [
     areasHacen: [
       { area: "posgrado", texto: "Te envía fechas y horarios por correo y en tus notificaciones" },
       { area: "posgrado", texto: "Si eliges examen, te envía recordatorios cada 5 días, un día antes y el mismo día" },
-      { area: "posgrado", texto: "Registra tus calificaciones por área (RF-16)" },
+      { area: "profesores", texto: "El profesor de cada área registra tus calificaciones (RF-16)" },
     ],
     requisito: "Se habilita si tu entrevista fue aprobada.",
     fuente: "CU-ADM-06 · RF-15 a RF-18, RN-08",
@@ -108,6 +110,27 @@ export const FASES: Fase[] = [
     ],
     requisito: "Se habilita al acreditar tu evaluación.",
     fuente: "CU-ADM-07 · RF-22, RF-57 a RF-59",
+  },
+  {
+    id: "inscripcion",
+    numero: 7,
+    titulo: "Inscripción",
+    href: "/aspirante/inscripcion",
+    resumen: "Proceso posterior a tu admisión: integras tu expediente de inscripción y Control Escolar te asigna tu número de registro.",
+    tuHaces: [
+      "Subir tu fotografía",
+      "Llenar, imprimir, firmar y subir tu SIP-01, SIP-05 y SIP-06",
+      "Firmar y subir tu programa individual (SIP-08) cuando tu asesor lo prepare",
+      "Actualizar tu currículum (SIP-02) si cambió algo",
+    ],
+    areasHacen: [
+      { area: "uteycv", texto: "Publica tu programa individual (SIP-08) que prepara tu asesor académico" },
+      { area: "uteycv", texto: "Revisa tu expediente de inscripción y carga las versiones con todas las firmas (RF-27, RF-28)" },
+      { area: "uteycv", texto: "Registra tu número SICEP; con él inicias sesión como alumno (RF-29 a RF-31)" },
+    ],
+    requisito: "Se habilita cuando se publica tu dictamen de admisión (SIP-04) y no te falta ningún documento (RN-11).",
+    fuente: "Módulos 6, 7, 8 y 19 · RF-24 a RF-31, RF-68, RF-69, RN-10 a RN-12",
+    aparte: true,
   },
 ];
 
