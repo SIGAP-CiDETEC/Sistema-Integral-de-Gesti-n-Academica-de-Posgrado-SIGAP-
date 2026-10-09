@@ -1,6 +1,7 @@
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf-lib";
 import type { Valor } from "../formatos";
 import { PROGRAMA_INDIVIDUAL_DEMO } from "../programa-individual";
+import { TABLAS_SIP02, idCantidadSip, idCeldaSip, GRADOS_SIP02 } from "../sip02-secciones";
 
 /**
  * Llena las plantillas oficiales con pdf-lib.
@@ -137,6 +138,36 @@ async function sip02(doc: PDFDocument, d: DatosPdf) {
   const hoja = (i: number): Ctx => ({ page: doc.getPage(i), font, alto: doc.getPage(i).getHeight() });
   const v = (k: string) => s(d.valores[k]);
 
+  const anexos: { titulo: string; valor: string }[] = [];
+  const seguro = (valor: string) => Array.from(valor.normalize("NFC")).map((caracter) => {
+    try { font.encodeText(caracter); return caracter; } catch { return caracter === "\n" ? "\n" : "?"; }
+  }).join("");
+  const envolver = (valor: string, ancho: number, size: number) => {
+    const lineas: string[] = [];
+    for (const parrafo of seguro(valor).split("\n")) {
+      let linea = "";
+      for (const letra of parrafo) {
+        if (font.widthOfTextAtSize(linea + letra, size) > ancho) { lineas.push(linea); linea = ""; }
+        linea += letra;
+      }
+      lineas.push(linea);
+    }
+    return lineas;
+  };
+  // Mantiene una letra legible; si no cabe, conserva el texto completo en el anexo.
+  const celda = (ctx: Ctx, valor: string, x: number, top: number, ancho: number, alto: number, titulo: string) => {
+    if (!valor) return;
+    for (let size = 8; size >= 6; size -= 0.5) {
+      const lineas = envolver(valor, ancho - 6, size);
+      if (lineas.length * (size + 1) <= alto - 2) {
+        lineas.forEach((linea, i) => texto(ctx, linea, x + 3, top + size + 1 + i * (size + 1), ancho - 6, size));
+        return;
+      }
+    }
+    anexos.push({ titulo, valor });
+    texto(ctx, `Ver anexo ${anexos.length}`, x + 3, top + 8, ancho - 6, 6);
+  };
+
   // Hoja 1 · Datos generales
   const c = hoja(0);
   texto(c, v("programa"), 64, 165, 495, 10);
@@ -170,6 +201,10 @@ async function sip02(doc: PDFDocument, d: DatosPdf) {
   texto(c, v("curp"), 265, 420, 112, 8);
   // II. Empleo actual o último
   texto(c, v("empresa"), 152, 472, 413, 8);
+  texto(c, v("empleoDomicilio"), 103, 489, 313, 8);
+  texto(c, v("empleoTelefono"), 471, 489, 94, 8);
+  texto(c, v("jefeNombre"), 172, 535, 245, 8);
+  texto(c, v("jefeTelefono"), 471, 535, 94, 8);
   texto(c, v("cargo"), 102, 512, 194, 8);
   texto(c, v("empleoInicio"), 350, 512, 68, 8);
   texto(c, v("empleoFin"), 471, 512, 94, 8);
@@ -177,18 +212,70 @@ async function sip02(doc: PDFDocument, d: DatosPdf) {
   texto(c, v("licPrograma"), 173, 582, 394, 8);
   texto(c, v("licInstitucion"), 172, 593, 116, 7);
   texto(c, v("licPais"), 484, 593, 83, 7);
+  texto(c, v("licIncorporada"), 355, 593, 83, 7);
   texto(c, v("licIngreso"), 264, 605, 106, 7);
   texto(c, v("licEgreso"), 463, 605, 104, 7);
   texto(c, v("formaTitulacion"), 172, 620, 133, 7);
   texto(c, v("fechaExamen"), 172, 639, 80, 7);
   texto(c, v("licFecha"), 335, 639, 75, 7);
   texto(c, v("cedula"), 492, 639, 75, 7);
-  marca(c, 133.5, 669.5, 7); // Especialidad: no aplica
+  celda(c, v("licTesis"), 410, 607.5, 156, 19, "Título de tesis de licenciatura");
+  if (v("licBeca") === "Sí") anexos.push({ titulo: "Beca durante la licenciatura", valor: v("licBecaInstitucion") || "Sí" });
 
   // Hoja 2 · Maestría y doctorado: no aplica
   const c2 = hoja(1);
-  marca(c2, 131.5, 72, 7);
-  marca(c2, 129.5, 176, 7);
+  GRADOS_SIP02.forEach((grado, i) => {
+    const ctx = i === 0 ? c : c2;
+    const base = [669.5, 72, 176][i];
+    const dato = (campo: string) => v(idCeldaSip(grado.id, 0, campo));
+    if (v(`sip02_${grado.id}_aplica`) !== "Sí") { marca(ctx, i === 0 ? 133.5 : i === 1 ? 131.5 : 129.5, base, 7); return; }
+    celda(ctx, dato("programa"), 170, base - 13, 398, i === 2 ? 24 : 18, `${grado.titulo}: programa`);
+    const institucionTop = i === 0 ? 675.3 : i === 1 ? 78.2 : 187.6;
+    celda(ctx, dato("institucion"), 170, institucionTop, 120, 11, `${grado.titulo}: institución`);
+    celda(ctx, dato("incorporada"), 354, institucionTop, 94, 11, `${grado.titulo}: incorporada a`);
+    celda(ctx, dato("pais"), 486, institucionTop, 82, 11, `${grado.titulo}: país`);
+    const periodoTop = i === 0 ? 686.8 : i === 1 ? 87.8 : 199.1;
+    texto(ctx, dato("inicio"), 265, periodoTop + 8, 107, 7);
+    texto(ctx, dato("fin"), 464, periodoTop + 8, 103, 7);
+    const tesisTop = i === 0 ? 697.6 : i === 1 ? 106.8 : 217.9;
+    celda(ctx, dato("titulacion"), 170, tesisTop, 133, 19, `${grado.titulo}: forma de titulación`);
+    celda(ctx, dato("tesis"), 419, tesisTop, 149, 19, `${grado.titulo}: tesis`);
+    const fechaTop = i === 0 ? 716.4 : i === 1 ? 125.6 : 236.9;
+    texto(ctx, dato("fechaExamen"), 172, fechaTop + 9, 80, 7);
+    texto(ctx, dato("fechaTitulo"), 335, fechaTop + 9, 75, 7);
+    texto(ctx, dato("cedula"), 492, fechaTop + 9, 75, 7);
+    const becaTop = i === 0 ? 742 : i === 1 ? 153 : 265;
+    if (dato("beca")) marca(ctx, dato("beca") === "Sí" ? 194 : 238, becaTop, 7);
+    celda(i === 0 ? c2 : ctx, dato("becaInstitucion"), 439, i === 0 ? 48.4 : becaTop - 9, 129, 11, `${grado.titulo}: institución de la beca`);
+  });
+
+  for (const tabla of TABLAS_SIP02) {
+    const cantidad = Math.min(Number(v(idCantidadSip(tabla.id))) || 0, tabla.max);
+    for (let fila = 0; fila < cantidad; fila++) {
+      const titulo = (columna: number) => `${tabla.titulo}, registro ${fila + 1}: ${tabla.columnas[columna].label}`;
+      const dato = (columna: number) => v(idCeldaSip(tabla.id, fila, tabla.columnas[columna].id));
+      if (tabla.id === "cursos") {
+        const top = 323 + fila * 33.9;
+        celda(c2, dato(0), 170, top, 399, 11, titulo(0));
+        celda(c2, dato(1), 170, top + 11.2, 120, 11, titulo(1));
+        celda(c2, dato(2), 354, top + 11.2, 95, 11, titulo(2));
+        celda(c2, dato(3), 486, top + 11.2, 83, 11, titulo(3));
+        texto(c2, dato(4), 265, top + 30, 107, 7);
+        texto(c2, dato(5), 464, top + 30, 103, 7);
+      } else if (tabla.id === "otrosIdiomas") {
+        const ctx = hoja(2);
+        const top = 506.4 + fila * 13.8;
+        celda(ctx, dato(0), 51.5, top, 86, 13.8, titulo(0));
+        [[161.5, 199.5], [244.5, 282.5], [336, 374], [419, 452.5], [493.5, 531.5]].forEach(([si, no], i) => { if (dato(i + 1)) marca(ctx, dato(i + 1) === "Sí" ? si : no, top + 7, 7); });
+      } else {
+        const segmento = tabla.id === "proyectosDesarrollo" && fila >= 2 ? 1 : 0;
+        const filaLocal = segmento ? fila - 2 : fila;
+        const ctx = hoja(tabla.paginas[segmento]);
+        const top = tabla.tops[segmento] + filaLocal * tabla.altos[segmento];
+        tabla.columnas.forEach((columna, j) => celda(ctx, dato(j), tabla.xs[j], top, tabla.xs[j + 1] - tabla.xs[j], tabla.altos[segmento], titulo(j)));
+      }
+    }
+  }
 
   // Hoja 3 · VIII. Idiomas y IX. Experiencia profesional
   const c3 = hoja(2);
@@ -212,13 +299,36 @@ async function sip02(doc: PDFDocument, d: DatosPdf) {
 
   // Hoja 5 · XIV. Información adicional y fecha
   const c5 = hoja(4);
-  renglones(c5, v("investigacion"), 70, 495, [460, 477, 495, 512, 529, 546, 564], 9);
+  celda(c5, [v("investigacion"), v("sip02Adicional")].filter(Boolean).join("\n\n"), 65.6, 447, 503.6, 120, "XIV. Información adicional relevante");
   centrado(c5, String(d.hoy.getDate()), 344, 399, 646, 10);
   centrado(c5, MESES[d.hoy.getMonth()], 416, 488, 646, 10);
   centrado(c5, String(d.hoy.getFullYear()), 509, 564, 646, 10);
 
   // Hoja 6 · Aviso de privacidad: ACEPTO
   marca(hoja(5), 290.5, 311.5, 10);
+  if (anexos.length) {
+    let ctx: Ctx;
+    let top = 0;
+    const nuevaHoja = () => {
+      const page = doc.addPage([612, 792]);
+      ctx = { page, font, alto: 792 };
+      texto(ctx, "SIP-02 | Anexo de información complementaria", 48, 45, 516, 13);
+      texto(ctx, [v("nombre"), v("apellidoPaterno"), v("apellidoMaterno")].filter(Boolean).join(" "), 48, 65, 516, 10);
+      top = 95;
+    };
+    nuevaHoja();
+    anexos.forEach((anexo, i) => {
+      for (const linea of envolver(`${i + 1}. ${anexo.titulo}`, 516, 10)) {
+        if (top > 730) nuevaHoja();
+        texto(ctx, linea, 48, top, 516, 10); top += 14;
+      }
+      for (const linea of envolver(anexo.valor, 516, 10)) {
+        if (top > 730) nuevaHoja();
+        texto(ctx, linea, 48, top, 516, 10); top += 14;
+      }
+      top += 16;
+    });
+  }
 }
 
 // ---------------- SIP-01 · Solicitud de inscripción ----------------

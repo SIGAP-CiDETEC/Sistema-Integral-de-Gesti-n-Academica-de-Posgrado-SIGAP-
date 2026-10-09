@@ -1,4 +1,5 @@
 import { PROGRAMA } from "./config";
+import { TABLAS_SIP02, idCantidadSip, idCeldaSip, GRADOS_SIP02, CAMPOS_GRADO_SIP02 } from "./sip02-secciones";
 
 /**
  * Definición del formulario de registro inicial (CU-ADM-01 / RF-01).
@@ -17,6 +18,10 @@ export type Pregunta = {
   label: string;
   tipo: TipoCampo;
   requerido?: boolean;
+  ordenable?: boolean;
+  maxOpciones?: number;
+  minOpciones?: number;
+  maxLength?: number;
   opciones?: string[];
   /** Para tipo "fijo": valor que no puede cambiar el aspirante */
   valorFijo?: string;
@@ -142,6 +147,7 @@ export const SECCIONES: Seccion[] = [
       { id: "apellidoPaterno", label: "Apellido paterno", tipo: "text", requerido: true },
       { id: "apellidoMaterno", label: "Apellido materno", tipo: "text", requerido: true },
       { id: "nombre", label: "Nombre(s)", tipo: "text", requerido: true },
+      { id: "genero", label: "Género", tipo: "radio", requerido: true, opciones: ["Masculino", "Femenino"] },
       {
         id: "curp",
         label: "CURP",
@@ -217,6 +223,7 @@ export const SECCIONES: Seccion[] = [
     id: "profesional",
     titulo: "Experiencia profesional",
     preguntas: [
+      { id: "tieneExperienciaProfesional", label: "¿Tienes experiencia profesional?", tipo: "radio", requerido: true, opciones: ["Sí", "No"], ancho: "completo" },
       { id: "empleos", label: "Escribe un poco sobre los empleos que has tenido", ayuda: "Tipo de organización, área, puestos, responsabilidades y tiempo en cada uno.", tipo: "textarea", requerido: true, ancho: "completo" },
       { id: "ultimoPuesto", label: "¿Cuál ha sido el último puesto desempeñado?", tipo: "text", requerido: true, ancho: "completo" },
       { id: "habilidadesTrabajo", label: "¿Qué habilidades específicas has desarrollado en tus trabajos que consideras relevantes para este programa?", tipo: "textarea", requerido: true, ancho: "completo" },
@@ -246,7 +253,7 @@ export const SECCIONES: Seccion[] = [
       },
       { id: "comoTeEnterasteOtra", label: "¿Cuál?", tipo: "text", requerido: true, mostrarSi: (r) => r.comoTeEnteraste === "Otra" },
       { id: "motivoPrograma", label: "¿Qué te motivó a elegir este programa en particular?", tipo: "textarea", requerido: true, ancho: "completo" },
-      { id: "areasInteres", label: "¿Cuál o cuáles son las áreas de investigación que despiertan tu interés?", tipo: "checkbox", requerido: true, opciones: AREAS_INVESTIGACION, ancho: "completo" },
+      { id: "areasInteres", label: "¿Cuál o cuáles son las áreas de investigación que despiertan tu interés?", tipo: "checkbox", requerido: true, ordenable: true, maxOpciones: 3, ayuda: "Selecciona hasta 3 áreas y ordénalas de mayor a menor interés usando Subir y Bajar. La primera será tu prioridad.", opciones: AREAS_INVESTIGACION, ancho: "completo" },
     ],
   },
   {
@@ -285,7 +292,7 @@ export const SECCIONES: Seccion[] = [
     id: "familiar",
     titulo: "Situación personal y familiar",
     preguntas: [
-      { id: "estadoCivil", label: "¿Cuál es tu estado civil?", tipo: "text", requerido: true },
+      { id: "estadoCivil", label: "¿Cuál es tu estado civil?", tipo: "radio", requerido: true, opciones: ["Soltero(a)", "Casado(a)", "Divorciado(a)", "Unión libre", "Viudo(a)"] },
       { id: "hijos", label: "¿Tienes hijos? ¿Cuántos?", tipo: "text", requerido: true },
       { id: "dependiente", label: "¿Tienes algún dependiente económico?", tipo: "text", requerido: true, ancho: "completo" },
       { id: "opinionFamilia", label: "¿Qué piensa tu familia de que ingreses al posgrado?", tipo: "textarea", requerido: true, ancho: "completo" },
@@ -294,7 +301,79 @@ export const SECCIONES: Seccion[] = [
   },
 ];
 
+// Información adicional necesaria para entregar el SIP-02 ya llenado.
+const validarFechaSip = (v: string) => {
+  const partes = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(v);
+  if (!partes) return "Usa el formato dd/mm/aaaa.";
+  const [, dia, mes, anio] = partes;
+  const fecha = new Date(Number(anio), Number(mes) - 1, Number(dia));
+  return fecha.getFullYear() === Number(anio) && fecha.getMonth() === Number(mes) - 1 && fecha.getDate() === Number(dia) ? null : "Ingresa una fecha válida.";
+};
+const fechaSip = (id: string, label: string, mostrarSi?: Pregunta["mostrarSi"]): Pregunta => ({ id, label, tipo: "text", requerido: true, placeholder: "dd/mm/aaaa", validar: validarFechaSip, mostrarSi });
+SECCIONES.push({
+  id: "curriculum",
+  titulo: "Datos para tu currículum SIP-02",
+  descripcion: "Tu nombre, CURP, datos de contacto, formación y experiencia ya se toman de las respuestas anteriores. Completa aquí los datos adicionales para recibir el formato lleno.",
+  preguntas: [
+    { id: "rfc", label: "RFC con homoclave", tipo: "text", requerido: true, maxLength: 13, validar: (v) => /^[A-ZÑ&]{4}\d{6}[A-Z0-9]{3}$/.test(v.trim().toUpperCase()) ? null : "Ingresa un RFC de 13 caracteres, incluida la homoclave." },
+    { id: "nacionalidad", label: "Nacionalidad", tipo: "text", requerido: true },
+    { id: "lugarNacimiento", label: "Estado y país de nacimiento", tipo: "text", requerido: true },
+    { id: "calle", label: "Calle del domicilio", tipo: "text", requerido: true },
+    { id: "numExt", label: "Número exterior", tipo: "text", requerido: true, ayuda: "Si no tiene número, escribe S/N." },
+    { id: "numInt", label: "Número interior (si aplica)", tipo: "text" },
+    { id: "colonia", label: "Colonia", tipo: "text", requerido: true },
+    { id: "alcaldia", label: "Alcaldía o municipio", tipo: "text", requerido: true },
+    { id: "cp", label: "Código postal", tipo: "text", requerido: true, maxLength: 5, validar: (v) => /^\d{5}$/.test(v) ? null : "Ingresa 5 dígitos." },
+    { id: "estadoDom", label: "Estado del domicilio", tipo: "text", requerido: true },
+    { id: "pais", label: "País del domicilio", tipo: "text", requerido: true },
+    { id: "telCasa", label: "Teléfono de casa (opcional)", tipo: "tel", validar: validarTelefono },
+    { id: "correo2", label: "Correo electrónico alternativo (opcional)", tipo: "email", validar: validarEmail },
+    { id: "empresa", label: "Empresa del empleo actual o último", tipo: "text", requerido: true, mostrarSi: (r) => r.tieneExperienciaProfesional === "Sí" },
+    fechaSip("empleoInicio", "Fecha de inicio del empleo", (r) => r.tieneExperienciaProfesional === "Sí"),
+    { id: "empleoVigente", label: "¿Continúas en ese empleo?", tipo: "radio", requerido: true, opciones: ["Sí", "No"], mostrarSi: (r) => r.tieneExperienciaProfesional === "Sí" },
+    fechaSip("empleoFin", "Fecha de término del empleo", (r) => r.tieneExperienciaProfesional === "Sí" && r.empleoVigente === "No"),
+    { id: "experiencia", label: "Resumen de las principales funciones del empleo para el SIP-02", tipo: "textarea", requerido: true, maxLength: 160, ayuda: "Hasta 160 caracteres para el espacio del formato oficial.", ancho: "completo", mostrarSi: (r) => r.tieneExperienciaProfesional === "Sí" },
+    { id: "licPais", label: "País de la institución de licenciatura", tipo: "text", requerido: true },
+    fechaSip("licIngreso", "Fecha de ingreso a la licenciatura"),
+    fechaSip("licEgreso", "Fecha de egreso de la licenciatura"),
+    fechaSip("licFecha", "Fecha de expedición del título", (r) => r.titulado === "Sí"),
+    { ...fechaSip("fechaExamen", "Fecha de examen profesional (si aplica)", (r) => r.titulado === "Sí"), requerido: false },
+    { id: "cedula", label: "Número de cédula profesional (si ya la tienes)", tipo: "text", mostrarSi: (r) => r.titulado === "Sí" },
+    { id: "inglesHabilidades", label: "Habilidades de inglés acreditadas", tipo: "checkbox", requerido: true, minOpciones: 2, opciones: ["Comprensión de lectura", "Comprensión auditiva", "Expresión escrita", "Expresión oral"], ayuda: "Selecciona al menos dos habilidades acreditadas en tu constancia.", ancho: "completo" },
+    { id: "inglesAval", label: "¿Tu constancia tiene aval de la DFLE o es de CELEX/CENLEX?", tipo: "radio", requerido: true, opciones: ["Sí", "No"], ancho: "completo" },
+  ],
+});
+
 // ---------- Utilidades ----------
+SECCIONES.push({
+  id: "sip02EmpleoFormacion",
+  titulo: "SIP-02: empleo y formación académica adicional",
+  preguntas: [
+    ...["empleoDomicilio", "empleoTelefono", "jefeNombre", "jefeTelefono"].map((id, i): Pregunta => ({ id, label: ["Domicilio de la empresa", "Teléfono de la empresa", "Nombre del jefe inmediato", "Teléfono del jefe inmediato"][i], tipo: "text", mostrarSi: (r) => r.tieneExperienciaProfesional === "Sí" })),
+    { id: "licIncorporada", label: "Licenciatura: institución a la que está incorporada (si aplica)", tipo: "text" },
+    { id: "licTesis", label: "Título de la tesis de licenciatura (si aplica)", tipo: "text" },
+    { id: "licBeca", label: "¿Obtuviste beca durante la licenciatura? (opcional)", tipo: "radio", opciones: ["Sí", "No"] },
+    { id: "licBecaInstitucion", label: "Institución que otorgó la beca de licenciatura", tipo: "text", mostrarSi: (r) => r.licBeca === "Sí" },
+    ...GRADOS_SIP02.flatMap((grado): Pregunta[] => [
+      { id: `sip02_${grado.id}_aplica`, label: `¿Cursaste una ${grado.titulo.toLowerCase()}?`, tipo: "radio", opciones: ["Sí", "No"], ayuda: "Opcional. Selecciona No si no aplica." },
+      ...CAMPOS_GRADO_SIP02.map((c): Pregunta => ({ id: idCeldaSip(grado.id, 0, c.id), label: `${grado.titulo}: ${c.label}`, tipo: c.opciones ? "radio" : "text", opciones: c.opciones, maxLength: c.maxLength, mostrarSi: (r) => r[`sip02_${grado.id}_aplica`] === "Sí", validar: c.label.includes("(dd/mm/aaaa)") ? validarFechaSip : undefined })),
+    ]),
+  ],
+});
+SECCIONES.push(...TABLAS_SIP02.map((tabla): Seccion => ({
+  id: `sip02_${tabla.id}`,
+  titulo: tabla.titulo,
+  descripcion: `Sección opcional. Selecciona 0 si no tienes registros. Puedes capturar hasta ${tabla.max}, como en el formato oficial.`,
+  preguntas: [
+    { id: idCantidadSip(tabla.id), label: "¿Cuántos registros deseas incluir?", tipo: "select", opciones: Array.from({ length: tabla.max + 1 }, (_, i) => String(i)), ancho: "completo" },
+    ...Array.from({ length: tabla.max }, (_, fila) => tabla.columnas.map((c): Pregunta => ({
+      id: idCeldaSip(tabla.id, fila, c.id), label: `Registro ${fila + 1}: ${c.label}`, tipo: c.opciones ? "radio" : "text", opciones: c.opciones,
+      maxLength: c.maxLength, mostrarSi: (r) => Number(r[idCantidadSip(tabla.id)] ?? 0) > fila,
+      validar: c.label.includes("(dd/mm/aaaa)") ? validarFechaSip : c.id === "anio" ? (v) => /^\d{4}$/.test(v) ? null : "Ingresa el año con 4 dígitos." : undefined,
+    }))).flat(),
+  ],
+})));
+SECCIONES.push({ id: "sip02Adicional", titulo: "XIV. Información adicional relevante", descripcion: "Opcional. Agrega información que no aparezca en las secciones anteriores.", preguntas: [{ id: "sip02Adicional", label: "Información adicional relevante para tu currículum", tipo: "textarea", ancho: "completo" }] });
 
 /** Respuestas que siempre llevan el mismo valor (campos tipo "fijo"). */
 export const VALORES_FIJOS: Respuestas = Object.fromEntries(
@@ -303,7 +382,10 @@ export const VALORES_FIJOS: Respuestas = Object.fromEntries(
     .map((p) => [p.id, p.valorFijo as string]),
 );
 
-export const esVisible = (p: Pregunta, r: Respuestas) => (p.mostrarSi ? p.mostrarSi(r) : true);
+export const esVisible = (p: Pregunta, r: Respuestas) => {
+  if (["empleos", "ultimoPuesto", "habilidadesTrabajo", "proyectoProfesional"].includes(p.id) && r.tieneExperienciaProfesional !== "Sí") return false;
+  return p.mostrarSi ? p.mostrarSi(r) : true;
+};
 
 /** Devuelve { idPregunta: mensaje } con los errores de una sección. */
 export function validarSeccion(seccion: Seccion, r: Respuestas): Record<string, string> {
@@ -311,6 +393,18 @@ export function validarSeccion(seccion: Seccion, r: Respuestas): Record<string, 
   for (const p of seccion.preguntas) {
     if (!esVisible(p, r) || p.tipo === "fijo") continue;
     const valor = r[p.id];
+    if (Array.isArray(valor) && p.minOpciones && valor.length < p.minOpciones) {
+      errores[p.id] = `Selecciona al menos ${p.minOpciones} opciones.`;
+      continue;
+    }
+    if (typeof valor === "string" && p.maxLength && valor.length > p.maxLength) {
+      errores[p.id] = `Usa como máximo ${p.maxLength} caracteres.`;
+      continue;
+    }
+    if (Array.isArray(valor) && p.maxOpciones && valor.length > p.maxOpciones) {
+      errores[p.id] = `Selecciona como máximo ${p.maxOpciones} opciones.`;
+      continue;
+    }
     const vacio = Array.isArray(valor) ? valor.length === 0 : !valor || !String(valor).trim();
     if (vacio) {
       if (p.requerido) errores[p.id] = p.tipo === "checkbox" ? "Selecciona al menos una opción." : "Este campo es obligatorio.";

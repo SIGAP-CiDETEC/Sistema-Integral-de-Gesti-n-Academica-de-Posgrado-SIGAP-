@@ -59,8 +59,8 @@ export function FormatoEditor({ clave }: { clave: string }) {
   const datosCompletos = estado.faltan === 0;
 
   // La vista previa solo es válida para los datos con que se generó
-  const datosActuales = JSON.stringify([exp.capturas, foto]);
-  const pdfUrl = pdf?.datos === datosActuales ? pdf.url : null;
+  const datosActuales = JSON.stringify([ctx.r, exp.capturas, foto]);
+  const pdfUrl = pdf?.datos === datosActuales ? pdf.url : exp.borradores[f.clave]?.dataUrl ?? null;
 
   // Liberar la URL del PDF anterior
   useEffect(() => () => void (pdf && URL.revokeObjectURL(pdf.url)), [pdf]);
@@ -146,7 +146,7 @@ export function FormatoEditor({ clave }: { clave: string }) {
                 <h2 className="font-semibold text-gray-900">{titulo}</h2>
                 <div className="mt-4 grid gap-4 sm:grid-cols-2">
                   {lista.map((c) => (
-                    <CampoInput key={c.id} campo={c} valor={resolver(c, ctx)} auto={exp.capturas[c.id] === undefined && !esVacio(c.auto?.(ctx))} onChange={(v) => exp.capturar(c.id, v)} />
+                    <CampoInput key={c.id} campo={c} valor={resolver(c, ctx)} auto={exp.capturas[c.id] === undefined && !esVacio(resolver(c, ctx))} onChange={(v) => exp.capturar(c.id, v)} />
                   ))}
                 </div>
               </section>

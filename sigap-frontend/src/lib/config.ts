@@ -74,10 +74,12 @@ export const convocatoriaActual: Convocatoria = {
   inicio: "12 ene",
   cierre: "27 feb 2026",
   requisitos: [
-    "Título y cédula profesional",
-    "Certificado de estudios y CURP",
-    "Constancia de inglés (la valida el Departamento de Posgrado)",
-    "Promedio mínimo conforme al programa",
+    "Título (deseable)",
+    "CURP (no mayor a 3 meses)",
+    "INE",
+    "Acta de nacimiento",
+    "Certificado total de estudios",
+    "Inglés B1 (2 habilidades)",
   ],
   fechasClave: [
     { etiqueta: "Documentos", fecha: "3 mar" },

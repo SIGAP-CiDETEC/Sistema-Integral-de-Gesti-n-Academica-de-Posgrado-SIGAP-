@@ -11,7 +11,7 @@ import type { IdConvocatoria } from "./config";
  */
 
 export type Calendario = { imagen: string; nombre: string; subidoEl?: string; subidoPor?: string };
-export type TarjetaInicio = { id: string; titulo: string; texto: string; accion: string; href: string };
+export type TarjetaInicio = { id: string; titulo: string; texto: string; accion: string; href: string; hrefReferentes?: string };
 export type AvisoInicio = { visible: boolean; titulo: string; texto: string };
 export type InicioAspirante = { aviso: AvisoInicio; tarjetas: TarjetaInicio[]; actualizadoEl?: string; actualizadoPor?: string };
 
@@ -36,7 +36,7 @@ export const INICIO_ASPIRANTE_DEFECTO: InicioAspirante = {
   tarjetas: [
     { id: "calendario", titulo: "Calendario IPN", texto: "Periodos escolares, registro, exámenes y resultados del IPN.", accion: "Consultar calendario", href: "https://www.ipn.mx/calendario-academico.html" },
     { id: "convocatorias", titulo: "Convocatorias", texto: "Convocatorias vigentes, requisitos y fechas importantes.", accion: "Ver convocatorias", href: "/#convocatoria" },
-    { id: "ingles", titulo: "Lugares para liberar el inglés", texto: "Centros autorizados para acreditar o liberar el inglés.", accion: "Ver centros", href: "#" },
+    { id: "ingles", titulo: "Dominio del idioma inglés", texto: "Consulta los centros autorizados y los referentes para acreditar el dominio del idioma inglés.", accion: "Ver centros", href: "#", hrefReferentes: "#" },
   ],
 };
 

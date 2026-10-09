@@ -5,7 +5,9 @@ import { Logos } from "@/components/Logos";
 /** Registro exitoso: muestra el ID temporal generado (RF-02). */
 export default async function RegistroExito({ searchParams }: PageProps<"/registro/exito">) {
   const { id, correo } = await searchParams;
-  const idTemporal = typeof id === "string" ? id : "ASP-2026-001";
+  const idTemporal = typeof id === "string"
+    ? id.replace(/^ASP-\d{4}-/, "MTC-A27").replace(/^(MTC-[AB]\d{2})-(\d{3})$/, "$1$2")
+    : "MTC-A27001";
   const email = typeof correo === "string" && correo ? correo : null;
 
   return (

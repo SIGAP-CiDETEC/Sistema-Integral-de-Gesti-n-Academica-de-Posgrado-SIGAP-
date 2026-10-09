@@ -64,7 +64,7 @@ export function InicioPublico({ forzarCerrada }: { forzarCerrada: boolean }) {
           <div className="flex flex-wrap items-end justify-between gap-2">
             <div>
               <h2 className="text-xl font-semibold text-gray-900">Convocatorias de admisión</h2>
-              <p className="mt-1 text-sm text-gray-500">{convocatoriaActual.programas}</p>
+              <p className="mt-2 inline-block rounded-lg bg-primary px-4 py-2 text-xl font-semibold text-white sm:text-2xl">{convocatoriaActual.programas}</p>
             </div>
             <p className="text-xs text-gray-500">Hay dos ingresos al año: A (enero – junio) y B (agosto – diciembre).</p>
           </div>
@@ -93,7 +93,7 @@ export function InicioPublico({ forzarCerrada }: { forzarCerrada: boolean }) {
 
                 <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
                   <div>
-                    <dt className="text-xs font-semibold uppercase tracking-wide text-gray-500">Periodo de ingreso</dt>
+                    <dt className="text-xs font-semibold uppercase tracking-wide text-gray-500">Semestre de ingreso</dt>
                     <dd className="mt-0.5 font-medium text-gray-900">{conv.periodo}</dd>
                   </div>
                   <div>
@@ -135,7 +135,7 @@ export function InicioPublico({ forzarCerrada }: { forzarCerrada: boolean }) {
                       href={`/registro?convocatoria=${conv.id}`}
                       className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white hover:bg-primary-hover"
                     >
-                      Registrarme a la convocatoria {conv.id} <ArrowRight size={16} />
+                      Registro al proceso {conv.id}27 <ArrowRight size={16} />
                     </Link>
                   ) : (
                     <button
@@ -146,15 +146,18 @@ export function InicioPublico({ forzarCerrada }: { forzarCerrada: boolean }) {
                     </button>
                   )}
                   <p className="mt-2 text-center text-xs text-gray-500">
-                    {conv.activa ? "Al terminar recibirás tu ID temporal (ej. ASP-2026-001)." : `El registro se abre el ${conv.inicio}.`}
+                    {conv.activa ? `Al terminar recibirás tu ID temporal (ej. MTC-${conv.id}27001).` : `El registro se abre el ${conv.inicio}.`}
                   </p>
+                  {conv.activa && conv.id === "A" && (
+                    <p className="mt-1 text-center text-xs text-gray-500">El registro se cierra el 30 octubre.</p>
+                  )}
                 </div>
               </article>
             ))}
           </div>
 
           <div className="mt-5 border-t border-gray-100 pt-4">
-            <p className="text-sm font-semibold text-gray-900">Requisitos (ambas convocatorias)</p>
+            <p className="text-sm font-semibold text-gray-900">Requisitos</p>
             <ul className="mt-2 grid gap-1.5 text-sm text-gray-700 sm:grid-cols-2">
               {convocatoriaActual.requisitos.map((r) => (
                 <li key={r} className="flex items-start gap-2">
@@ -177,14 +180,21 @@ export function InicioPublico({ forzarCerrada }: { forzarCerrada: boolean }) {
                 key={r.id}
                 className="flex flex-col rounded-xl border border-gray-200 bg-white p-5"
               >
-                <h3 className="font-semibold text-gray-900">{r.titulo}</h3>
-                <p className="mt-1.5 flex-1 text-sm text-gray-600">{r.texto}</p>
+                <h3 className="font-semibold text-gray-900">{r.id === "ingles" ? "Dominio del idioma inglés" : r.titulo}</h3>
+                <p className="mt-1.5 flex-1 text-sm text-gray-600">{r.id === "ingles" ? "Consulta los centros autorizados y los referentes para acreditar el dominio del idioma inglés." : r.texto}</p>
+                <div className="mt-4 flex flex-wrap gap-2">
                 <a
                   href={r.href}
-                  className="mt-4 self-start rounded-full bg-indigo-50 px-3 py-1 text-xs font-medium text-primary hover:bg-indigo-100"
+                  className="self-start rounded-full bg-indigo-50 px-3 py-1 text-xs font-medium text-primary hover:bg-indigo-100"
                 >
-                  {r.accion}
+                  {r.id === "ingles" ? "Ver centros" : r.accion}
                 </a>
+                {r.id === "ingles" && (
+                  <a href={r.hrefReferentes ?? "#"} className="self-start rounded-full bg-indigo-50 px-3 py-1 text-xs font-medium text-primary hover:bg-indigo-100">
+                    Referentes
+                  </a>
+                )}
+                </div>
               </article>
             ))}
           </div>

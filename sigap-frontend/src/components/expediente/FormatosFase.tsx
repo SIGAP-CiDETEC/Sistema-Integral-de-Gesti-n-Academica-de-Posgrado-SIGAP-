@@ -34,7 +34,7 @@ export function FormatosFase({ fase }: { fase: FaseId }) {
 }
 
 function TarjetaFormato({ f }: { f: Formato }) {
-  const { ctx, firmados, confirmados, recibidos, cargado } = useExpediente();
+  const { ctx, firmados, confirmados, recibidos, cargado, borradores } = useExpediente();
   const bloqueo = useBloqueoFormato(f.clave);
   const e0 = estadoFormato(f, ctx, firmados[f.clave], { confirmado: confirmados[f.clave], recibido: recibidos[f.clave] });
   const e = bloqueo && !e0.completo ? { ...e0, etiqueta: "Bloqueado", tono: "gris" as const } : e0;
@@ -52,6 +52,7 @@ function TarjetaFormato({ f }: { f: Formato }) {
           )}
         </div>
         <p className="mt-1.5 flex-1 text-sm text-gray-600">{f.descripcion}</p>
+        {borradores[f.clave] && <p className="mt-2 text-xs text-primary">Borrador generado al enviar tu registro. Revisa los datos y completa lo que falte antes de firmarlo.</p>}
         {editable && e.autollenados > 0 && (
           <p className="mt-2 flex items-center gap-1.5 text-xs text-emerald-700">
             <Sparkles size={13} /> {e.autollenados} datos llenados automáticamente

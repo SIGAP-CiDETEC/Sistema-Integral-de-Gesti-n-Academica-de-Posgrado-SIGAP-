@@ -29,7 +29,7 @@ function destinoSimulado(usuario: string, password: string): { ruta: string } | 
     return { ruta: `/${cuentaPersonal.rol}` };
   }
   const cuenta = leerCuenta();
-  if (u.startsWith("ASP-")) {
+  if (u.startsWith("ASP-") || /^MTC-[AB]\d{2}-?\d{3}$/.test(u)) {
     // RF-30 / RN-12: al concluir la inscripción, el número de registro sustituye al ID temporal
     if (cuenta) return { error: `Tu ID temporal ya no es válido. Ahora inicias sesión con tu número de registro ${cuenta.numeroRegistro}.` };
     return { ruta: "/aspirante" };
@@ -96,7 +96,7 @@ export default function LoginPage({ searchParams }: PageProps<"/login">) {
                   setUsuario(e.target.value);
                   setError("");
                 }}
-                placeholder="correo@ipn.mx, ASP-2026-001 o número de registro"
+                placeholder="correo@ipn.mx, MTC-A27001 o número de registro"
                 autoComplete="username"
                 className="w-full py-2.5 text-sm outline-none"
               />

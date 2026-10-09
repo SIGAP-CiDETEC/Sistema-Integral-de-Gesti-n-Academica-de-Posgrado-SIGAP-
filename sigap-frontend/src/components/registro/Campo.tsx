@@ -37,6 +37,7 @@ export function Campo({ pregunta: p, valor, error, onChange }: Props) {
         <textarea
           id={p.id}
           rows={3}
+          maxLength={p.maxLength}
           value={texto}
           onChange={(e) => onChange(e.target.value)}
           placeholder={p.placeholder ?? "Escribe tu respuesta"}
@@ -93,6 +94,7 @@ export function Campo({ pregunta: p, valor, error, onChange }: Props) {
       break;
     case "checkbox":
       control = (
+        <div>
         <div className="grid gap-2 sm:grid-cols-2">
           {p.opciones?.map((o) => {
             const activo = lista.includes(o);
@@ -106,6 +108,7 @@ export function Campo({ pregunta: p, valor, error, onChange }: Props) {
                 <input
                   type="checkbox"
                   checked={activo}
+                  disabled={!activo && !!p.maxOpciones && lista.length >= p.maxOpciones}
                   onChange={() => onChange(activo ? lista.filter((x) => x !== o) : [...lista, o])}
                   className="accent-[var(--color-primary)]"
                 />
@@ -113,6 +116,33 @@ export function Campo({ pregunta: p, valor, error, onChange }: Props) {
               </label>
             );
           })}
+        </div>
+        {p.ordenable && lista.length > 0 && (
+          <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-3">
+            <p className="mb-2 text-sm font-medium text-gray-900">Orden de interés (de mayor a menor)</p>
+            <ol className="space-y-2" aria-live="polite">
+              {lista.map((area, indice) => (
+                <li key={area} className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-white p-2 text-sm">
+                  <span>{indice + 1}. {area}</span>
+                  <div className="flex gap-2">
+                    {[-1, 1].map((direccion) => (
+                      <button key={direccion} type="button" disabled={indice + direccion < 0 || indice + direccion >= lista.length}
+                        aria-label={`${direccion === -1 ? "Subir" : "Bajar"} ${area}`}
+                        className="rounded border border-gray-300 px-2 py-1 text-primary hover:bg-indigo-50 disabled:cursor-not-allowed disabled:opacity-40"
+                        onClick={() => {
+                          const orden = [...lista];
+                          [orden[indice], orden[indice + direccion]] = [orden[indice + direccion], orden[indice]];
+                          onChange(orden);
+                        }}>
+                        {direccion === -1 ? "Subir" : "Bajar"}
+                      </button>
+                    ))}
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </div>
+        )}
         </div>
       );
       break;
@@ -123,9 +153,9 @@ export function Campo({ pregunta: p, valor, error, onChange }: Props) {
           type={p.tipo === "email" ? "email" : p.tipo === "tel" ? "tel" : "text"}
           inputMode={p.tipo === "tel" ? "numeric" : undefined}
           value={texto}
-          onChange={(e) => onChange(p.id === "curp" ? e.target.value.toUpperCase() : e.target.value)}
+          onChange={(e) => onChange(p.id === "curp" || p.id === "rfc" ? e.target.value.toUpperCase() : e.target.value)}
           placeholder={p.placeholder ?? "Escribe tu respuesta"}
-          maxLength={p.id === "curp" ? 18 : undefined}
+          maxLength={p.id === "curp" ? 18 : p.maxLength}
           aria-invalid={!!error}
           aria-describedby={error ? idError : undefined}
           className={`${base} ${borde}`}

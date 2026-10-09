@@ -4,10 +4,13 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { AlertTriangle, ArrowLeft, ArrowRight, Check, CloudCheck, Pencil, RotateCcw, ShieldCheck, Wand2 } from "lucide-react";
-import { REGISTRO_DEMO } from "@/lib/aspirante-datos";
+import { CAPTURAS_DEMO, REGISTRO_DEMO } from "@/lib/aspirante-datos";
 import type { IdConvocatoria } from "@/lib/config";
 import { useConvocatorias } from "@/lib/convocatoria";
 import { Campo } from "./Campo";
+import { generarPdfRegistro } from "@/lib/pdf/registro";
+import { generarBytesFormato, pdfDataUrl } from "@/lib/pdf/cliente";
+import { formatoPorClave } from "@/lib/formatos";
 import {
   CURPS_REGISTRADAS,
   SECCIONES,
@@ -53,6 +56,8 @@ export function RegistroWizard({ convocatoria }: { convocatoria?: IdConvocatoria
   const [aceptaPrivacidad, setAceptaPrivacidad] = useState(false);
   const [errorPrivacidad, setErrorPrivacidad] = useState(false);
   const [cargado, setCargado] = useState(false);
+  const [enviando, setEnviando] = useState(false);
+  const [errorEnvio, setErrorEnvio] = useState("");
   const [guardadoEn, setGuardadoEn] = useState<string | null>(null);
   const tarjetaRef = useRef<HTMLDivElement>(null);
 
@@ -129,7 +134,8 @@ export function RegistroWizard({ convocatoria }: { convocatoria?: IdConvocatoria
     irA(paso + 1);
   };
 
-  const enviar = () => {
+  const enviar = async () => {
+    if (enviando) return;
     // Verifica todas las secciones antes de enviar
     const pendiente = SECCIONES.findIndex((s) => Object.keys(validarSeccion(s, respuestas)).length > 0);
     if (pendiente !== -1) {
@@ -142,21 +148,31 @@ export function RegistroWizard({ convocatoria }: { convocatoria?: IdConvocatoria
       return;
     }
     // CASCARÓN: el ID lo generará el backend (RF-02)
-    const id = `ASP-2026-${String(Math.floor(Math.random() * 900) + 100)}`;
+    const ciclo = String(respuestas.semestre).split(" ")[0];
+    const id = `MTC-${ciclo}${String(Math.floor(Math.random() * 900) + 100)}`;
+    setEnviando(true);
+    setErrorEnvio("");
     try {
+      const respuestasEnvio = Object.fromEntries(SECCIONES.flatMap((s) => s.preguntas).filter((p) => esVisible(p, respuestas)).map((p) => [p.id, respuestas[p.id] ?? p.valorFijo ?? ""]));
+      const pdf = await generarPdfRegistro(respuestasEnvio, id);
+      const sip02 = await generarBytesFormato(formatoPorClave("sip-02")!, { r: respuestasEnvio, c: {}, hoy: new Date() });
+      const borrador = { nombre: `SIP-02_${id}.pdf`, bytes: sip02.length, fecha: new Date().toISOString(), dataUrl: await pdfDataUrl(sip02) };
+      localStorage.setItem("sigap-registro-pdf", JSON.stringify({ folio: id, pdf }));
       localStorage.removeItem(STORAGE_KEY);
       // Las respuestas alimentan los formatos del expediente (SIP-02 y SIP-04)
-      localStorage.setItem("sigap-aspirante-registro", JSON.stringify(respuestas));
-      localStorage.removeItem("sigap-expediente");
+      localStorage.setItem("sigap-aspirante-registro", JSON.stringify(respuestasEnvio));
+      localStorage.setItem("sigap-expediente", JSON.stringify({ borradores: { "sip-02": borrador } }));
     } catch {
-      /* ignorar */
+      setErrorEnvio("No se pudo generar o guardar el PDF. Reintenta; si el almacenamiento está lleno, libera espacio del navegador.");
+      setEnviando(false);
+      return;
     }
     router.push(`/registro/exito?id=${id}&correo=${encodeURIComponent(String(respuestas.correo ?? ""))}`);
   };
 
   // Solo cascarón: llena todo con datos de ejemplo válidos y salta a la revisión
   const simularLlenado = () => {
-    setRespuestas({ ...REGISTRO_DEMO, ...VALORES_FIJOS, semestre: semestreElegido ?? semestresAbiertos[0] ?? String(REGISTRO_DEMO.semestre) });
+    setRespuestas({ ...CAPTURAS_DEMO, ...REGISTRO_DEMO, ...VALORES_FIJOS, nacionalidad: "Mexicana", lugarNacimiento: "Ciudad de México, México", estadoCivil: "Soltero(a)", pais: "México", licPais: "México", experiencia: String(REGISTRO_DEMO.empleos).slice(0, 160), empleoVigente: "Sí", genero: "Femenino", tieneExperienciaProfesional: "Sí", semestre: semestreElegido ?? semestresAbiertos[0] ?? String(REGISTRO_DEMO.semestre) });
     setCompletados(SECCIONES.map((_, i) => i));
     setAceptaPrivacidad(true);
     setErrorPrivacidad(false);
@@ -294,6 +310,7 @@ export function RegistroWizard({ convocatoria }: { convocatoria?: IdConvocatoria
         )}
 
         {/* Navegación */}
+        {errorEnvio && <p role="alert" className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">{errorEnvio}</p>}
         <div className="mt-8 flex flex-col-reverse gap-3 border-t border-gray-100 pt-5 sm:flex-row sm:items-center sm:justify-between">
           {paso > 0 ? (
             <button
@@ -310,9 +327,10 @@ export function RegistroWizard({ convocatoria }: { convocatoria?: IdConvocatoria
             <button
               type="button"
               onClick={enviar}
+              disabled={enviando}
               className="flex items-center justify-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-white hover:bg-primary-hover"
             >
-              Enviar registro <Check size={16} />
+              {enviando ? "Enviando registro…" : "Enviar registro"} <Check size={16} />
             </button>
           ) : (
             <button
@@ -397,7 +415,7 @@ function Revision({
                 .filter((p) => esVisible(p, respuestas))
                 .map((p) => {
                   const v = respuestas[p.id];
-                  const texto = Array.isArray(v) ? v.join(", ") : v;
+                  const texto = Array.isArray(v) ? (p.ordenable ? v.map((area, indice) => `${indice + 1}. ${area}`).join("\n") : v.join(", ")) : v;
                   return (
                     <div key={p.id} className="grid gap-1 py-2.5 sm:grid-cols-[1fr_1.2fr] sm:gap-4">
                       <dt className="text-gray-500">{p.label}</dt>

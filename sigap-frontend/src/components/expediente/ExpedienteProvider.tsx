@@ -26,6 +26,8 @@ export type EleccionEvaluacion = {
 type Estado = {
   registro: Respuestas;
   capturas: Capturas;
+  /** PDF autogenerado sin firma, pendiente de revisión del aspirante. */
+  borradores: Record<string, ArchivoCargado>;
   /** PDF firmado a mano y escaneado, por clave de formato */
   firmados: Record<string, ArchivoCargado>;
   documentos: Record<string, ArchivoCargado>;
@@ -58,6 +60,7 @@ const CLAVE_EXPEDIENTE = "sigap-expediente";
 
 const INICIAL: Omit<Estado, "registro"> = {
   capturas: {},
+  borradores: {},
   firmados: {},
   documentos: {},
   enviadoRevision: false,
@@ -88,6 +91,7 @@ export function ExpedienteProvider({ children }: { children: React.ReactNode }) 
       setEstado({
         registro: reg ? JSON.parse(reg) : REGISTRO_DEMO,
         capturas: guardado.capturas ?? {},
+        borradores: soloArchivos(guardado.borradores),
         firmados: soloArchivos(guardado.firmados),
         documentos: soloArchivos(guardado.documentos),
         enviadoRevision: !!guardado.enviadoRevision,
@@ -125,6 +129,7 @@ export function ExpedienteProvider({ children }: { children: React.ReactNode }) 
         actualizar((e) => ({
           ...e,
           capturas: { ...e.capturas, [id]: valor },
+          borradores: {},
           // Si cambian los datos, los PDF firmados ya subidos quedan desactualizados
           firmados: {},
         })),
@@ -135,7 +140,7 @@ export function ExpedienteProvider({ children }: { children: React.ReactNode }) 
             if (v === undefined) delete capturas[id];
             else capturas[id] = v;
           }
-          return { ...e, capturas, firmados: {} };
+          return { ...e, capturas, firmados: {}, borradores: {} };
         }),
       subirFirmado: (clave, archivo) =>
         actualizar((e) => {

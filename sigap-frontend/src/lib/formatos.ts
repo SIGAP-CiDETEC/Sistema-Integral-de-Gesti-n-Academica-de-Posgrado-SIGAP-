@@ -8,6 +8,7 @@ import {
 import type { FaseId } from "./fases";
 import { PROGRAMA_INDIVIDUAL_DEMO, nombreAsesor } from "./programa-individual";
 import { AREAS_INVESTIGACION, nombreUnidad, type Respuestas } from "./registro-form";
+import { TABLAS_SIP02, idCantidadSip, idCeldaSip, GRADOS_SIP02, CAMPOS_GRADO_SIP02 } from "./sip02-secciones";
 
 /**
  * Formatos oficiales que el SISTEMA LLENA con los datos del aspirante.
@@ -169,8 +170,8 @@ export const FORMATOS: Formato[] = [
     destino: "Departamento de Posgrado",
     codigo: "SIP-02",
     nombre: "Currículum vitae",
-    descripcion: "Se arma con tu registro. Solo completa domicilio, fechas y datos que el registro no pide.",
-    fase: "registro",
+    descripcion: "Se llena automáticamente con tu registro. Revisa tus datos y corrige lo necesario antes de descargarlo y firmarlo.",
+    fase: "documentos",
     llena: "aspirante",
     plantilla: "sip-02.pdf",
     pdf: "listo",
@@ -188,7 +189,7 @@ export const FORMATOS: Formato[] = [
       C.calle, C.numExt, C.numInt, C.colonia, C.alcaldia, C.cp, C.estadoDom, C.pais,
       C.telCasa, C.telMovil, C.sexo, C.correo1, C.correo2,
       { id: "empresa", label: "Empresa del empleo actual o último", tipo: "text", opcional: true, seccion: "Empleo actual o último" },
-      { id: "cargo", label: "Cargo", tipo: "text", opcional: true, auto: ({ r }) => str(r.ultimoPuesto), seccion: "Empleo actual o último" },
+      { id: "cargo", label: "Cargo", tipo: "text", opcional: true, auto: ({ r }) => r.tieneExperienciaProfesional === "No" ? "" : str(r.ultimoPuesto), seccion: "Empleo actual o último" },
       { id: "empleoInicio", label: "Fecha de inicio (dd/mm/aaaa)", tipo: "text", opcional: true, seccion: "Empleo actual o último" },
       { id: "empleoFin", label: "Fecha de término (vacío si sigue vigente)", tipo: "text", opcional: true, seccion: "Empleo actual o último" },
       C.licPrograma, C.licInstitucion,
@@ -208,8 +209,18 @@ export const FORMATOS: Formato[] = [
         seccion: "Idiomas",
       },
       { id: "inglesAval", label: "¿Tu constancia tiene aval de la DFLE (o es de CELEX/CENLEX)?", tipo: "radio", opciones: ["Sí", "No"], seccion: "Idiomas" },
-      { id: "experiencia", label: "Principales funciones en tu empleo", tipo: "textarea", opcional: true, maxLength: 160, auto: ({ r }) => str(r.empleos).slice(0, 160), seccion: "Experiencia e investigación" },
+      { id: "experiencia", label: "Principales funciones en tu empleo", tipo: "textarea", opcional: true, maxLength: 160, auto: ({ r }) => r.tieneExperienciaProfesional === "No" ? "Sin experiencia profesional" : str(r.empleos).slice(0, 160), seccion: "Experiencia e investigación" },
       { id: "investigacion", label: "Información adicional relevante (investigación, publicaciones…)", tipo: "textarea", opcional: true, maxLength: 700, auto: ({ r }) => str(r.investigacion), seccion: "Experiencia e investigación" },
+      ...["empleoDomicilio", "empleoTelefono", "jefeNombre", "jefeTelefono", "licIncorporada", "licTesis", "licBeca", "licBecaInstitucion"].map((id, i): CampoFormato => ({ id, label: ["Domicilio de la empresa", "Teléfono de la empresa", "Nombre del jefe inmediato", "Teléfono del jefe inmediato", "Institución a la que está incorporada la licenciatura", "Título de tesis de licenciatura", "¿Obtuviste beca durante la licenciatura?", "Institución que otorgó la beca"][i], tipo: id === "licBeca" ? "radio" : "text", opciones: id === "licBeca" ? ["Sí", "No"] : undefined, opcional: true, seccion: i < 4 ? "Empleo actual o último" : "Formación académica" })),
+      ...GRADOS_SIP02.flatMap((grado): CampoFormato[] => [
+        { id: `sip02_${grado.id}_aplica`, label: `¿Cursaste ${grado.titulo.toLowerCase()}?`, tipo: "radio", opciones: ["Sí", "No"], opcional: true, seccion: grado.titulo },
+        ...CAMPOS_GRADO_SIP02.map((c): CampoFormato => ({ id: idCeldaSip(grado.id, 0, c.id), label: c.label, tipo: c.opciones ? "radio" : "text", opciones: c.opciones, opcional: true, maxLength: c.maxLength, seccion: grado.titulo, mostrarSi: (v) => v(`sip02_${grado.id}_aplica`) === "Sí" })),
+      ]),
+      ...TABLAS_SIP02.flatMap((tabla): CampoFormato[] => [
+        { id: idCantidadSip(tabla.id), label: "Cantidad de registros (0 si no aplica)", tipo: "radio", opciones: Array.from({ length: tabla.max + 1 }, (_, i) => String(i)), opcional: true, seccion: tabla.titulo },
+        ...Array.from({ length: tabla.max }, (_, fila) => tabla.columnas.map((c): CampoFormato => ({ id: idCeldaSip(tabla.id, fila, c.id), label: `Registro ${fila + 1}: ${c.label}`, tipo: c.opciones ? "radio" : c.maxLength && c.maxLength > 300 ? "textarea" : "text", opciones: c.opciones, opcional: true, maxLength: c.maxLength, seccion: tabla.titulo, mostrarSi: (v) => Number(v(idCantidadSip(tabla.id)) ?? 0) > fila }))).flat(),
+      ]),
+      { id: "sip02Adicional", label: "Información adicional para el SIP-02", tipo: "textarea", opcional: true, seccion: "XIV. Información adicional relevante" },
     ],
     firmas: [{ rol: "aspirante", label: "Firma del aspirante" }],
   },
@@ -397,6 +408,7 @@ export const formatosDeFase = (fase: FaseId) => FORMATOS_ASPIRANTE.filter((f) =>
 
 export function resolver(campo: CampoFormato, ctx: Contexto): Valor | undefined {
   if (!campo.sistema && ctx.c[campo.id] !== undefined) return ctx.c[campo.id];
+  if (!campo.sistema && campo.id !== "estadoCivil" && ctx.r[campo.id] !== undefined) return ctx.r[campo.id] || undefined;
   const v = campo.auto?.(ctx);
   return v === "" ? undefined : v;
 }
@@ -423,5 +435,5 @@ export function faltantes(f: Formato, ctx: Contexto) {
 
 /** Campos que el sistema llenó sin que el aspirante los escribiera. */
 export function autollenados(f: Formato, ctx: Contexto) {
-  return camposVisibles(f, ctx).filter((c) => ctx.c[c.id] === undefined && !esVacio(c.auto?.(ctx)));
+  return camposVisibles(f, ctx).filter((c) => ctx.c[c.id] === undefined && !esVacio(resolver(c, ctx)));
 }
