@@ -22,6 +22,7 @@ export type Pregunta = {
   maxOpciones?: number;
   minOpciones?: number;
   maxLength?: number;
+  grupo?: string;
   opciones?: string[];
   /** Para tipo "fijo": valor que no puede cambiar el aspirante */
   valorFijo?: string;
@@ -35,7 +36,7 @@ export type Pregunta = {
   ancho?: "completo";
 };
 
-export type Seccion = { id: string; titulo: string; descripcion?: string; preguntas: Pregunta[] };
+export type Seccion = { id: string; titulo: string; descripcion?: string; preguntas: Pregunta[]; grupos?: Seccion[] };
 
 // ---------- Catálogos (reemplazar por los de la BD cuando exista el backend) ----------
 
@@ -374,6 +375,20 @@ SECCIONES.push(...TABLAS_SIP02.map((tabla): Seccion => ({
   ],
 })));
 SECCIONES.push({ id: "sip02Adicional", titulo: "XIV. Información adicional relevante", descripcion: "Opcional. Agrega información que no aparezca en las secciones anteriores.", preguntas: [{ id: "sip02Adicional", label: "Información adicional relevante para tu currículum", tipo: "textarea", ancho: "completo" }] });
+
+// Un único paso de trayectoria opcional, con apartados que el aspirante abre cuando los necesita.
+const inicioTrayectoria = SECCIONES.findIndex((s) => s.id === "sip02EmpleoFormacion");
+const gruposTrayectoria = SECCIONES.splice(inicioTrayectoria).map((s) => ({
+  ...s,
+  titulo: s.titulo.replace(/^[IVX]+\.\s*/, "").replace(/^SIP-02:\s*/, ""),
+}));
+SECCIONES.push({
+  id: "trayectoriaOpcional",
+  titulo: "Trayectoria adicional (opcional)",
+  descripcion: "Abre únicamente los apartados que correspondan a tu experiencia. Si ninguno aplica, puedes continuar sin llenarlos.",
+  grupos: gruposTrayectoria,
+  preguntas: gruposTrayectoria.flatMap((s) => s.preguntas.map((p) => ({ ...p, grupo: s.titulo }))),
+});
 
 /** Respuestas que siempre llevan el mismo valor (campos tipo "fijo"). */
 export const VALORES_FIJOS: Respuestas = Object.fromEntries(

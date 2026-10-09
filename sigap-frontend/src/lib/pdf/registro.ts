@@ -53,7 +53,14 @@ export async function generarPdfRegistro(respuestas: Respuestas, folio: string) 
     if (y < 150) nuevaPagina();
     lineas(`${indice + 1}. ${seccion.titulo}`, true, 13, azul);
     y -= 8;
+    let grupoActual = "";
     for (const pregunta of seccion.preguntas.filter((p) => esVisible(p, respuestas))) {
+      if (pregunta.grupo && pregunta.grupo !== grupoActual) {
+        if (y < 140) nuevaPagina();
+        lineas(pregunta.grupo, true, 12, azul);
+        y -= 8;
+        grupoActual = pregunta.grupo;
+      }
       if (y < 115) nuevaPagina();
       lineas(pregunta.label, true, 10);
       const valor = respuestas[pregunta.id] ?? pregunta.valorFijo;

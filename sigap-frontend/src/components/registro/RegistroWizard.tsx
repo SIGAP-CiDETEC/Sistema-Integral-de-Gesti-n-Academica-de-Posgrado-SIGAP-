@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { AlertTriangle, ArrowLeft, ArrowRight, Check, CloudCheck, Pencil, RotateCcw, ShieldCheck, Wand2 } from "lucide-react";
+import { AlertTriangle, ArrowLeft, ArrowRight, Check, ChevronDown, CloudCheck, Pencil, RotateCcw, ShieldCheck, Wand2 } from "lucide-react";
 import { CAPTURAS_DEMO, REGISTRO_DEMO } from "@/lib/aspirante-datos";
 import type { IdConvocatoria } from "@/lib/config";
 import { useConvocatorias } from "@/lib/convocatoria";
@@ -67,7 +67,7 @@ export function RegistroWizard({ convocatoria }: { convocatoria?: IdConvocatoria
     if (b) {
       setRespuestas({ ...b.respuestas, ...VALORES_FIJOS });
       setPaso(Math.min(b.paso, TOTAL - 1));
-      setCompletados(b.completados);
+      setCompletados(b.completados.filter((n) => n < SECCIONES.length));
     }
     setCargado(true);
   }, []);
@@ -276,7 +276,37 @@ export function RegistroWizard({ convocatoria }: { convocatoria?: IdConvocatoria
               </div>
             )}
 
-            <div className="mt-6 grid gap-5 sm:grid-cols-2">
+            {seccion.grupos ? (
+              <div className="mt-6 space-y-3">
+                {seccion.grupos.map((grupo) => {
+                  const visibles = grupo.preguntas.filter((p) => esVisible(p, respuestas));
+                  const tieneErrores = visibles.some((p) => errores[p.id]);
+                  const tieneDatos = visibles.some((p) => {
+                    const valor = respuestas[p.id];
+                    return Array.isArray(valor) ? valor.length > 0 : !!valor && valor !== "0" && valor !== "No";
+                  });
+                  return (
+                    <details key={`${grupo.id}-${tieneErrores}`} open={tieneErrores || undefined} className="group rounded-xl border border-gray-200 bg-white open:border-primary/30">
+                      <summary className="flex cursor-pointer items-center justify-between gap-3 px-4 py-4 text-sm font-medium text-gray-900">
+                        <span>{grupo.titulo}</span>
+                        <span className="flex shrink-0 items-center gap-2">
+                        <span className={`rounded-full px-2 py-1 text-xs ${tieneErrores ? "bg-red-50 text-red-700" : tieneDatos ? "bg-emerald-50 text-emerald-700" : "bg-gray-100 text-gray-500"}`}>
+                          {tieneErrores ? "Revisar" : tieneDatos ? "Con información" : "Opcional"}
+                        </span>
+                        <ChevronDown size={16} className="text-gray-400 transition-transform group-open:rotate-180" />
+                        </span>
+                      </summary>
+                      <div className="border-t border-gray-100 px-4 pb-5 pt-4">
+                        {grupo.descripcion && <p className="mb-4 text-sm text-gray-500">{grupo.descripcion}</p>}
+                        <div className="grid gap-5 sm:grid-cols-2">
+                          {visibles.map((p) => <Campo key={p.id} pregunta={p} valor={respuestas[p.id]} error={errores[p.id]} onChange={(v) => cambiar(p.id, v)} />)}
+                        </div>
+                      </div>
+                    </details>
+                  );
+                })}
+              </div>
+            ) : <div className="mt-6 grid gap-5 sm:grid-cols-2">
               {seccion.preguntas
                 .filter((p) => esVisible(p, respuestas))
                 .map((p) => (
@@ -288,7 +318,7 @@ export function RegistroWizard({ convocatoria }: { convocatoria?: IdConvocatoria
                     onChange={(v) => cambiar(p.id, v)}
                   />
                 ))}
-            </div>
+            </div>}
 
             {Object.keys(errores).length > 0 && (
               <p role="alert" className="mt-5 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
@@ -418,7 +448,7 @@ function Revision({
                   const texto = Array.isArray(v) ? (p.ordenable ? v.map((area, indice) => `${indice + 1}. ${area}`).join("\n") : v.join(", ")) : v;
                   return (
                     <div key={p.id} className="grid gap-1 py-2.5 sm:grid-cols-[1fr_1.2fr] sm:gap-4">
-                      <dt className="text-gray-500">{p.label}</dt>
+                      <dt className="text-gray-500">{p.grupo ? `${p.grupo}: ${p.label}` : p.label}</dt>
                       <dd className="whitespace-pre-wrap break-words text-gray-900">{texto || "—"}</dd>
                     </div>
                   );
