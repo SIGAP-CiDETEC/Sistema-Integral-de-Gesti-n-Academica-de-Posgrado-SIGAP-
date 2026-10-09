@@ -49,31 +49,6 @@ function centrado(c: Ctx, t: string, x0: number, x1: number, top: number, tam = 
   c.page.drawText(t, { x: (x0 + x1) / 2 - w / 2, y: c.alto - top, size, font: c.font, color: TINTA });
 }
 
-/** Escribe un texto largo sobre renglones ya impresos (una línea por renglón). */
-function renglones(c: Ctx, t: string, x: number, ancho: number, bases: number[], tam = 9) {
-  const partir = (sz: number) => {
-    const out: string[] = [];
-    for (const p of t.split(/\n/)) {
-      let linea = "";
-      for (const palabra of p.split(/\s+/)) {
-        const prueba = linea ? `${linea} ${palabra}` : palabra;
-        if (c.font.widthOfTextAtSize(prueba, sz) > ancho) {
-          out.push(linea);
-          linea = palabra;
-        } else linea = prueba;
-      }
-      if (linea) out.push(linea);
-    }
-    return out;
-  };
-  let size = tam;
-  let lineas = partir(size);
-  while (lineas.length > bases.length && size > 6) lineas = partir((size -= 0.5));
-  lineas.slice(0, bases.length).forEach((l, i) =>
-    c.page.drawText(l, { x, y: c.alto - bases[i], size, font: c.font, color: TINTA }),
-  );
-}
-
 function parrafo(c: Ctx, t: string, x: number, top: number, ancho: number, altoMax: number, tam = 10, minTam = 6) {
   let size = tam;
   let lineas: string[] = [];
@@ -146,9 +121,14 @@ async function sip02(doc: PDFDocument, d: DatosPdf) {
     const lineas: string[] = [];
     for (const parrafo of seguro(valor).split("\n")) {
       let linea = "";
-      for (const letra of parrafo) {
-        if (font.widthOfTextAtSize(linea + letra, size) > ancho) { lineas.push(linea); linea = ""; }
-        linea += letra;
+      for (const palabra of parrafo.split(/\s+/)) {
+        if (linea && font.widthOfTextAtSize(`${linea} ${palabra}`, size) > ancho) { lineas.push(linea); linea = ""; }
+        if (font.widthOfTextAtSize(palabra, size) > ancho) {
+          for (const letra of palabra) {
+            if (font.widthOfTextAtSize(linea + letra, size) > ancho) { lineas.push(linea); linea = ""; }
+            linea += letra;
+          }
+        } else linea = linea ? `${linea} ${palabra}` : palabra;
       }
       lineas.push(linea);
     }
@@ -231,19 +211,28 @@ async function sip02(doc: PDFDocument, d: DatosPdf) {
     if (v(`sip02_${grado.id}_aplica`) !== "Sí") { marca(ctx, i === 0 ? 133.5 : i === 1 ? 131.5 : 129.5, base, 7); return; }
     celda(ctx, dato("programa"), 170, base - 13, 398, i === 2 ? 24 : 18, `${grado.titulo}: programa`);
     const institucionTop = i === 0 ? 675.3 : i === 1 ? 78.2 : 187.6;
-    celda(ctx, dato("institucion"), 170, institucionTop, 120, 11, `${grado.titulo}: institución`);
-    celda(ctx, dato("incorporada"), 354, institucionTop, 94, 11, `${grado.titulo}: incorporada a`);
-    celda(ctx, dato("pais"), 486, institucionTop, 82, 11, `${grado.titulo}: país`);
+    celda(ctx, dato("institucion"), 170, institucionTop, i === 0 ? 120 : 80, 11, `${grado.titulo}: institución`);
+    celda(ctx, dato("incorporada"), i === 0 ? 354 : 308, institucionTop, i === 0 ? 94 : 105, 11, `${grado.titulo}: incorporada a`);
+    celda(ctx, dato("pais"), i === 0 ? 486 : 446, institucionTop, i === 0 ? 82 : 122, 11, `${grado.titulo}: país`);
     const periodoTop = i === 0 ? 686.8 : i === 1 ? 87.8 : 199.1;
-    texto(ctx, dato("inicio"), 265, periodoTop + 8, 107, 7);
-    texto(ctx, dato("fin"), 464, periodoTop + 8, 103, 7);
+    if (i === 0) {
+      texto(ctx, dato("inicio"), 265, periodoTop + 8, 107, 7);
+      texto(ctx, dato("fin"), 464, periodoTop + 8, 103, 7);
+    } else {
+      celda(ctx, [dato("inicio"), dato("fin")].filter(Boolean).join(" - "), 170, periodoTop, 133, 19, `${grado.titulo}: periodo de estudios`);
+      celda(ctx, dato("tesis"), 419, periodoTop, 149, 19, `${grado.titulo}: tesis`);
+    }
     const tesisTop = i === 0 ? 697.6 : i === 1 ? 106.8 : 217.9;
-    celda(ctx, dato("titulacion"), 170, tesisTop, 133, 19, `${grado.titulo}: forma de titulación`);
-    celda(ctx, dato("tesis"), 419, tesisTop, 149, 19, `${grado.titulo}: tesis`);
+    celda(ctx, dato("titulacion"), 170, tesisTop, i === 0 ? 133 : 80, 19, `${grado.titulo}: forma de titulación`);
+    if (i === 0) celda(ctx, dato("tesis"), 419, tesisTop, 149, 19, `${grado.titulo}: tesis`);
+    else {
+      texto(ctx, dato("fechaTitulo"), 320, tesisTop + 10, 93, 7);
+      texto(ctx, dato("cedula"), 484, tesisTop + 10, 84, 7);
+    }
     const fechaTop = i === 0 ? 716.4 : i === 1 ? 125.6 : 236.9;
     texto(ctx, dato("fechaExamen"), 172, fechaTop + 9, 80, 7);
-    texto(ctx, dato("fechaTitulo"), 335, fechaTop + 9, 75, 7);
-    texto(ctx, dato("cedula"), 492, fechaTop + 9, 75, 7);
+    texto(ctx, dato("fechaTitulo"), i === 0 ? 335 : 320, fechaTop + 9, i === 0 ? 75 : 93, 7);
+    texto(ctx, dato("cedula"), i === 0 ? 492 : 484, fechaTop + 9, i === 0 ? 75 : 84, 7);
     const becaTop = i === 0 ? 742 : i === 1 ? 153 : 265;
     if (dato("beca")) marca(ctx, dato("beca") === "Sí" ? 194 : 238, becaTop, 7);
     celda(i === 0 ? c2 : ctx, dato("becaInstitucion"), 439, i === 0 ? 48.4 : becaTop - 9, 129, 11, `${grado.titulo}: institución de la beca`);
@@ -293,7 +282,7 @@ async function sip02(doc: PDFDocument, d: DatosPdf) {
   }
   texto(c3, v("cargo"), 68, 608, 122, 7);
   texto(c3, v("empresa"), 194, 608, 122, 7);
-  parrafo(c3, v("experiencia"), 320, 598, 122, 15, 6, 4);
+  celda(c3, v("experiencia"), 318, 596.5, 126, 17.5, "IX. Principales funciones del empleo actual o último");
   const periodo = [v("empleoInicio"), v("empleoFin") || (v("empleoInicio") ? "a la fecha" : "")].filter(Boolean).join(" – ");
   texto(c3, periodo, 446, 608, 121, 7);
 
