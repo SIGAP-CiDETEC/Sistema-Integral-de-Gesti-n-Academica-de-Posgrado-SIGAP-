@@ -14,7 +14,7 @@ const fh = (iso: string) => new Date(iso).toLocaleString("es-MX", { day: "numeri
 
 /**
  * Calendario de cada convocatoria (A y B): la Jefatura de Posgrado sube la imagen y se publica
- * en el inicio público, debajo de las fechas clave. Solo cascarón: se guarda en el navegador.
+ * en el inicio público, en la tarjeta de la convocatoria. Solo cascarón: se guarda en el navegador.
  */
 export default function CalendarioConvocatorias() {
   const { lista } = useConvocatorias();
@@ -23,7 +23,7 @@ export default function CalendarioConvocatorias() {
   return (
     <>
       <Regresar href="/posgrado" t="Inicio" />
-      <PageHeader titulo="Calendario de convocatorias" subtitulo="Imagen del calendario que se publica en el inicio, debajo de las fechas clave" />
+      <PageHeader titulo="Calendario de convocatorias" subtitulo="Imagen del calendario que se publica en el inicio, en la tarjeta de cada convocatoria" />
       <div className="grid gap-6 lg:grid-cols-2">
         {IDS_CONVOCATORIA.map((id) => (
           <CalendarioDe key={id} id={id} nombre={lista.find((c) => c.id === id)?.nombre ?? `Convocatoria ${id}`} />
@@ -76,7 +76,7 @@ function CalendarioDe({ id, nombre }: { id: IdConvocatoria; nombre: string }) {
           <img src={cal.imagen} alt={`Calendario de la ${nombre}`} className="max-h-[520px] w-full object-contain" />
         </a>
       ) : (
-        <p className="rounded-lg border border-dashed border-gray-300 px-4 py-10 text-center text-sm text-gray-500">Sin calendario publicado. En el inicio solo se verán las fechas clave.</p>
+        <p className="rounded-lg border border-dashed border-gray-300 px-4 py-10 text-center text-sm text-gray-500">Sin calendario publicado. En el inicio solo se verán el periodo y las fechas de registro.</p>
       )}
       {cal && (
         <p className="mt-2 text-xs text-gray-500">
@@ -105,7 +105,7 @@ function CalendarioDe({ id, nombre }: { id: IdConvocatoria; nombre: string }) {
           </button>
         )}
       </div>
-      <p className="mt-2 text-xs text-gray-500">JPG o PNG. Se muestra en el inicio público debajo de las fechas clave de esta convocatoria.</p>
+      <p className="mt-2 text-xs text-gray-500">JPG o PNG. Se muestra en el inicio público, en la tarjeta de esta convocatoria.</p>
       {error && (
         <div className="mt-3">
           <Aviso tono="error" titulo={error} />
@@ -119,3 +119,4 @@ function CalendarioDe({ id, nombre }: { id: IdConvocatoria; nombre: string }) {
     </Tarjeta>
   );
 }
+

@@ -67,7 +67,7 @@ export default function UteycvInicio() {
                 {!turnados.length && (
                   <tr>
                     <td colSpan={4} className="py-6 text-center text-gray-500">
-                      Posgrado aún no turna aspirantes.
+                      Aún no hay aspirantes admitidos por el Colegio de Profesores.
                     </td>
                   </tr>
                 )}

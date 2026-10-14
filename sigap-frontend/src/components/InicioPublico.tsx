@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, CalendarDays, CheckCircle2, LogIn, Lock } from "lucide-react";
+import { ArrowRight, CheckCircle2, LogIn, Lock } from "lucide-react";
 import { Logos } from "@/components/Logos";
 import { PERIODO_ESCOLAR, convocatoriaActual } from "@/lib/config";
 import { useContenido } from "@/lib/contenido";
@@ -51,10 +51,10 @@ export function InicioPublico({ forzarCerrada }: { forzarCerrada: boolean }) {
           <h1 className="mt-4 max-w-2xl text-3xl font-semibold leading-tight sm:text-4xl">
             Sistema Integral de Gestión Académica de Posgrado
           </h1>
-          <p className="mt-3 max-w-2xl text-white/75">
-            Centro de Innovación y Desarrollo Tecnológico en Cómputo — Instituto Politécnico Nacional.
-            Consulta la convocatoria, realiza tu registro de admisión o accede a tu cuenta.
+          <p className="mt-4 max-w-3xl text-xl font-medium leading-snug text-white/90 sm:text-2xl">
+            Centro de Innovación y Desarrollo Tecnológico en Cómputo — Instituto Politécnico Nacional
           </p>
+          <p className="mt-2 max-w-2xl text-white/75">Consulta la convocatoria, realiza tu registro de admisión o accede a tu cuenta.</p>
         </div>
       </section>
 
@@ -104,18 +104,6 @@ export function InicioPublico({ forzarCerrada }: { forzarCerrada: boolean }) {
                   </div>
                 </dl>
 
-                <p className="mt-4 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-gray-500">
-                  <CalendarDays size={14} /> Fechas clave
-                </p>
-                <dl className="mt-1 divide-y divide-gray-200 text-sm">
-                  {conv.fechasClave.map((f) => (
-                    <div key={f.etiqueta} className="flex justify-between py-1.5">
-                      <dt className="text-gray-600">{f.etiqueta}</dt>
-                      <dd className="font-medium text-gray-900">{f.fecha}</dd>
-                    </div>
-                  ))}
-                </dl>
-
                 {calendarioDe(conv.id) && (
                   <a
                     href={calendarioDe(conv.id)!.imagen}
@@ -123,6 +111,7 @@ export function InicioPublico({ forzarCerrada }: { forzarCerrada: boolean }) {
                     rel="noreferrer"
                     className="mt-4 block overflow-hidden rounded-lg border border-gray-200 bg-white"
                     title="Ver el calendario completo"
+                    aria-label={`Calendario del proceso de admisión ${conv.nombre} (abrir en grande)`}
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element -- imagen que publica la Jefatura de Posgrado */}
                     <img src={calendarioDe(conv.id)!.imagen} alt={`Calendario del proceso de admisión ${conv.nombre}`} className="w-full" />

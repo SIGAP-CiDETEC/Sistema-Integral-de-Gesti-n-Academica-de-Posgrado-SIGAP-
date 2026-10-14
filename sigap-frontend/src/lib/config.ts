@@ -39,31 +39,18 @@ export type Convocatoria = {
   inicio: string;
   cierre: string;
   requisitos: string[];
-  fechasClave: { etiqueta: string; fecha: string }[];
 };
 
 /** Datos fijos de las dos convocatorias por ciclo: A (enero–junio) y B (agosto–diciembre). */
 export type IdConvocatoria = "A" | "B";
-export const CONVOCATORIAS_INFO: Record<IdConvocatoria, { periodo: string; semestre: string; fechasClave: { etiqueta: string; fecha: string }[] }> = {
+export const CONVOCATORIAS_INFO: Record<IdConvocatoria, { periodo: string; semestre: string }> = {
   A: {
     periodo: "Enero – junio 2027",
     semestre: "A27 (enero – junio 2027)",
-    fechasClave: [
-      { etiqueta: "Documentos", fecha: "27 nov" },
-      { etiqueta: "Entrevistas", fecha: "7–11 dic" },
-      { etiqueta: "Resultados", fecha: "15 ene" },
-      { etiqueta: "Dictamen (SIP-04)", fecha: "19 ene" },
-    ],
   },
   B: {
     periodo: "Agosto – diciembre 2027",
     semestre: "B27 (agosto – diciembre 2027)",
-    fechasClave: [
-      { etiqueta: "Documentos", fecha: "28 may" },
-      { etiqueta: "Entrevistas", fecha: "7–11 jun" },
-      { etiqueta: "Resultados", fecha: "9 jul" },
-      { etiqueta: "Dictamen (SIP-04)", fecha: "16 jul" },
-    ],
   },
 };
 
@@ -80,12 +67,6 @@ export const convocatoriaActual: Convocatoria = {
     "Acta de nacimiento",
     "Certificado total de estudios",
     "Inglés B1 (2 habilidades)",
-  ],
-  fechasClave: [
-    { etiqueta: "Documentos", fecha: "3 mar" },
-    { etiqueta: "Entrevistas", fecha: "16–20 mar" },
-    { etiqueta: "Resultados", fecha: "30 abr" },
-    { etiqueta: "Dictamen (SIP-04)", fecha: "8 may" },
   ],
 };
 

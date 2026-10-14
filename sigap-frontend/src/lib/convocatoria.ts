@@ -101,7 +101,6 @@ function vista(id: IdConvocatoria, c: ConfigConvocatoria): ConvocatoriaVista {
     activa: c.activa,
     periodo: info.periodo,
     semestre: info.semestre,
-    fechasClave: info.fechasClave,
     inicioISO: c.inicio,
     inicio: fechaCorta(c.inicio, c.inicio.slice(0, 4) !== c.cierre.slice(0, 4)),
     cierre: fechaCorta(c.cierre),

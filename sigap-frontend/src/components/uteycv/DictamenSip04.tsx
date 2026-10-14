@@ -22,7 +22,7 @@ export function DictamenSip04({ inicial }: { inicial?: string }) {
     <>
       <PageHeader titulo="Dictamen SIP-04" subtitulo="Elaborar, recabar firmas y publicar el dictamen del proceso de admisión" />
       {!turnados.length ? (
-        <p className="rounded-xl border border-dashed border-gray-300 bg-white p-6 text-center text-sm text-gray-500">Posgrado aún no turna aspirantes.</p>
+        <p className="rounded-xl border border-dashed border-gray-300 bg-white p-6 text-center text-sm text-gray-500">Aún no hay aspirantes admitidos por el Colegio de Profesores.</p>
       ) : (
         <div className="grid gap-6 lg:grid-cols-[300px_1fr]">
           <ul className="space-y-2">
