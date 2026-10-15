@@ -2,7 +2,7 @@ import { Clock } from "lucide-react";
 import type { Firma } from "@/lib/formatos";
 
 /** Firmas de otras personas que se recaban en papel después. */
-export function FirmasOtros({ firmas, recibe }: { firmas: Firma[]; recibe?: string }) {
+export function FirmasOtros({ firmas, recibe, recabaAspirante }: { firmas: Firma[]; recibe?: string; recabaAspirante?: boolean }) {
   const area = recibe?.includes("UTEyCV") ? "UTEyCV" : "Posgrado";
   const otros = firmas.filter((x) => x.rol !== "aspirante" && !x.ocultaAspirante);
   if (!otros.length) return null;
@@ -21,7 +21,7 @@ export function FirmasOtros({ firmas, recibe }: { firmas: Firma[]; recibe?: stri
             <Clock size={15} className="mt-0.5 shrink-0 text-gray-400" />
             <span>
               <span className="text-gray-900">{x.label}</span>
-              <span className="block text-xs text-gray-500">{como[x.rol] ?? "firma en papel"}</span>
+              <span className="block text-xs text-gray-500">{recabaAspirante ? "firma el documento impreso; tú subes el escaneo con todas las firmas" : (como[x.rol] ?? "firma en papel")}</span>
             </span>
           </li>
         ))}

@@ -20,6 +20,7 @@ export default function Comision() {
   const { aspirantes, cargado, acta, guardarActa, actualizar, enviarAviso } = usePosgrado();
   const [numero, setNumero] = useState(acta?.numero ?? "");
   const [fecha, setFecha] = useState(acta?.fecha ?? "");
+  const [hora, setHora] = useState(acta?.hora ?? "12:00");
   const [archivo, setArchivo] = useState<string | undefined>(acta?.archivo);
   const [res, setRes] = useState<Record<string, ResolucionColegio>>({});
   if (!cargado) return null;
@@ -29,7 +30,7 @@ export default function Comision() {
   const turnados = aspirantes.filter((a) => !!a.turnadoUteycv);
   const informeListo = !!acta?.informeGeneradoEl;
   const resolucionDe = (a: AspiranteP) => res[a.id] ?? "Aceptado";
-  const puedeRegistrar = informeListo && numero.trim() && fecha && archivo && sinResolucion.length > 0;
+  const puedeRegistrar = informeListo && numero.trim() && fecha && hora && archivo && sinResolucion.length > 0;
 
   const descargarInforme = () => {
     const filas = [
@@ -138,7 +139,7 @@ export default function Comision() {
         </Tarjeta>
 
         <Tarjeta titulo="2. Acta del Colegio de Profesores (RF-59, RF-60)">
-          <div className="grid gap-3 sm:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <label className="text-sm">
               <span className="font-medium text-gray-900">Número de acta</span>
               <input value={numero} onChange={(e) => setNumero(e.target.value)} placeholder="Ej. 04/2026" className={`${inputBase} mt-1`} />
@@ -146,6 +147,10 @@ export default function Comision() {
             <label className="text-sm">
               <span className="font-medium text-gray-900">Fecha de sesión</span>
               <input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} className={`${inputBase} mt-1`} />
+            </label>
+            <label className="text-sm">
+              <span className="font-medium text-gray-900">Hora de la sesión</span>
+              <input type="time" value={hora} onChange={(e) => setHora(e.target.value)} className={`${inputBase} mt-1`} />
             </label>
             <label className="text-sm">
               <span className="font-medium text-gray-900">Acta firmada (PDF)</span>
@@ -174,18 +179,18 @@ export default function Comision() {
               onClick={() => {
                 const resoluciones = Object.fromEntries(sinResolucion.map((a) => [a.id, resolucionDe(a)]));
                 guardarActa(
-                  { numero: numero.trim(), fecha, archivo, resoluciones: { ...(acta?.resoluciones ?? {}), ...resoluciones }, informeGeneradoEl: acta?.informeGeneradoEl },
+                  { numero: numero.trim(), fecha, hora, archivo, resoluciones: { ...(acta?.resoluciones ?? {}), ...resoluciones }, informeGeneradoEl: acta?.informeGeneradoEl },
                   `Registró el acta de Colegio ${numero.trim()} con ${sinResolucion.length} resolución(es)`,
                 );
                 sinResolucion.forEach((a) => {
                   const r = resolucionDe(a);
-                  // Si es admitido, pasa automáticamente a UTEyCV para que elabore el SIP-04
+                  // Si es admitido, el resultado se publica al aspirante y pasa automáticamente a inscripción (UTEyCV)
                   actualizar(
                     a.id,
                     r === "No aceptado"
                       ? { resolucion: r, concluido: "No aceptado por el Colegio de Profesores" }
                       : { resolucion: r, turnadoUteycv: new Date().toISOString() },
-                    `Resolución del Colegio (acta ${numero.trim()}): ${r}${r === "No aceptado" ? "" : " · enviado automáticamente a UTEyCV para el dictamen SIP-04"}`,
+                    `Resolución del Colegio (acta ${numero.trim()}): ${r}${r === "No aceptado" ? "" : " · resultado publicado; pasa a inscripción (UTEyCV)"}`,
                   );
                   const nom = a.nombre.split(" ")[0];
                   enviarAviso(
@@ -194,7 +199,7 @@ export default function Comision() {
                     r === "No aceptado" ? "Resultado de tu proceso de admisión" : "¡Fuiste admitido(a)!",
                     r === "No aceptado"
                       ? `Estimado(a) ${nom}:\n\nAgradecemos tu interés en la Maestría en Tecnología de Cómputo. Te informamos que tu proceso de admisión en esta convocatoria ha concluido.\n\nAtentamente,\nDepartamento de Posgrado · CIDETEC`
-                      : `Estimado(a) ${nom}:\n\nEl Colegio de Profesores resolvió tu admisión a la Maestría en Tecnología de Cómputo${r === "Condicionado" ? " (condicionada)" : ""}. Control Escolar (UTEyCV) te enviará tu dictamen SIP-04, con el que concluye tu proceso de admisión.\n\nAtentamente,\nDepartamento de Posgrado · CIDETEC`,
+                      : `Estimado(a) ${nom}:\n\nEl Colegio de Profesores resolvió tu admisión a la Maestría en Tecnología de Cómputo${r === "Condicionado" ? " (condicionada)" : ""}. Con esto concluye tu proceso de admisión; consulta tu resultado en SIGAP (6 · Dictamen final) y continúa con tu inscripción, donde llenarás tu dictamen SIP-04.\n\nAtentamente,\nDepartamento de Posgrado · CIDETEC`,
                   );
                 });
               }}
@@ -204,15 +209,16 @@ export default function Comision() {
           </div>
           {acta?.registradaEl && (
             <p className="mt-3 text-xs text-emerald-700">
-              Acta {acta.numero} del {fechaCorta(acta.fecha)} registrada · {acta.archivo}
+              Acta {acta.numero} del {fechaCorta(acta.fecha)}
+              {acta.hora ? `, ${acta.hora} h` : ""} registrada · {acta.archivo}
             </p>
           )}
         </Tarjeta>
 
-        <Tarjeta titulo={<span className="flex items-center gap-2"><Send size={16} className="text-primary" /> 3. Enviados a Control Escolar (UTEyCV)</span>}>
+        <Tarjeta titulo={<span className="flex items-center gap-2"><Send size={16} className="text-primary" /> 3. Resultados publicados</span>}>
           <p className="text-sm text-gray-600">
-            Al registrar la resolución, los aspirantes admitidos pasan <b>automáticamente</b> a UTEyCV, que elabora el dictamen SIP-04, recaba firmas y lo publica al aspirante.
-            Con eso concluye su proceso de admisión.
+            Al registrar la resolución, el resultado se <b>publica</b> a cada aspirante en SIGAP (6 · Dictamen final) y se le avisa por correo. Con eso concluye su
+            proceso de admisión. Los admitidos pasan automáticamente a su inscripción con Control Escolar (UTEyCV), donde llenan su dictamen SIP-04.
           </p>
           <p className="mt-1 text-xs text-gray-500">Si tienen documentos en prórroga, pasan igual y UTEyCV ve la fecha límite.</p>
           {turnados.length ? (
@@ -227,12 +233,12 @@ export default function Comision() {
                       {d.nombre} en prórroga al {fechaCorta(d.prorrogaHasta!)}
                     </Etiqueta>
                   ))}
-                  {a.turnadoUteycv && <span className="text-xs text-gray-500">· enviado el {fechaCorta(a.turnadoUteycv)}</span>}
+                  {a.turnadoUteycv && <span className="text-xs text-gray-500">· publicado el {fechaCorta(a.turnadoUteycv)}</span>}
                 </li>
               ))}
             </ul>
           ) : (
-            <p className="mt-3 text-sm text-gray-500">Aún no hay aspirantes admitidos enviados a UTEyCV.</p>
+            <p className="mt-3 text-sm text-gray-500">Aún no se publican resultados de admitidos.</p>
           )}
         </Tarjeta>
       </div>

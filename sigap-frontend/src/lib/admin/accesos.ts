@@ -26,14 +26,14 @@ export const PERMISOS: Permiso[] = [
   { id: "pg.comunicados", area: "posgrado", nombre: "Enviar comunicados a aspirantes", ruta: "/posgrado/comunicados" },
   { id: "pg.bitacora", area: "posgrado", nombre: "Consultar bitácora", ruta: "/posgrado/bitacora" },
   { id: "pg.inicio", area: "posgrado", nombre: "Editar el inicio del aspirante", ruta: "/posgrado/inicio-aspirante" },
-  { id: "pg.calendario", area: "posgrado", nombre: "Publicar el calendario de las convocatorias (Jefatura)", ruta: "/posgrado/calendario" },
+  { id: "pg.calendario", area: "posgrado", nombre: "Fechas de registro y calendario de las convocatorias (Jefatura)", ruta: "/posgrado/calendario" },
+  { id: "pg.calificaciones", area: "posgrado", nombre: "Calificaciones del examen y concentrado de calificaciones (Jefatura)", ruta: "/posgrado/calificaciones" },
   { id: "ut.inscripcion", area: "uteycv", nombre: "Inscripciones: expediente, firmas y número SICEP", ruta: "/uteycv/inscripciones" },
   { id: "sd.aspirantes", area: "subdireccion", nombre: "Consultar aspirantes y su proceso (solo lectura)", ruta: "/subdireccion/aspirantes" },
   { id: "sd.bitacora", area: "subdireccion", nombre: "Consultar bitácora (solo lectura)", ruta: "/subdireccion/bitacora" },
-  { id: "ut.dictamen", area: "uteycv", nombre: "Elaborar y publicar el dictamen SIP-04", ruta: "/uteycv/dictamen" },
   { id: "ut.bitacora", area: "uteycv", nombre: "Consultar bitácora", ruta: "/uteycv/bitacora" },
   { id: "pr.entrevistas", area: "profesor", nombre: "Entrevistas del sínodo: llenar y firmar el acta MTC-EC", ruta: "/profesor/entrevistas" },
-  { id: "pr.evaluacion", area: "profesor", nombre: "Capturar calificaciones de su área (propedéutico y examen)", ruta: "/profesor/evaluacion" },
+  { id: "pr.evaluacion", area: "profesor", nombre: "Capturar calificaciones del propedéutico de los grupos que imparte", ruta: "/profesor/evaluacion" },
 ];
 
 export type RolPersonal = { id: string; nombre: string; area: AreaPersonal; permisos: string[]; base?: boolean };
@@ -42,11 +42,11 @@ const todos = (area: AreaPersonal) => PERMISOS.filter((p) => p.area === area).ma
 
 export const ROLES_BASE: RolPersonal[] = [
   { id: "pg-jefatura", nombre: "Jefatura de Posgrado", area: "posgrado", permisos: todos("posgrado"), base: true },
-  { id: "pg-analista", nombre: "Analista de Posgrado", area: "posgrado", permisos: todos("posgrado").filter((p) => p !== "pg.calendario") },
+  { id: "pg-analista", nombre: "Analista de Posgrado", area: "posgrado", permisos: todos("posgrado").filter((p) => p !== "pg.calendario" && p !== "pg.calificaciones") },
   { id: "pg-validaciones", nombre: "Analista de validaciones de Posgrado", area: "posgrado", permisos: ["pg.expedientes", "pg.comunicados"] },
   { id: "pg-secretaria", nombre: "Secretaria de Admisión Posgrado", area: "posgrado", permisos: ["pg.expedientes", "pg.entrevistas", "pg.comunicados"] },
   { id: "ut-control", nombre: "Control Escolar (UTEyCV)", area: "uteycv", permisos: todos("uteycv"), base: true },
-  { id: "ut-analista", nombre: "Analista de UTEyCV", area: "uteycv", permisos: ["ut.dictamen", "ut.inscripcion"] },
+  { id: "ut-analista", nombre: "Analista de UTEyCV", area: "uteycv", permisos: ["ut.inscripcion"] },
   { id: "sd-subdireccion", nombre: "Subdirección Académica", area: "subdireccion", permisos: todos("subdireccion"), base: true },
   { id: "pr-profesor", nombre: "Profesor colegiado", area: "profesor", permisos: todos("profesor"), base: true },
 ];
@@ -91,7 +91,7 @@ const leerRaw = () => {
  * Permisos que se agregaron después de que el navegador guardó los roles: se suman a los roles
  * precargados que los tienen por defecto (lo que el administrador quitó a propósito no se toca).
  */
-const PERMISOS_NUEVOS = ["pg.inicio", "pg.calendario", "sd.aspirantes", "sd.bitacora", "ut.inscripcion", "pr.entrevistas", "pr.evaluacion"];
+const PERMISOS_NUEVOS = ["pg.inicio", "pg.calendario", "pg.calificaciones", "sd.aspirantes", "sd.bitacora", "ut.inscripcion", "pr.entrevistas", "pr.evaluacion"];
 function normalizar(e: Estado): Estado {
   const conocidos = e.permisosConocidos ?? [];
   const faltan = PERMISOS_NUEVOS.filter((p) => !conocidos.includes(p));

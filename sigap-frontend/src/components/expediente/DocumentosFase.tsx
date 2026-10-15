@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { CheckCircle2, FileUp, Info, Paperclip, Send, Trash2, Upload, Wand2 } from "lucide-react";
+import { AlertTriangle, CheckCircle2, FileUp, Info, Lock, Paperclip, Send, Trash2, Upload, Wand2 } from "lucide-react";
 import { documentosDeFase, esRequerido, type Documento } from "@/lib/documentos";
 import type { FaseId } from "@/lib/fases";
 import { useRevisionDocs } from "@/lib/posgrado/revision";
@@ -36,6 +36,9 @@ export function DocumentosFase({ fase, conEnvio = false }: { fase: FaseId; conEn
   const requeridos = lista.filter((d) => esRequerido(d, registro));
   const listos = requeridos.filter((d) => documentos[d.id]).length;
   const usados = lista.reduce((t, d) => t + (documentos[d.id]?.bytes ?? 0), 0);
+  // Si Posgrado observó algún documento, solo se pueden cambiar los observados (los demás quedan bloqueados)
+  const revisiones = useRevisionDocs();
+  const observados = lista.filter((d) => revisiones[d.id]?.estado === "observado");
 
   if (!lista.length) return null;
 
@@ -47,7 +50,9 @@ export function DocumentosFase({ fase, conEnvio = false }: { fase: FaseId; conEn
             <Upload size={17} className="text-primary" /> Documentos que subes
           </h2>
           <p className="mt-0.5 text-sm text-gray-500">
-            {lista[0].formatos === "imagen" ? "Imagen JPG o PNG." : `Solo PDF, máximo ${limiteMB} MB por documento.`}
+            {lista[0].formatos === "imagen"
+              ? `Imagen JPG o PNG, máximo ${Math.min(lista[0].maxMB, limiteMB)} MB.`
+              : `Solo PDF, máximo ${limiteMB} MB por documento.`}
           </p>
         </div>
         <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700">
@@ -55,9 +60,20 @@ export function DocumentosFase({ fase, conEnvio = false }: { fase: FaseId; conEn
         </span>
       </header>
 
+      {observados.length > 0 && (
+        <p className="flex items-start gap-2 border-b border-orange-100 bg-orange-50 px-5 py-3 text-sm text-orange-900">
+          <AlertTriangle size={16} className="mt-0.5 shrink-0" />
+          <span>
+            Posgrado hizo observaciones a {observados.length === 1 ? "un documento" : `${observados.length} documentos`}:{" "}
+            <b>{observados.map((d) => d.nombre).join(", ")}</b>. Solo puedes reemplazar {observados.length === 1 ? "ese documento" : "esos documentos"}; los
+            demás quedan bloqueados mientras se revisan.
+          </span>
+        </p>
+      )}
+
       <ul className="divide-y divide-gray-100">
         {lista.map((d) => (
-          <FilaDocumento key={d.id} doc={d} requerido={esRequerido(d, registro)} />
+          <FilaDocumento key={d.id} doc={d} requerido={esRequerido(d, registro)} hayObservaciones={observados.length > 0} />
         ))}
       </ul>
 
@@ -101,7 +117,7 @@ export function DocumentosFase({ fase, conEnvio = false }: { fase: FaseId; conEn
   );
 }
 
-function FilaDocumento({ doc, requerido }: { doc: Documento; requerido: boolean }) {
+function FilaDocumento({ doc, requerido, hayObservaciones }: { doc: Documento; requerido: boolean; hayObservaciones: boolean }) {
   const { documentos, guardarDocumento } = useExpediente();
   const input = useRef<HTMLInputElement>(null);
   const [error, setError] = useState("");
@@ -111,6 +127,8 @@ function FilaDocumento({ doc, requerido }: { doc: Documento; requerido: boolean 
   // Si volvió a subir el archivo después de la revisión, esa revisión ya no aplica
   const revision = rev && !(archivo && rev.el && archivo.fecha > rev.el && rev.estado !== "prorroga") ? rev : undefined;
   const acepta = doc.formatos === "pdf" ? "application/pdf" : "image/png,image/jpeg";
+  // Bloqueado: ya aprobado por Posgrado, o hay observaciones en otros documentos (solo se cambian los observados)
+  const bloqueado = !!archivo && rev?.estado !== "observado" && (revision?.estado === "aprobado" || hayObservaciones);
 
   async function onArchivo(file: File | undefined) {
     if (!file) return;
@@ -174,16 +192,25 @@ function FilaDocumento({ doc, requerido }: { doc: Documento; requerido: boolean 
           <img src={archivo.dataUrl} alt="Vista previa" className="h-14 w-11 rounded border border-gray-200 object-cover" />
         )}
         <input ref={input} type="file" accept={acepta} className="hidden" onChange={(e) => onArchivo(e.target.files?.[0])} />
-        <button
-          type="button"
-          onClick={() => input.current?.click()}
-          className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium ${
-            archivo ? "border border-gray-300 text-gray-700 hover:bg-gray-50" : "bg-primary text-white hover:bg-primary-hover"
-          }`}
-        >
-          <FileUp size={15} /> {archivo ? "Reemplazar" : "Subir"}
-        </button>
-        {archivo && (
+        {bloqueado ? (
+          <span
+            title={revision?.estado === "aprobado" ? "Ya lo aprobó Posgrado" : "Solo puedes cambiar los documentos con observaciones"}
+            className="flex items-center gap-1.5 rounded-lg bg-gray-100 px-3 py-2 text-sm text-gray-500"
+          >
+            <Lock size={14} /> {revision?.estado === "aprobado" ? "Aprobado" : "Bloqueado"}
+          </span>
+        ) : (
+          <button
+            type="button"
+            onClick={() => input.current?.click()}
+            className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium ${
+              archivo ? "border border-gray-300 text-gray-700 hover:bg-gray-50" : "bg-primary text-white hover:bg-primary-hover"
+            }`}
+          >
+            <FileUp size={15} /> {archivo ? "Reemplazar" : "Subir"}
+          </button>
+        )}
+        {archivo && !bloqueado && (
           <button
             type="button"
             onClick={() => guardarDocumento(doc.id, null)}

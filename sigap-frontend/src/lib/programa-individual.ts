@@ -1,6 +1,6 @@
 /**
  * SIP-08 · Programa individual de actividades — DATOS DE EJEMPLO (solo cascarón).
- * Con backend lo captura el asesor académico junto con Control Escolar (UTEyCV)
+ * Con backend lo elabora Control Escolar (UTEyCV)
  * (REP Art. 12) y llega aquí desde la API. Las materias y claves NO son las oficiales.
  */
 

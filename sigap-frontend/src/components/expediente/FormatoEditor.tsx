@@ -31,7 +31,6 @@ import { generarPdfFormato } from "@/lib/pdf/cliente";
 import { useExpediente } from "./ExpedienteProvider";
 import { FirmasOtros } from "./FirmasOtros";
 import { DocumentoAsesor } from "./DocumentoAsesor";
-import { RevisarDictamen } from "./RevisarDictamen";
 import { SubirFirmado } from "./SubirFirmado";
 import { useBloqueoFormato, useDocumentosFaltantes } from "./bloqueos";
 import { TONOS, estadoFormato } from "./estadoFormato";
@@ -108,14 +107,12 @@ export function FormatoEditor({ clave }: { clave: string }) {
 
       {bloqueo && !firmado && !recibidos[f.clave] ? (
         <FormatoBloqueado motivo={bloqueo} />
-      ) : f.confirmaAspirante ? (
-        <RevisarDictamen formato={f} />
       ) : f.llena === "asesor" ? (
         <DocumentoAsesor formato={f} />
       ) : !editable ? (
         <section className="rounded-xl border border-gray-200 bg-white p-5 text-sm text-gray-700">
           <p className="flex items-center gap-2 font-medium text-gray-900">
-            <Lock size={16} /> {f.llena === "area" ? `Este formato lo emite ${f.destino.replace(/^Aspirante \(lo emite (.*)\)$/, "$1")}.` : "Este formato lo prepara tu asesor académico."}
+            <Lock size={16} /> {f.llena === "area" ? `Este formato lo emite ${f.destino.replace(/^Aspirante \(lo emite (.*)\)$/, "$1")}.` : "Este formato lo prepara Control Escolar (UTEyCV)."}
           </p>
           <p className="mt-2">
             {estado.firmaAspirante
@@ -123,7 +120,7 @@ export function FormatoEditor({ clave }: { clave: string }) {
               : "Cuando se emita, podrás consultarlo y descargarlo desde esta pantalla."}
           </p>
           {f.pdf === "falta-plantilla" && <p className="mt-2 text-amber-700">PDF pendiente: {f.notaPlantilla}</p>}
-          <FirmasOtros firmas={f.firmas} recibe={f.destino} />
+          <FirmasOtros firmas={f.firmas} recibe={f.destino} recabaAspirante={f.subeFirmado} />
         </section>
       ) : (
         <div className="grid gap-6 xl:grid-cols-[1fr_380px]">
@@ -202,7 +199,7 @@ export function FormatoEditor({ clave }: { clave: string }) {
                 </Paso>
 
                 {estado.firmaAspirante ? (
-                  <Paso n={3} hecho={!!firmado} titulo="Fírmalo a mano y sube el escaneo" ultimo>
+                  <Paso n={3} hecho={!!firmado} titulo={f.subeFirmado ? "Recaba las firmas y sube el escaneo" : "Fírmalo a mano y sube el escaneo"} ultimo>
                     <SubirFirmado clave={f.clave} habilitado={datosCompletos} destino={f.destino} />
                   </Paso>
                 ) : (
@@ -215,7 +212,7 @@ export function FormatoEditor({ clave }: { clave: string }) {
                 )}
               </ol>
 
-              <FirmasOtros firmas={f.firmas} recibe={f.destino} />
+              <FirmasOtros firmas={f.firmas} recibe={f.destino} recabaAspirante={f.subeFirmado} />
             </section>
           </aside>
         </div>
@@ -387,7 +384,7 @@ function CampoInput({
   const falta = (!c.opcional && !c.sistema && esVacio(valor)) || invalido;
   const texto = typeof valor === "string" ? valor : "";
   const borde = falta ? "border-amber-400 bg-amber-50/40" : auto && !invalido ? "border-emerald-300 bg-emerald-50/30" : "border-gray-300 bg-white";
-  const ancho = c.tipo === "textarea" || c.tipo === "ranking" || c.tipo === "multi" || (c.tipo === "radio" && (c.opciones?.length ?? 0) > 3) || c.label.length > 45;
+  const ancho = c.tipo === "textarea" || c.tipo === "ranking" || c.tipo === "multi" || c.tipo === "tabla" || (c.tipo === "radio" && (c.opciones?.length ?? 0) > 3) || c.label.length > 45;
 
   let control: React.ReactNode;
   if (c.sistema) {
@@ -438,6 +435,60 @@ function CampoInput({
             </label>
           );
         })}
+      </div>
+    );
+  } else if (c.tipo === "tabla") {
+    const cols = c.columnas ?? [];
+    const filas = Array.from({ length: c.filas ?? 1 }, (_, i) => {
+      const celdas = (Array.isArray(valor) ? valor[i] ?? "" : "").split("\t");
+      return cols.map((_, j) => celdas[j] ?? "");
+    });
+    const cambiar = (i: number, j: number, texto: string) => {
+      const nuevas = filas.map((f) => [...f]);
+      nuevas[i][j] = texto;
+      // Al empezar a llenar una fila se ponen los valores por defecto (p. ej. CIDETEC)
+      cols.forEach((col, k) => {
+        if (col.defecto && !nuevas[i][k] && nuevas[i].some((x, m) => m !== k && x.trim())) nuevas[i][k] = col.defecto;
+      });
+      onChange(nuevas.map((f) => f.join("\t")));
+    };
+    control = (
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[640px] border-collapse text-sm">
+          <thead>
+            <tr className="text-left text-xs text-gray-500">
+              <th className="w-8 pb-1 font-medium">#</th>
+              {cols.map((col) => (
+                <th key={col.id} className="pb-1 pr-2 font-medium">
+                  {col.label}
+                  {col.requerida && <span className="text-red-600"> *</span>}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {filas.map((fila, i) => {
+              const incompleta = fila.some((x) => x.trim()) && cols.some((col, j) => col.requerida && !fila[j].trim());
+              return (
+                <tr key={i}>
+                  <td className="py-1 text-xs text-gray-400">{i + 1}</td>
+                  {cols.map((col, j) => (
+                    <td key={col.id} className={`py-1 pr-2 ${col.id === "clave" ? "w-28" : ""}`}>
+                      <input
+                        aria-label={`${col.label}, fila ${i + 1}`}
+                        value={fila[j]}
+                        maxLength={col.maxLength}
+                        placeholder={col.defecto}
+                        onChange={(e) => cambiar(i, j, e.target.value)}
+                        className={`${base} py-2 ${incompleta && col.requerida && !fila[j].trim() ? "border-amber-400 bg-amber-50/40" : i === 0 && falta && col.requerida ? "border-amber-400 bg-amber-50/40" : "border-gray-300 bg-white"}`}
+                      />
+                    </td>
+                  ))}
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
     );
   } else if (c.tipo === "ranking") {

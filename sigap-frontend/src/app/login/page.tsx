@@ -6,7 +6,7 @@ import { use, useState } from "react";
 import { ArrowLeft, AtSign, Eye, EyeOff, Lock, LogIn, ShieldCheck } from "lucide-react";
 import { Logos } from "@/components/Logos";
 import { PERIODO_ESCOLAR } from "@/lib/config";
-import { leerCuenta } from "@/lib/cuenta-alumno";
+import { guardarCuenta, leerCuenta } from "@/lib/cuenta-alumno";
 import { USUARIOS_DEMO, autenticar, iniciarSesion } from "@/lib/sesion";
 
 /**
@@ -145,9 +145,21 @@ export default function LoginPage({ searchParams }: PageProps<"/login">) {
           </div>
 
           {error && (
-            <p role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
-              {error}
-            </p>
+            <div role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+              <p>{error}</p>
+              {error.startsWith("Tu ID temporal ya no es válido") && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    guardarCuenta(null);
+                    setError("");
+                  }}
+                  className="mt-1.5 text-xs text-red-800 underline"
+                >
+                  Solo cascarón: borrar el número de registro de prueba y volver a entrar como aspirante
+                </button>
+              )}
+            </div>
           )}
 
           <button

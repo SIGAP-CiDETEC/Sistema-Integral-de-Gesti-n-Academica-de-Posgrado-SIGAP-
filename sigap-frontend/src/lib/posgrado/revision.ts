@@ -102,11 +102,73 @@ export function useEstadoAdmision(id = "ASP-2026-001"): EstadoVivo {
       // "matricula" venía de versiones anteriores del cascarón: ahora el proceso termina en el dictamen
       etapa: c.etapa === "matricula" ? "dictamen" : ((c.etapa as EstadoVivo["etapa"]) ?? "documentos"),
       concluido: c.concluido as string | undefined,
-      entrevista: c.entrevista as EstadoVivo["entrevista"],
+      // El aspirante ve su cita solo cuando Posgrado la publica (después de que se completa el sínodo)
+      entrevista: (c.entrevista as { notificadaEl?: string } | undefined)?.notificadaEl ? (c.entrevista as EstadoVivo["entrevista"]) : undefined,
       resultadoEntrevista: (c.dictamen as { resolucion?: EstadoVivo["resultadoEntrevista"] } | undefined)?.resolucion,
       evaluacion: { propedeutico: ev.propedeutico, examen: ev.examen },
       resolucion: c.resolucion as EstadoVivo["resolucion"],
       turnadoUteycv: c.turnadoUteycv as string | undefined,
     };
   }, [raw, id]);
+}
+
+/**
+ * Solo cascarón: deshace la conclusión del proceso del aspirante de este navegador y lo regresa
+ * al paso anterior, para seguir probando (p. ej. después de simular que no acreditó el examen).
+ * Con backend esto no existe. Devuelve el motivo que se deshizo (o null si no había conclusión).
+ */
+export function deshacerConclusion(id = "ASP-2026-001"): string | null {
+  let motivo: string | null = null;
+  try {
+    const e = JSON.parse(localStorage.getItem("sigap-posgrado") ?? "{}");
+    const c = { ...(e.cambios?.[id] ?? {}) };
+    if (!c.concluido) return null;
+    motivo = String(c.concluido);
+    delete c.concluido;
+    if (/entrevista/i.test(motivo)) {
+      // Rechazado por el sínodo: vuelve a la entrevista sin acta
+      delete c.dictamen;
+      delete c.actaEntrevista;
+      c.etapa = "entrevista";
+    } else if (/Colegio/i.test(motivo)) {
+      // No aceptado por el Colegio: vuelve a esperar la resolución
+      delete c.resolucion;
+    } else {
+      // Evaluación: se quita el examen no acreditado (o la decisión de no presentarlo)
+      const ev = { ...(c.evaluacion ?? {}) };
+      if (/Decidió no/i.test(motivo)) delete ev.segundaOportunidad;
+      else {
+        delete ev.examen;
+        if (ev.capturas) {
+          ev.capturas = { ...ev.capturas };
+          delete ev.capturas.examen;
+        }
+      }
+      c.evaluacion = ev;
+      c.etapa = "evaluacion";
+    }
+    c.ultimoMovimiento = new Date().toISOString();
+    const bitacora = [
+      { fecha: new Date().toISOString(), usuario: "Vista de prueba", aspirante: id, accion: `Deshizo la conclusión del proceso (solo cascarón): ${motivo}` },
+      ...(e.bitacora ?? []),
+    ];
+    localStorage.setItem("sigap-posgrado", JSON.stringify({ ...e, cambios: { ...e.cambios, [id]: c }, bitacora }));
+  } catch {
+    /* ignorar */
+  }
+  window.dispatchEvent(new Event("sigap-posgrado"));
+  return motivo;
+}
+
+/** Sesión del Colegio que resolvió la admisión (la registra Posgrado al capturar el acta). */
+export function useSesionColegio(): { fecha?: string; hora?: string; numero?: string } | null {
+  const raw = useSyncExternalStore(suscribir, leer, () => null);
+  return useMemo(() => {
+    try {
+      const acta = raw ? JSON.parse(raw).acta : null;
+      return acta?.registradaEl ? { fecha: acta.fecha, hora: acta.hora, numero: acta.numero } : null;
+    } catch {
+      return null;
+    }
+  }, [raw]);
 }

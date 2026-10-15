@@ -4,11 +4,11 @@
 
 ---
 
-### HU-AD-01 · Configurar las convocatorias A y B
-**Como** administrador, **quiero** configurar cada convocatoria, **para** controlar cuándo pueden registrarse los aspirantes.
+### HU-AD-01 · Configurar los parámetros de las convocatorias
+**Como** administrador, **quiero** configurar los parámetros del proceso, **para** que apliquen a las dos convocatorias.
 
 **Criterios de aceptación**
-- Por convocatoria (A y B) edito nombre (p. ej. "Convocatoria de admisión A-27"), estado **Abierta/Cerrada** y fechas de inicio y cierre del registro.
+- Veo cada convocatoria (A y B) con su nombre, periodo de registro y estado (**Próxima**, **Abierta** o **Cerrada**) en solo lectura: las fechas las define el Departamento de Posgrado (HU-PG-24) y la convocatoria se abre y se cierra sola.
 - Configuro el **límite de tamaño por archivo (MB)** que aplica a los documentos de los aspirantes.
 - Debo confirmar los cambios antes de guardarlos; quedan en la bitácora de administración.
 - Si una convocatoria está cerrada, el inicio muestra "Registro no disponible" y no permite registrarse.
@@ -30,7 +30,7 @@
   - comisión;
   - comunicados;
   - calendario (Jefatura);
-  - dictamen SIP-04;
+  - inscripción (UTEyCV);
   - entrevistas del sínodo;
   - calificaciones.
 - Puedo crear, editar y eliminar roles; los roles base no se eliminan.

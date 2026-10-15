@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { CalendarCog, CheckCircle2, Pencil, Plus, RotateCcw, Trash2 } from "lucide-react";
-import { DIAS, describirGrupo, type Dia, type Materia } from "@/lib/evaluacion";
+import { CalendarCog, CheckCircle2, Download, Pencil, Plus, RotateCcw, Trash2 } from "lucide-react";
+import { DIAS, describirGrupo, lugarDe, type Dia, type Materia } from "@/lib/evaluacion";
+import { PROFESORES_SINODO, nombreProfesor, profesorValido, type AspiranteP } from "@/lib/posgrado/datos";
+import { descargarCsv, fechaArchivo } from "@/lib/csv";
 import {
   CONFIG_EVALUACION_DEFECTO,
   fechaLargaIso,
@@ -20,7 +22,7 @@ const mins = (h: string) => {
 
 /** Lista legible de lo que cambió entre dos configuraciones. */
 function diferencias(a: ConfigEvaluacion, b: ConfigEvaluacion) {
-  const out: { texto: string; afecta: "propedeutico" | "examen" }[] = [];
+  const out: { texto: string; afecta: "propedeutico" | "examen" | "interno" }[] = [];
   if (a.propedeutico.inicio !== b.propedeutico.inicio || a.propedeutico.fin !== b.propedeutico.fin)
     out.push({ texto: `Cursos propedéuticos: del ${fechaLargaIso(b.propedeutico.inicio)} al ${fechaLargaIso(b.propedeutico.fin)}`, afecta: "propedeutico" });
   if (a.propedeutico.modalidad !== b.propedeutico.modalidad || a.propedeutico.duracion !== b.propedeutico.duracion)
@@ -32,8 +34,12 @@ function diferencias(a: ConfigEvaluacion, b: ConfigEvaluacion) {
     m.grupos.forEach((g) => {
       const ga = antes?.grupos.find((x) => x.id === g.id);
       if (!ga) out.push({ texto: `${m.nombre}: nuevo grupo ${g.id} (${describirGrupo(g)})`, afecta: "propedeutico" });
-      else if (JSON.stringify(ga.sesiones) !== JSON.stringify(g.sesiones))
-        out.push({ texto: `${m.nombre}, grupo ${g.id}: ${describirGrupo(g)}`, afecta: "propedeutico" });
+      else {
+        if (JSON.stringify(ga.sesiones) !== JSON.stringify(g.sesiones)) out.push({ texto: `${m.nombre}, grupo ${g.id}: ${describirGrupo(g)}`, afecta: "propedeutico" });
+        if ((ga.lugar ?? "") !== (g.lugar ?? "")) out.push({ texto: `${m.nombre}, grupo ${g.id}: lugar ${lugarDe(g)}`, afecta: "propedeutico" });
+        // El docente no se publica al aspirante: el cambio no se le avisa
+        if ((ga.docente ?? "") !== (g.docente ?? "")) out.push({ texto: `${m.nombre}, grupo ${g.id}: docente ${g.docente ? nombreProfesor(g.docente) : "sin asignar"}`, afecta: "interno" });
+      }
     });
     antes?.grupos.filter((g) => !m.grupos.some((x) => x.id === g.id)).forEach((g) => out.push({ texto: `${m.nombre}: se eliminó el grupo ${g.id}`, afecta: "propedeutico" }));
   });
@@ -58,9 +64,14 @@ export function EditarCalendario() {
       <Tarjeta
         titulo={<span className="flex items-center gap-2"><CalendarCog size={17} className="text-primary" /> Fechas y horarios {editada && <Etiqueta tono="bg-amber-50 text-amber-800">Modificados por Posgrado</Etiqueta>}</span>}
         accion={
-          <button type="button" className={botonSecundario} onClick={() => { setBorrador(structuredClone(config)); setGuardado(""); }}>
-            <Pencil size={14} /> Editar fechas y horarios
-          </button>
+          <span className="flex flex-wrap gap-2">
+            <button type="button" className={botonSecundario} onClick={() => descargarInscritos(aspirantes, config.materias)}>
+              <Download size={14} /> Inscritos por curso (CSV)
+            </button>
+            <button type="button" className={botonSecundario} onClick={() => { setBorrador(structuredClone(config)); setGuardado(""); }}>
+              <Pencil size={14} /> Editar fechas y horarios
+            </button>
+          </span>
         }
       >
         {guardado && (
@@ -85,9 +96,13 @@ export function EditarCalendario() {
               <p className="font-medium text-gray-900">{m.nombre}</p>
               <ul className="mt-1.5 space-y-1">
                 {m.grupos.map((g) => (
-                  <li key={g.id} className="flex justify-between gap-2 text-xs text-gray-600">
+                  <li key={g.id} className="flex justify-between gap-2 text-xs text-gray-600" data-grupo={`${m.id}-${g.id}`}>
                     <span>
                       Grupo {g.id}: {describirGrupo(g)}
+                      <span className="block text-gray-500">Lugar: {lugarDe(g)}</span>
+                      <span className="block text-gray-500">
+                        Docente: {g.docente ? nombreProfesor(g.docente) : "sin asignar"} <span className="text-gray-400">(solo Posgrado)</span>
+                      </span>
                     </span>
                     <span className="shrink-0 font-semibold text-gray-900" title="Aspirantes inscritos">{usados(m.id, g.id)}</span>
                   </li>
@@ -231,6 +246,34 @@ export function EditarCalendario() {
                   <button type="button" onClick={() => setMateria(mi, (x) => void x.grupos[gi].sesiones.push({ dia: "viernes", inicio: "10:00", fin: "12:00" }))} className="inline-flex items-center gap-1 text-xs text-primary hover:underline">
                     <Plus size={12} /> Agregar sesión
                   </button>
+                  <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                    <label className="block text-xs text-gray-700">
+                      Lugar (lo ve el aspirante)
+                      <input
+                        aria-label={`Lugar de ${m.nombre}, grupo ${g.id}`}
+                        value={g.lugar ?? ""}
+                        placeholder="Ej. Aula 1, CIDETEC"
+                        onChange={(e) => setMateria(mi, (x) => void (x.grupos[gi].lugar = e.target.value))}
+                        className={`${inputBase} mt-0.5 py-1.5`}
+                      />
+                    </label>
+                    <label className="block text-xs text-gray-700">
+                      Docente (solo Posgrado; captura las calificaciones del grupo)
+                      <select
+                        aria-label={`Docente de ${m.nombre}, grupo ${g.id}`}
+                        value={g.docente ?? ""}
+                        onChange={(e) => setMateria(mi, (x) => void (x.grupos[gi].docente = e.target.value || undefined))}
+                        className={`${inputBase} mt-0.5 py-1.5`}
+                      >
+                        <option value="">Sin asignar</option>
+                        {PROFESORES_SINODO.filter(profesorValido).map((p) => (
+                          <option key={p.id} value={p.id}>
+                            {p.nombre}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
                 </div>
               ))}
             </div>
@@ -296,4 +339,17 @@ function Campo({ t, children }: { t: string; children: React.ReactNode }) {
       <div className="mt-0.5">{children}</div>
     </label>
   );
+}
+
+/** CSV con los aspirantes inscritos en cada curso y grupo del propedéutico (nombre y correo). */
+function descargarInscritos(lista: AspiranteP[], materias: Materia[]) {
+  const filas = materias.flatMap((m) =>
+    m.grupos.flatMap((g) =>
+      lista
+        .filter((a) => a.evaluacion.modalidad === "propedeutico" && (a.evaluacion.grupos[m.id] ?? (m.grupos.length === 1 ? g.id : undefined)) === g.id)
+        .sort((x, y) => x.nombre.localeCompare(y.nombre, "es"))
+        .map((a) => [m.nombre, g.id, describirGrupo(g), lugarDe(g), g.docente ? nombreProfesor(g.docente) : "", a.id, a.nombre, a.correo, a.telefono]),
+    ),
+  );
+  descargarCsv(`Inscritos_propedeutico_${fechaArchivo()}.csv`, ["Curso", "Grupo", "Horario", "Lugar", "Docente", "ID", "Aspirante", "Correo", "Teléfono"], filas);
 }

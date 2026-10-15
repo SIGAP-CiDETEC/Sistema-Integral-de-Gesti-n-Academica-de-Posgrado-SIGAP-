@@ -11,7 +11,8 @@ import { MODALIDADES } from "@/lib/evaluacion";
 import {
   bandejaDe,
   enDias,
-  estadoUteycv,
+  estadoInscripcion,
+  puedeInscribirse,
   expedienteCompleto,
   fechaCorta,
   fechaHora,
@@ -340,10 +341,10 @@ export default function RevisionExpediente({ params }: PageProps<"/posgrado/aspi
                 <dt className="text-gray-500">Resolución del Colegio</dt>
                 <dd className="text-gray-900">{a.resolucion ?? "Pendiente"}</dd>
               </div>
-              {a.turnadoUteycv && (
+              {puedeInscribirse(a) && (
                 <div>
-                  <dt className="text-gray-500">Dictamen SIP-04 (UTEyCV)</dt>
-                  <dd className="text-gray-900">{estadoUteycv(a)}</dd>
+                  <dt className="text-gray-500">Inscripción (UTEyCV)</dt>
+                  <dd className="text-gray-900">{estadoInscripcion(a)}</dd>
                 </div>
               )}
             </dl>

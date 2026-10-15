@@ -4,23 +4,17 @@ import { useState } from "react";
 import { CheckCircle2, Lock, TriangleAlert } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { Aviso, Etiqueta, Tarjeta, botonPrimario, botonSecundario, inputBase } from "@/components/admin/ui";
-import { CONVOCATORIAS_INFO, PROGRAMA, type IdConvocatoria } from "@/lib/config";
-import {
-  CONVOCATORIAS_DEFECTO,
-  IDS_CONVOCATORIA,
-  guardarConvocatorias,
-  useConvocatorias,
-  type ConfigConvocatoria,
-  type ConfigConvocatorias,
-} from "@/lib/convocatoria";
+import { CONVOCATORIAS_INFO, PROGRAMA } from "@/lib/config";
+import { CONVOCATORIAS_DEFECTO, TONO_ESTADO_CONV, guardarConvocatorias, useConvocatorias, type ConfigConvocatorias } from "@/lib/convocatoria";
 import { registrarEventoAdmin } from "@/lib/admin/accesos";
 import { useSesion } from "@/lib/sesion";
 
+const fechaLarga = (f: string) => new Date(`${f}T12:00:00`).toLocaleDateString("es-MX", { day: "numeric", month: "long", year: "numeric" });
 const fh = (iso: string) => new Date(iso).toLocaleString("es-MX", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
 
-/** Configuración de las convocatorias A (enero–junio) y B (agosto–diciembre) (RF-81, US-AD-03). */
+/** Parámetros de las convocatorias A y B (RF-81). Las fechas las define Posgrado y el estado se calcula solo. */
 export default function ConfiguracionConvocatoria() {
-  const { config, cargada } = useConvocatorias();
+  const { config, lista, cargada } = useConvocatorias();
   const { sesion } = useSesion();
   const [borrador, setBorrador] = useState<ConfigConvocatorias | null>(null);
   const [confirmar, setConfirmar] = useState(false);
@@ -31,29 +25,18 @@ export default function ConfiguracionConvocatoria() {
     setBorrador({ ...b, ...patch });
     setGuardado("");
   };
-  const setConv = (id: IdConvocatoria, patch: Partial<ConfigConvocatoria>) => set({ [id]: { ...b[id], ...patch } });
 
   const cambios: string[] = [];
   const errores: string[] = [];
-  for (const id of IDS_CONVOCATORIA) {
-    const n = b[id];
-    const o = config[id];
-    if (n.nombre !== o.nombre) cambios.push(`${id} · Nombre: ${n.nombre}`);
-    if (n.inicio !== o.inicio || n.cierre !== o.cierre) cambios.push(`${id} · Periodo de registro: ${n.inicio} a ${n.cierre}`);
-    if (n.activa !== o.activa) cambios.push(n.activa ? `${id} · ABIERTA (se abre su registro público)` : `${id} · CERRADA (se cierra su registro público)`);
-    if (n.cierre < n.inicio) errores.push(`Convocatoria ${id}: la fecha de cierre es anterior a la de inicio.`);
-    if (!n.nombre.trim()) errores.push(`Convocatoria ${id}: escribe el nombre.`);
-  }
   if (b.limiteMB !== config.limiteMB) cambios.push(`Límite por archivo: ${b.limiteMB} MB`);
   if (b.limiteMB < 1 || b.limiteMB > 20) errores.push("El límite por archivo debe estar entre 1 y 20 MB.");
   // Con alguna convocatoria abierta, cualquier cambio es crítico: pide confirmación (mockup)
-  const critico = (config.A.activa || config.B.activa) && cambios.length > 0;
+  const critico = lista.some((c) => c.activa) && cambios.length > 0;
 
   const guardar = () => {
     const nuevo: ConfigConvocatorias = {
-      ...b,
-      A: { ...b.A, nombre: b.A.nombre.trim() },
-      B: { ...b.B, nombre: b.B.nombre.trim() },
+      ...config,
+      limiteMB: b.limiteMB,
       actualizadoEl: new Date().toISOString(),
       actualizadoPor: sesion?.correo,
     };
@@ -66,7 +49,7 @@ export default function ConfiguracionConvocatoria() {
 
   return (
     <>
-      <PageHeader titulo="Configuración de convocatorias" subtitulo="Convocatoria A (ingreso enero – junio) y B (ingreso agosto – diciembre)" />
+      <PageHeader titulo="Configuración de convocatorias" subtitulo="Parámetros del proceso; las fechas de registro las define el Departamento de Posgrado" />
       {config.actualizadoEl && (
         <p className="mb-5 text-xs text-gray-500">
           Última actualización: {fh(config.actualizadoEl)} · {config.actualizadoPor}
@@ -74,48 +57,27 @@ export default function ConfiguracionConvocatoria() {
       )}
 
       <div className="grid gap-6 lg:grid-cols-2">
-        {IDS_CONVOCATORIA.map((id) => {
-          const c = b[id];
-          return (
-            <Tarjeta
-              key={id}
-              titulo={`Convocatoria ${id} · ${CONVOCATORIAS_INFO[id].periodo}`}
-              accion={<Etiqueta tono={config[id].activa ? "bg-emerald-50 text-emerald-700" : "bg-gray-100 text-gray-600"}>{config[id].activa ? "Abierta" : "Cerrada"}</Etiqueta>}
-            >
-              <label className="block text-sm">
-                <span className="font-medium text-gray-900">Nombre</span>
-                <input value={c.nombre} onChange={(e) => setConv(id, { nombre: e.target.value })} className={`${inputBase} mt-1`} />
-              </label>
-              <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                <label className="text-sm">
-                  <span className="font-medium text-gray-900">Inicio del registro</span>
-                  <input type="date" value={c.inicio} onChange={(e) => setConv(id, { inicio: e.target.value })} className={`${inputBase} mt-1`} />
-                </label>
-                <label className="text-sm">
-                  <span className="font-medium text-gray-900">Cierre del registro</span>
-                  <input type="date" value={c.cierre} onChange={(e) => setConv(id, { cierre: e.target.value })} className={`${inputBase} mt-1`} />
-                </label>
-              </div>
-              <div className="mt-3 text-sm">
-                <span className="font-medium text-gray-900">Semestre de ingreso</span>
-                <p className="mt-1 flex items-center gap-1.5 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-gray-700">
-                  <Lock size={13} /> {CONVOCATORIAS_INFO[id].semestre}
-                </p>
-              </div>
-              <fieldset className="mt-4">
-                <legend className="text-sm font-medium text-gray-900">Estado</legend>
-                <div className="mt-1 flex flex-wrap gap-2">
-                  {[true, false].map((v) => (
-                    <label key={String(v)} className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm ${c.activa === v ? "border-primary bg-indigo-50 text-primary" : "border-gray-300"}`}>
-                      <input type="radio" name={`estado-${id}`} checked={c.activa === v} onChange={() => setConv(id, { activa: v })} className="accent-[var(--color-primary)]" />
-                      {v ? "Abierta (registro público)" : "Cerrada"}
-                    </label>
-                  ))}
+        {lista.map((c) => (
+          <Tarjeta key={c.id} titulo={`Convocatoria ${c.id} · ${CONVOCATORIAS_INFO[c.id].periodo}`} accion={<Etiqueta tono={TONO_ESTADO_CONV[c.estado]}>{c.estado}</Etiqueta>}>
+            <dl className="space-y-3 text-sm">
+              {[
+                ["Nombre", c.nombre],
+                ["Periodo de registro", `${fechaLarga(c.inicioISO)} al ${fechaLarga(c.cierreISO)}`],
+                ["Semestre de ingreso", CONVOCATORIAS_INFO[c.id].semestre],
+              ].map(([k, v]) => (
+                <div key={k}>
+                  <dt className="font-medium text-gray-900">{k}</dt>
+                  <dd className="mt-1 flex items-center gap-1.5 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-gray-700">
+                    <Lock size={13} /> {v}
+                  </dd>
                 </div>
-              </fieldset>
-            </Tarjeta>
-          );
-        })}
+              ))}
+            </dl>
+            <p className="mt-3 text-xs text-gray-500">
+              Las fechas las define el Departamento de Posgrado (Convocatorias y calendario). La convocatoria se abre y se cierra sola en esas fechas.
+            </p>
+          </Tarjeta>
+        ))}
 
         <Tarjeta titulo="Parámetros del proceso (ambas convocatorias)">
           <div className="mb-3 text-sm">
@@ -132,8 +94,9 @@ export default function ConfiguracionConvocatoria() {
           <dl className="mt-4 space-y-3 text-sm">
             {[
               ["Formatos permitidos", "PDF (fotografía en JPG o PNG)"],
-              ["Integrantes del sínodo", "3 profesores colegiados vigentes (RN-07)"],
+              ["Integrantes del sínodo", "3 profesores colegiados vigentes o de asignatura, que eligen sus entrevistas (RN-07)"],
               ["Segunda oportunidad", "Examen de admisión después del propedéutico (RN-08)"],
+              ["Fechas de registro de las convocatorias", "Las define el Departamento de Posgrado; se abren y cierran solas"],
               ["Fechas y horarios de la evaluación", "Los edita el Departamento de Posgrado"],
             ].map(([k, v]) => (
               <div key={k}>
@@ -159,7 +122,7 @@ export default function ConfiguracionConvocatoria() {
         {critico && (
           <Aviso tono="alerta" titulo="Cambios críticos">
             <span className="flex items-start gap-1.5">
-              <TriangleAlert size={14} className="mt-0.5 shrink-0" /> Modificar fechas o reglas con una convocatoria abierta requiere confirmación y queda registrado en la bitácora.
+              <TriangleAlert size={14} className="mt-0.5 shrink-0" /> Modificar reglas con una convocatoria abierta requiere confirmación y queda registrado en la bitácora.
             </span>
             <ul className="mt-1 list-disc pl-5">
               {cambios.map((c) => (
@@ -181,7 +144,7 @@ export default function ConfiguracionConvocatoria() {
             type="button"
             className="text-xs text-gray-500 underline"
             onClick={() => {
-              setBorrador(CONVOCATORIAS_DEFECTO);
+              setBorrador({ ...config, limiteMB: CONVOCATORIAS_DEFECTO.limiteMB });
               setGuardado("");
             }}
           >

@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Info, Search } from "lucide-react";
+import { Download, Info, Search } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { usePosgrado } from "@/components/posgrado/PosgradoProvider";
-import { EtiquetaBandeja, Etiqueta, Progreso, inputBase, Regresar } from "@/components/posgrado/ui";
+import { EtiquetaBandeja, Etiqueta, Progreso, botonSecundario, inputBase, Regresar } from "@/components/posgrado/ui";
+import { descargarReporteAspirantes } from "@/lib/reporte-aspirantes";
 import { ETAPAS } from "@/lib/admision";
 import { TONO_BANDEJA, bandejaDe, prioridadDe, progresoDe, type Bandeja, type Prioridad } from "@/lib/posgrado/datos";
 
@@ -38,6 +39,15 @@ export function BandejaAspirantes({ inicial, prioridadInicial }: { inicial?: str
     <>
       <Regresar href="/posgrado" t="Inicio" />
       <PageHeader titulo="Bandeja de aspirantes" subtitulo="Consulta y prioriza solicitudes" />
+
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm">
+        <p className="text-gray-600">
+          Reporte para la Subdirección Académica: todos los aspirantes ({aspirantes.length}) con su procedencia, fase, estado, calificaciones y dictamen (CSV, se abre en Excel).
+        </p>
+        <button type="button" className={botonSecundario} onClick={() => descargarReporteAspirantes(aspirantes)} disabled={!aspirantes.length}>
+          <Download size={15} /> Descargar CSV de todos los aspirantes
+        </button>
+      </div>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <label className="text-sm">

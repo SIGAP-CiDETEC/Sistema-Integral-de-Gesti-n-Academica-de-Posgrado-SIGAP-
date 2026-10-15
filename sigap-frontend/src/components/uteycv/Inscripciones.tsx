@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
 import { useRef } from "react";
 import { CheckCircle2, Circle, FileUp, GraduationCap, Send, TriangleAlert, Wand2 } from "lucide-react";
@@ -80,10 +79,8 @@ function Detalle({ a }: { a: AspiranteP }) {
 
   if (!puedeInscribirse(a))
     return (
-      <Aviso tono="alerta" titulo="Primero publica su dictamen SIP-04">
-        <Link href={`/uteycv/dictamen?id=${a.id}`} className="underline">
-          Ir al SIP-04 de {a.nombre}
-        </Link>
+      <Aviso tono="alerta" titulo="Aún no es admitido(a)">
+        La inscripción se habilita cuando Posgrado publica la resolución del Colegio de Profesores (Aceptado o Condicionado).
       </Aviso>
     );
 
@@ -120,14 +117,14 @@ function Detalle({ a }: { a: AspiranteP }) {
         ) : (
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="text-sm text-gray-600">
-              Lo prepara su asesor académico ({nombreAsesor()}) con Control Escolar. Al publicarlo, el aspirante lo descarga, firma y sube.
+              Lo elabora Control Escolar con el programa del aspirante (asesor: {nombreAsesor()}). Al publicarlo, el aspirante lo descarga, firma y sube.
             </p>
             <button
               type="button"
               className={botonPrimario}
               onClick={() => {
-                actualizarUteycv(a.id, { sip08PublicadoEl: new Date().toISOString() }, "Publicó el programa individual (SIP-08) preparado por el asesor");
-                enviarAviso([a.id], "ambos", "Tu programa individual (SIP-08) está listo", `Estimado(a) ${nombre}:\n\nTu asesor académico preparó tu programa individual de actividades (SIP-08). Descárgalo en SIGAP (Inscripción), fírmalo y súbelo escaneado.\n\nAtentamente,\nControl Escolar (UTEyCV) · CIDETEC`);
+                actualizarUteycv(a.id, { sip08PublicadoEl: new Date().toISOString() }, "Elaboró y publicó el programa individual (SIP-08)");
+                enviarAviso([a.id], "ambos", "Tu programa individual (SIP-08) está listo", `Estimado(a) ${nombre}:\n\nControl Escolar elaboró tu programa individual de actividades (SIP-08). Descárgalo en SIGAP (Inscripción), fírmalo y súbelo escaneado.\n\nAtentamente,\nControl Escolar (UTEyCV) · CIDETEC`);
               }}
             >
               <Send size={15} /> Publicar SIP-08 al aspirante

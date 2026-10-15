@@ -113,11 +113,12 @@ export const DOCUMENTOS: Documento[] = [
   {
     id: "foto",
     nombre: "Fotografía tamaño infantil",
-    descripcion: "Fondo blanco, de frente. Se coloca automáticamente en tu SIP-01.",
+    descripcion: "A color, de frente, con fondo blanco. Se coloca automáticamente en tu SIP-01.",
     fase: "inscripcion",
     requerido: true,
     formatos: "imagen",
     maxMB: 2,
+    nota: "Rostro descubierto: sin lentes, gorra, sombrero ni accesorios que cubran la cara, y con orejas y frente visibles. Imagen JPG o PNG de máximo 2 MB.",
     fuente: "SIP-01",
   },
 ];

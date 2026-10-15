@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { AlertTriangle, BookOpen, CalendarDays, CheckCircle2, FileQuestion, Info, Lock, Mail, RotateCcw } from "lucide-react";
 import { CORREO_POSGRADO } from "@/lib/config";
-import { DIAS, choques, describirGrupo, type Grupo, type Materia, type ModalidadId } from "@/lib/evaluacion";
+import { DIAS, choques, describirGrupo, lugarDe, type Grupo, type Materia, type ModalidadId } from "@/lib/evaluacion";
 import { useConfigEvaluacion } from "@/lib/evaluacion-config";
 import { useExpediente } from "./ExpedienteProvider";
 import { RecordatoriosExamen } from "./Recordatorios";
@@ -95,7 +95,7 @@ export function ModalidadEvaluacion() {
                 </legend>
                 {m.grupos.length === 1 ? (
                   <p className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-700">
-                    {describirGrupo(m.grupos[0])} <span className="text-xs text-gray-500">· horario único</span>
+                    {describirGrupo(m.grupos[0])} <span className="text-xs text-gray-500">· horario único · {lugarDe(m.grupos[0])}</span>
                   </p>
                 ) : (
                   <div className="grid gap-2 sm:grid-cols-2">
@@ -118,6 +118,7 @@ export function ModalidadEvaluacion() {
                           <span>
                             <span className="block text-xs font-semibold">Grupo {g.id}</span>
                             {describirGrupo(g)}
+                            <span className="block text-xs text-gray-500">{lugarDe(g)}</span>
                           </span>
                         </label>
                       );
@@ -195,7 +196,7 @@ function Resumen({
   const porDia = DIAS.map((dia) => ({
     dia,
     clases: elegidos
-      .flatMap(({ materia, grupo }) => grupo.sesiones.filter((s) => s.dia === dia).map((s) => ({ ...s, materia: materia.nombre })))
+      .flatMap(({ materia, grupo }) => grupo.sesiones.filter((s) => s.dia === dia).map((s) => ({ ...s, materia: materia.nombre, lugar: lugarDe(grupo) })))
       .sort((a, b) => a.inicio.localeCompare(b.inicio)),
   })).filter((d) => d.clases.length);
 
@@ -228,6 +229,7 @@ function Resumen({
                           {c.inicio} – {c.fin}
                         </span>
                         <span className="text-gray-900">{c.materia}</span>
+                        <span className="block text-xs text-gray-500">{c.lugar}</span>
                       </li>
                     ))}
                   </ul>

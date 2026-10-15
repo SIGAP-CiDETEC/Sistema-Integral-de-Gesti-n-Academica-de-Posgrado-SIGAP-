@@ -17,6 +17,7 @@ import { guardarCuenta, ID_TEMPORAL_DEMO, type CuentaAlumno } from "@/lib/cuenta
 import { siglasUnidad, type Respuestas } from "@/lib/registro-form";
 import { useSesion } from "@/lib/sesion";
 import { useProfesorActual } from "@/lib/profesor";
+import { registroSintetico } from "@/lib/registro-aspirante";
 
 /**
  * Estado compartido del proceso de admisión para el personal: lo usan el Departamento de Posgrado
@@ -46,6 +47,8 @@ export type AvisoP = { id: string; fecha: string; usuario: string; aspirante: st
 export type ActaColegio = {
   numero: string;
   fecha: string;
+  /** Hora de la sesión del Colegio (aparece en el SIP-04) */
+  hora?: string;
   archivo?: string;
   resoluciones: Record<string, ResolucionColegio>;
   registradaEl: string;
@@ -76,10 +79,14 @@ type Api = {
   guardarActa: (acta: Omit<ActaColegio, "registradaEl">, accion: string) => void;
   /** Aviso a uno o varios aspirantes (p. ej. cambio de horario o de entrevista) */
   enviarAviso: (aspirantes: string[], canal: Canal, asunto: string, mensaje: string) => void;
-  /** Registra el trabajo de UTEyCV (dictamen SIP-04 e inscripción). Lo que toca al aspirante de este navegador se refleja en su sesión. */
+  /** Registra el trabajo de UTEyCV (inscripción). Lo que toca al aspirante de este navegador se refleja en su sesión. */
   actualizarUteycv: (id: string, patch: Partial<UteycvP>, accion: string) => void;
   /** Deja constancia en bitácora de un cambio general (p. ej. fechas de evaluación) */
   registrarEnBitacora: (accion: string) => void;
+  /** Respuestas del registro (primer formulario) del aspirante */
+  registroDe: (id: string) => Respuestas;
+  /** Lo que el aspirante capturó en sus formatos (solo el de este navegador) */
+  capturasDe: (id: string) => Record<string, unknown>;
   avisos: AvisoP[];
   bitacora: EntradaBitacora[];
   comunicados: Comunicado[];
@@ -177,19 +184,17 @@ export function PosgradoProvider({ children }: { children: React.ReactNode }) {
       if (!a.concluido && a.etapa === "evaluacion" && a.evaluacion.segundaOportunidad?.decision === "no" && !a.evaluacion.examen)
         a.concluido = "Decidió no presentar el examen de las áreas no acreditadas (RN-08)";
       if (base.enVivo) {
-        // Lo que hizo el aspirante en su sesión (confirmar SIP-04) y lo publicado para él
+        // Lo que hizo el aspirante en su sesión (formatos de inscripción) y lo publicado para él
         const x = vivo.exp;
         const est = x.capturas?.estatus;
-        // La dedicación la elige el aspirante al revisar su SIP-04
+        // La dedicación la elige el aspirante al llenar su SIP-04
         a.dedicacion = est === "Tiempo completo" || est === "Tiempo parcial" ? est : undefined;
         a.uteycv = {
           ...a.uteycv,
-          confirmoSip04: !!x.confirmados?.["sip-04"],
-          sip04PublicadoEl: x.recibidos?.["sip-04"]?.fecha,
-          sip04Archivo: x.recibidos?.["sip-04"]?.nombre,
           // Inscripción: lo que subió en su sesión y lo que Control Escolar le publicó
           foto: !!x.documentos?.foto,
           sip01Firmado: !!x.firmados?.["sip-01"],
+          sip04Firmado: !!x.firmados?.["sip-04"],
           sip05Firmado: !!x.firmados?.["sip-05"],
           sip06Firmado: !!x.firmados?.["sip-06"],
           sip08Firmado: !!x.firmados?.["sip-08"],
@@ -225,6 +230,12 @@ export function PosgradoProvider({ children }: { children: React.ReactNode }) {
       usuario,
       aspirantes,
       porId: (id) => aspirantes.find((a) => a.id === id),
+      registroDe: (id) => {
+        const a = aspirantes.find((x) => x.id === id);
+        if (!a) return {};
+        return a.enVivo ? vivo.registro : registroSintetico(a);
+      },
+      capturasDe: (id) => (aspirantes.find((x) => x.id === id)?.enVivo ? (vivo.exp.capturas ?? {}) : {}),
       actualizar: (id, patch, accion) =>
         guardar((e) =>
           registrar(
@@ -321,9 +332,8 @@ export function PosgradoProvider({ children }: { children: React.ReactNode }) {
           const exp = leerLocal<Record<string, unknown> & ExpedienteLocal>("sigap-expediente") ?? {};
           const recibidos = { ...(exp.recibidos ?? {}) };
           const ahora = new Date().toISOString();
-          if (patch.sip04PublicadoEl) recibidos["sip-04"] = { nombre: patch.sip04Archivo ?? "SIP-04_firmado.pdf", fecha: ahora };
           if (patch.sip08PublicadoEl) recibidos["sip-08"] = { nombre: "SIP-08_programa_individual.pdf", fecha: ahora };
-          if (patch.sip04PublicadoEl || patch.sip08PublicadoEl) {
+          if (patch.sip08PublicadoEl) {
             const nuevo = { ...exp, recibidos: Object.fromEntries(Object.entries(recibidos).map(([k, v]) => [k, { bytes: 240_000, ...v }])) };
             try {
               localStorage.setItem("sigap-expediente", JSON.stringify(nuevo));

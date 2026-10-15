@@ -28,6 +28,9 @@ export type Entrevista = {
   modalidad: "Presencial" | "En línea";
   sala: string;
   sinodo: string[]; // ids de profesor
+  /** Cuándo Posgrado publicó el horario a los profesores para que lo elijan (vacío = borrador) */
+  horarioPublicadoEl?: string;
+  /** Cuándo Posgrado publicó la entrevista al aspirante (vacío = el aspirante aún no la ve) */
   notificadaEl: string;
 };
 
@@ -77,6 +80,20 @@ export type ActaEntrevista = {
   capturadaEl: string;
   /** id de profesor → fecha de firma */
   firmas: Record<string, string>;
+};
+/** El sínodo se integra con 3 profesores; los lugares libres los eligen los propios profesores. */
+export const LUGARES_SINODO = 3;
+export const lugaresLibres = (e?: Entrevista) => (e ? Math.max(0, LUGARES_SINODO - e.sinodo.length) : 0);
+export const sinodoCompleto = (e?: Entrevista) => !!e && e.sinodo.length >= LUGARES_SINODO;
+/** Paso en que va la entrevista: Posgrado publica el horario → los profesores lo eligen → Posgrado la publica al aspirante. */
+export type PasoEntrevista = "Horario sin publicar" | "Esperando profesores" | "Lista para publicar" | "Publicada al aspirante";
+export const pasoEntrevista = (e: Entrevista): PasoEntrevista =>
+  e.notificadaEl ? "Publicada al aspirante" : !e.horarioPublicadoEl ? "Horario sin publicar" : sinodoCompleto(e) ? "Lista para publicar" : "Esperando profesores";
+export const TONO_PASO_ENTREVISTA: Record<PasoEntrevista, string> = {
+  "Horario sin publicar": "bg-gray-100 text-gray-700",
+  "Esperando profesores": "bg-amber-50 text-amber-800",
+  "Lista para publicar": "bg-sky-50 text-sky-800",
+  "Publicada al aspirante": "bg-emerald-50 text-emerald-700",
 };
 export const firmasActa = (a: { actaEntrevista?: ActaEntrevista; entrevista?: Entrevista }) =>
   (a.entrevista?.sinodo ?? []).filter((p) => !!a.actaEntrevista?.firmas[p]).length;
@@ -160,25 +177,16 @@ export type Prioridad = "Alta" | "Media" | "Normal";
 export type Dedicacion = "Tiempo completo" | "Tiempo parcial";
 
 /**
- * Trabajo de Control Escolar (UTEyCV) sobre el aspirante: cartas y dictamen SIP-04.
- * El proceso de admisión termina cuando UTEyCV publica el SIP-04 firmado.
+ * Trabajo de Control Escolar (UTEyCV) sobre el admitido: su inscripción.
+ * El proceso de admisión termina con la resolución del Colegio; el SIP-04 lo llena el admitido en su inscripción.
  */
 export type UteycvP = {
-  cartasValidadasEl?: string;
-  /** SIP-04: fecha y hora de la sesión del Colegio que dictaminó */
-  fechaSesion?: string;
-  horaSesion?: string;
-  sip04ElaboradoEl?: string;
-  /** El aspirante revisó y confirmó sus datos del SIP-04 */
-  confirmoSip04?: boolean;
-  firmasEl?: string;
-  sip04PublicadoEl?: string;
-  sip04Archivo?: string;
   // ---- Inscripción (proceso posterior a la admisión; Módulos 6, 7, 8 y 19) ----
-  /** SIP-08 que preparó el asesor académico, publicado para que el admitido lo firme */
+  /** SIP-08 que elaboró Control Escolar, publicado para que el admitido lo firme */
   sip08PublicadoEl?: string;
   foto?: boolean;
   sip01Firmado?: boolean;
+  sip04Firmado?: boolean;
   sip05Firmado?: boolean;
   sip06Firmado?: boolean;
   sip08Firmado?: boolean;
@@ -218,19 +226,19 @@ export type AspiranteP = {
   actaEntrevista?: ActaEntrevista;
   evaluacion: EvaluacionP;
   resolucion?: ResolucionColegio;
-  /** Fecha en que se turnó a UTEyCV para el dictamen SIP-04 */
+  /** Fecha en que pasó a inscripción (UTEyCV) al registrarse la resolución del Colegio */
   turnadoUteycv?: string;
   /** Formatos firmados recibidos (SIP-02, SIP-05…) */
   formatos: Record<string, boolean>;
   /** true = es el aspirante que se llenó en este navegador */
   enVivo?: boolean;
-  /** Dedicación que ELIGIÓ el aspirante en su carta protesta (SIP-05); UTEyCV solo la usa en el SIP-04 */
+  /** Dedicación que ELIGIÓ el admitido al llenar su SIP-04 (RN-10) */
   dedicacion?: Dedicacion;
   /** Lo que registra Control Escolar (UTEyCV) */
   uteycv?: UteycvP;
 };
 
-// ---------- Profesores para el sínodo (RN-07: 3 colegiados vigentes) ----------
+// ---------- Profesores para el sínodo (RN-07: 3 profesores, colegiados vigentes o de asignatura) ----------
 
 export type ProfesorP = { id: string; nombre: string; correo: string; colegiado: boolean; vigencia: string; linea: string };
 
@@ -244,10 +252,11 @@ export const PROFESORES_SINODO: ProfesorP[] = [
   { id: "js", nombre: "Dr. Jorge Salinas Ortega", correo: "jsalinas@ipn.mx", colegiado: false, vigencia: "Asignatura", linea: "Seguridad informática" },
 ];
 
-/** Profesor que califica cada área del propedéutico y del examen (ejemplo; con backend lo asigna Posgrado por convocatoria). */
-export const PROFESOR_AREA: Record<AreaEvalId, string> = { matematicas: "ac", programacion: "rm" };
-
-export const profesorValido = (p: ProfesorP) => p.colegiado && /^\d{4}$/.test(p.vigencia) && Number(p.vigencia) >= 2026;
+const colegiadoVigente = (p: ProfesorP) => p.colegiado && /^\d{4}$/.test(p.vigencia) && Number(p.vigencia) >= 2026;
+/** Pueden integrar el sínodo los profesores colegiados con nombramiento vigente y los profesores de asignatura (RN-07). */
+export const profesorValido = (p: ProfesorP) => colegiadoVigente(p) || p.vigencia === "Asignatura";
+export const nombramientoDe = (p: ProfesorP) =>
+  colegiadoVigente(p) ? `Colegiado · vigente a ${p.vigencia}` : p.vigencia === "Asignatura" ? "De asignatura" : "Nombramiento vencido";
 export const nombreProfesor = (id: string) => PROFESORES_SINODO.find((p) => p.id === id)?.nombre ?? id;
 
 // ---------- Documentos ----------
@@ -283,7 +292,8 @@ const entrevistaDe = (fecha: string, hora: string, sinodo = ["lh", "ac", "rm"]):
   modalidad: "Presencial",
   sala: "Sala de juntas CIDETEC",
   sinodo,
-  notificadaEl: "2026-03-10T10:00:00",
+  horarioPublicadoEl: "2026-03-05T10:00:00",
+  notificadaEl: sinodo.length >= 3 ? "2026-03-10T10:00:00" : "",
 });
 
 const dictamenDe = (resolucion: Resolucion, comentarios: string): DictamenEntrevista => ({
@@ -389,6 +399,24 @@ export const ASPIRANTES_BASE: AspiranteP[] = [
     entrevista: entrevistaDe("2026-03-18", "12:00", ["mt", "ac", "rm"]),
     evaluacion: { grupos: {} },
     formatos: F(["sip-02", "sip-05", "sip-06", "mtc-ec"]),
+  },
+  {
+    id: "ASP-2026-043",
+    nombre: "Valeria Núñez Ortiz",
+    curp: "NUOV990721MDFXRL02",
+    correo: "valeria.nunez@correo.mx",
+    telefono: "5570007777",
+    procedencia: "UNAM — Facultad de Ciencias",
+    promedio: "9.0",
+    ultimoMovimiento: hace(1),
+    dedicacion: "Tiempo completo",
+    registradoEl: "2026-02-16",
+    etapa: "entrevista",
+    documentos: docs({}),
+    // Sínodo incompleto: quedan 2 lugares para que los profesores los elijan
+    entrevista: entrevistaDe("2026-03-19", "11:00", ["lh"]),
+    evaluacion: { grupos: {} },
+    formatos: F(["sip-02", "sip-05", "sip-06"]),
   },
   {
     id: "ASP-2026-022",
@@ -499,7 +527,7 @@ export const ASPIRANTES_BASE: AspiranteP[] = [
     curp: "RAGH970128HDFMLC07",
     correo: "hector.ramirez@correo.mx",
     telefono: "5533331111",
-    procedencia: "UPIICSA",
+    procedencia: "IPN — UPIICSA",
     promedio: "7.9",
     ultimoMovimiento: hace(20),
     dedicacion: "Tiempo completo",
@@ -531,7 +559,7 @@ export const ASPIRANTES_BASE: AspiranteP[] = [
     resolucion: "Aceptado",
     turnadoUteycv: hace(5),
     formatos: F(["sip-02", "sip-05", "sip-06", "mtc-ec"]),
-    uteycv: { cartasValidadasEl: hace(20), fechaSesion: "2026-06-20", horaSesion: "12:00", sip04ElaboradoEl: hace(4), confirmoSip04: true },
+    uteycv: {},
   },
   {
     id: "ASP-2026-033",
@@ -553,18 +581,11 @@ export const ASPIRANTES_BASE: AspiranteP[] = [
     turnadoUteycv: hace(9),
     formatos: F(["sip-02", "sip-05", "sip-06", "mtc-ec"]),
     uteycv: {
-      cartasValidadasEl: hace(25),
-      fechaSesion: "2026-06-20",
-      horaSesion: "12:00",
-      sip04ElaboradoEl: hace(8),
-      confirmoSip04: true,
-      firmasEl: hace(6),
-      sip04PublicadoEl: hace(5),
-      sip04Archivo: "SIP-04_MEDINA_firmado.pdf",
-      // Ya avanzó con su inscripción: foto y SIP-01 entregados
+      // Ya avanzó con su inscripción: foto, SIP-01 y SIP-04 entregados
       sip08PublicadoEl: hace(3),
       foto: true,
       sip01Firmado: true,
+      sip04Firmado: true,
       sip05Firmado: true,
     },
   },
@@ -581,8 +602,7 @@ export type Bandeja =
   | "En evaluación"
   | "Segunda oportunidad"
   | "Esperando resolución del Colegio"
-  | "Turnado a UTEyCV"
-  | "Dictamen publicado"
+  | "Admitido"
   | "No admitido";
 
 /** El expediente se puede aprobar cuando todo lo obligatorio está aprobado y nada queda observado o sin revisar. */
@@ -606,7 +626,7 @@ export function leTocaAPosgrado(a: AspiranteP): boolean {
   const b = bandejaDe(a);
   // Entregó un documento (p. ej. dentro de su prórroga) que falta revisar
   if (!a.concluido && !a.turnadoUteycv && a.documentos.some((d) => d.estado === "pendiente")) return true;
-  if (b === "Registro incompleto" || b === "Con observaciones" || b === "Turnado a UTEyCV" || b === "Dictamen publicado" || b === "No admitido") return false;
+  if (b === "Registro incompleto" || b === "Con observaciones" || b === "Admitido" || b === "No admitido") return false;
   if (b === "En evaluación" && !a.evaluacion.modalidad) return false;
   // Las calificaciones las capturan los profesores; a Posgrado le toca cuando hay que publicarlas
   if ((b === "En evaluación" || b === "Segunda oportunidad") && evaluacionPendiente(a.evaluacion)) return false;
@@ -619,7 +639,7 @@ export function leTocaAPosgrado(a: AspiranteP): boolean {
  * Prioridad calculada (no se captura a mano):
  * - Alta: una prórroga vence en 3 días o menos (o ya venció), o el expediente lleva 5+ días esperando a Posgrado.
  * - Media: lleva de 2 a 4 días esperando a Posgrado.
- * - Normal: se atendió hace menos de 2 días, o la siguiente acción es del aspirante o de otra área (p. ej. el SIP-04 en UTEyCV).
+ * - Normal: se atendió hace menos de 2 días, o la siguiente acción es del aspirante o de otra área (p. ej. la inscripción en UTEyCV).
  */
 export function prioridadDe(a: AspiranteP): { nivel: Prioridad; motivo: string } {
   if (a.concluido) return { nivel: "Normal", motivo: "Proceso concluido" };
@@ -649,8 +669,8 @@ export function bandejaDe(a: AspiranteP): Bandeja {
     case "evaluacion":
       return a.evaluacion.propedeutico && !a.evaluacion.propedeutico.acreditado ? "Segunda oportunidad" : "En evaluación";
     case "dictamen":
-      if (a.uteycv?.sip04PublicadoEl) return "Dictamen publicado";
-      return a.turnadoUteycv ? "Turnado a UTEyCV" : "Esperando resolución del Colegio";
+      // Con la resolución del Colegio publicada concluye la admisión; la inscripción es otro proceso (UTEyCV)
+      return esAdmitido(a) ? "Admitido" : "Esperando resolución del Colegio";
   }
 }
 
@@ -663,16 +683,14 @@ export const TONO_BANDEJA: Record<Bandeja, string> = {
   "En evaluación": "bg-sky-50 text-sky-800",
   "Segunda oportunidad": "bg-amber-50 text-amber-800",
   "Esperando resolución del Colegio": "bg-violet-50 text-violet-800",
-  "Turnado a UTEyCV": "bg-emerald-50 text-emerald-800",
-  "Dictamen publicado": "bg-emerald-100 text-emerald-900",
+  Admitido: "bg-emerald-50 text-emerald-800",
   "No admitido": "bg-red-50 text-red-700",
 };
 
 const PESO: Record<EtapaId, number> = { registro: 10, documentos: 25, entrevista: 45, evaluacion: 65, dictamen: 85 };
 
 export function progresoDe(a: AspiranteP) {
-  if (a.etapa === "dictamen" && a.uteycv?.sip04PublicadoEl) return { pct: 100, texto: "Dictamen publicado" };
-  if (a.etapa === "dictamen" && a.turnadoUteycv) return { pct: 92, texto: "SIP-04 en UTEyCV" };
+  if (a.etapa === "dictamen" && esAdmitido(a)) return { pct: 100, texto: `Admitido (${a.resolucion?.toLowerCase()})` };
   if (a.etapa === "documentos") {
     const ok = a.documentos.filter((d) => d.estado === "aprobado").length;
     return { pct: Math.round(15 + (ok / a.documentos.length) * 20), texto: `Documentos ${ok}/${a.documentos.length}` };
@@ -692,30 +710,22 @@ export function resultadoFinal(e: EvaluacionP): ResultadoEval | undefined {
   return e.examen ?? e.propedeutico;
 }
 
-// ---------- Control Escolar (UTEyCV) ----------
-
-export type EstadoUteycv = "SIP-04 por elaborar" | "Esperando confirmación" | "Recabando firmas" | "Por publicar SIP-04" | "Dictamen publicado";
-
-export const TONO_UTEYCV: Record<EstadoUteycv, string> = {
-  "SIP-04 por elaborar": "bg-amber-50 text-amber-800",
-  "Esperando confirmación": "bg-gray-100 text-gray-700",
-  "Recabando firmas": "bg-indigo-50 text-primary",
-  "Por publicar SIP-04": "bg-amber-50 text-amber-800",
-  "Dictamen publicado": "bg-emerald-50 text-emerald-700",
-};
+/** Admitido por el Colegio (Aceptado o Condicionado): con eso concluye su proceso de admisión. */
+export const esAdmitido = (a: Pick<AspiranteP, "resolucion" | "concluido">) => !a.concluido && (a.resolucion === "Aceptado" || a.resolucion === "Condicionado");
 
 // ---------- Inscripción (Control Escolar) ----------
 
-/** Formatos de inscripción que el admitido entrega firmados (RF-24, RF-26). */
+/** Formatos de inscripción que el admitido entrega firmados (RF-22, RF-24, RF-26). */
 export const FORMATOS_INSCRIPCION = [
   { clave: "sip-01", t: "SIP-01 · Solicitud de inscripción", campo: "sip01Firmado" },
+  { clave: "sip-04", t: "SIP-04 · Dictamen del proceso de admisión", campo: "sip04Firmado" },
   { clave: "sip-05", t: "SIP-05 · Carta protesta", campo: "sip05Firmado" },
   { clave: "sip-06", t: "SIP-06 · Exposición de motivos", campo: "sip06Firmado" },
   { clave: "sip-08", t: "SIP-08 · Programa individual", campo: "sip08Firmado" },
 ] as const;
 
-/** Admitidos cuyo dictamen SIP-04 ya se publicó: pueden inscribirse. */
-export const puedeInscribirse = (a: AspiranteP) => !a.concluido && !!a.uteycv?.sip04PublicadoEl && a.resolucion !== "No aceptado";
+/** Admitidos por el Colegio (resultado publicado): pueden inscribirse. */
+export const puedeInscribirse = (a: AspiranteP) => esAdmitido(a);
 
 /** Qué falta para formalizar la inscripción. */
 export function pendientesInscripcion(a: AspiranteP) {
@@ -727,9 +737,9 @@ export function pendientesInscripcion(a: AspiranteP) {
   ];
 }
 
-export type EstadoInscripcion = "Pendiente de dictamen" | "SIP-08 por publicar" | "Integrando expediente" | "Listo para formalizar" | "Inscrito";
+export type EstadoInscripcion = "Pendiente de resultado" | "SIP-08 por publicar" | "Integrando expediente" | "Listo para formalizar" | "Inscrito";
 export const TONO_INSCRIPCION: Record<EstadoInscripcion, string> = {
-  "Pendiente de dictamen": "bg-gray-100 text-gray-600",
+  "Pendiente de resultado": "bg-gray-100 text-gray-600",
   "SIP-08 por publicar": "bg-amber-50 text-amber-800",
   "Integrando expediente": "bg-sky-50 text-sky-800",
   "Listo para formalizar": "bg-violet-50 text-violet-800",
@@ -737,19 +747,10 @@ export const TONO_INSCRIPCION: Record<EstadoInscripcion, string> = {
 };
 export function estadoInscripcion(a: AspiranteP): EstadoInscripcion {
   const u = a.uteycv ?? {};
-  if (!puedeInscribirse(a)) return "Pendiente de dictamen";
+  if (!puedeInscribirse(a)) return "Pendiente de resultado";
   if (u.formalizadoEl) return "Inscrito";
   if (!u.sip08PublicadoEl) return "SIP-08 por publicar";
   return pendientesInscripcion(a).every((p) => p.ok) ? "Listo para formalizar" : "Integrando expediente";
-}
-
-export function estadoUteycv(a: AspiranteP): EstadoUteycv {
-  const u = a.uteycv ?? {};
-  if (!u.sip04ElaboradoEl) return "SIP-04 por elaborar";
-  if (!u.confirmoSip04) return "Esperando confirmación";
-  if (!u.firmasEl) return "Recabando firmas";
-  if (!u.sip04PublicadoEl) return "Por publicar SIP-04";
-  return "Dictamen publicado";
 }
 
 /** Separa "Nombre(s) Paterno Materno" (para los formatos de los aspirantes de ejemplo). */

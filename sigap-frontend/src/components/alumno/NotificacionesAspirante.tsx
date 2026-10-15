@@ -26,7 +26,7 @@ export function NotificacionesAspirante() {
     new Date(iso).toLocaleString("es-MX", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" });
 
   const anteriores = [
-    { titulo: "Dictamen favorable", texto: "La Comisión de Admisión emitió tu dictamen (SIP-04). Con él concluye tu proceso de admisión.", cuando: "Hace 2 semanas" },
+    { titulo: "Resultado publicado", texto: "El Colegio de Profesores resolvió tu admisión. Con eso concluye tu proceso de admisión.", cuando: "Hace 2 semanas" },
     { titulo: "Resultado de evaluación", texto: "Acreditaste los cursos propedéuticos.", cuando: "Hace 3 semanas" },
     { titulo: "Entrevista confirmada", texto: "18 de marzo, 10:30 h. Sala de juntas CIDETEC.", cuando: "Hace 2 meses" },
   ];

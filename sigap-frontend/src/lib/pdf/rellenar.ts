@@ -364,6 +364,21 @@ async function sip01(doc: PDFDocument, d: DatosPdf) {
   // Estatus
   if (v("estatus") === "Tiempo completo") marca(c, 159, 533);
   if (v("estatus") === "Tiempo parcial") marca(c, 241, 531);
+  // Programa semestral: materias que anotó el aspirante (6 filas; clave, curso, profesor, unidad académica)
+  const materias = (Array.isArray(d.valores.materias) ? d.valores.materias : [])
+    .map((f) => f.split("\t"))
+    .filter((celdas) => celdas.some((x) => x.trim()))
+    .slice(0, 6);
+  const FILAS = [579.2, 596.9, 615.2, 632.9, 650.6, 668.2];
+  materias.forEach(([clave = "", curso = "", profesor = "", unidad = ""], i) => {
+    const top = FILAS[i] + 12;
+    // La clave va un carácter por casilla (8 casillas)
+    const CASILLAS = [46.1, 54.3, 62.2, 70, 77.9, 86.1, 94.2, 103.4];
+    [...clave.toUpperCase().replace(/\s/g, "")].slice(0, 8).forEach((ch, k) => centrado(ch, CASILLAS[k] - 5.5, CASILLAS[k] + 5.5, top, 7));
+    texto(c, curso, 112, top, 214, 7.5);
+    texto(c, profesor, 332, top, 108, 7);
+    centrado(unidad, 443, 563, top, 7);
+  });
   // Fecha
   centrado(String(d.hoy.getDate()), 91, 115, 776);
   centrado(String(d.hoy.getMonth() + 1).padStart(2, "0"), 122, 146, 776);
@@ -394,11 +409,14 @@ async function sip04(doc: PDFDocument, d: DatosPdf) {
     const w = c.font.widthOfTextAtSize(t, size);
     c.page.drawText(t, { x: (x0 + x1) / 2 - w / 2, y: c.alto - top, size, font: c.font, color: TINTA });
   };
+  // Fecha de la sesión del Colegio: viene como dd/mm/aaaa (la captura el admitido) o ya separada
+  const MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+  const [dd, mm, aa] = v("fechaSesion").split("/");
   centrado("México", 155, 220, 153);
   centrado(v("horaSesion"), 291, 336, 153);
-  centrado(v("diaSesion"), 432, 477, 153);
-  centrado(v("mesSesion"), 51, 135, 173);
-  centrado(v("anioSesion"), 170, 220, 173);
+  centrado(v("diaSesion") || (dd ?? "").replace(/^0/, ""), 432, 477, 153);
+  centrado(v("mesSesion") || (mm ? MESES[Number(mm) - 1] ?? "" : ""), 51, 135, 173);
+  centrado(v("anioSesion") || (aa ?? ""), 170, 220, 173);
   centrado(v("apellidoPaterno").toUpperCase(), 99, 200, 276);
   centrado(v("apellidoMaterno").toUpperCase(), 247, 335, 276);
   centrado(v("nombre").toUpperCase(), 397, 569, 276);
@@ -490,7 +508,7 @@ async function mtcEc(doc: PDFDocument, d: DatosPdf) {
 }
 
 // ---------------- SIP-08 · Programa individual de actividades ----------------
-// Solo cascarón: materias, créditos y asesor salen de PROGRAMA_INDIVIDUAL_DEMO (con backend los captura el asesor).
+// Solo cascarón: materias, créditos y asesor salen de PROGRAMA_INDIVIDUAL_DEMO (con backend los captura Control Escolar).
 async function sip08(doc: PDFDocument, d: DatosPdf) {
   const page = doc.getPage(0);
   const c: Ctx = { page, font: await doc.embedFont(StandardFonts.Helvetica), alto: page.getHeight() };

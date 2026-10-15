@@ -7,12 +7,15 @@ import { usePosgrado } from "@/components/posgrado/PosgradoProvider";
 import { Aviso, Etiqueta, Migas, Tarjeta, botonPrimario, botonSecundario, inputBase } from "@/components/posgrado/ui";
 import { ActaVista, FirmasActa, TEXTO_CONTINUAR, TONO_RESOLUCION } from "@/components/profesor/ActaVista";
 import { useAccionesProfesor } from "@/components/profesor/useAccionesProfesor";
+import { DocumentosAspirante } from "@/components/profesor/DocumentosAspirante";
+import { hoja1Prellenada } from "@/lib/registro-aspirante";
 import { AREAS_INVESTIGACION } from "@/lib/registro-form";
 import {
   CRITERIOS_ACTA,
   VALORACION_TEXTO,
   fechaCorta,
   firmasActa,
+  lugaresLibres,
   nombreProfesor,
   type ActaEntrevista,
   type AspiranteP,
@@ -44,7 +47,8 @@ export default function EntrevistaProfesor({ params }: PageProps<"/profesor/entr
       <>
         {migas}
         <Aviso tono="alerta" titulo="No formas parte del sínodo de esta entrevista">
-          Sínodo: {a.entrevista.sinodo.map(nombreProfesor).join(", ")}. Puedes usar la vista de prueba para actuar como alguno de ellos.
+          {lugaresLibres(a.entrevista) > 0 ? "Si quieres participar, elígela en Mis entrevistas: todavía tiene lugares libres." : "El sínodo ya está completo."} En la vista de
+          prueba puedes actuar como alguno de sus integrantes.
         </Aviso>
       </>
     );
@@ -86,8 +90,20 @@ export default function EntrevistaProfesor({ params }: PageProps<"/profesor/entr
         </Tarjeta>
       </div>
 
+      <div className="mt-6">
+        <DocumentosAspirante a={a} />
+      </div>
+
       <div className="mt-6 space-y-6">
-        {a.concluido && !a.dictamen ? (
+        {estado === "Sínodo incompleto" ? (
+          <Aviso tono="info" titulo={`El sínodo aún no está completo (${a.entrevista.sinodo.length} de 3)`}>
+            Podrás llenar el acta MTC-EC cuando otros {lugaresLibres(a.entrevista)} profesor(es) elijan esta entrevista.
+          </Aviso>
+        ) : estado === "Esperando publicación" ? (
+          <Aviso tono="info" titulo="Sínodo completo: falta que Posgrado publique la entrevista al aspirante">
+            Podrás llenar el acta MTC-EC cuando el Departamento de Posgrado publique la cita al aspirante. Mientras tanto revisa su registro y el acta prellenada.
+          </Aviso>
+        ) : a.concluido && !a.dictamen ? (
           <Aviso tono="error" titulo="El proceso de este aspirante ya concluyó">
             {a.concluido}
           </Aviso>
@@ -176,7 +192,9 @@ function Pregunta({ t, children }: { t: string; children: React.ReactNode }) {
 }
 
 function FormularioActa({ a, inicial, onGuardar, onCancelar, yo }: { a: AspiranteP; inicial?: ActaEntrevista; onGuardar: (x: ActaEntrevista) => void; onCancelar?: () => void; yo: string }) {
-  const [h, setH] = useState<Hoja1>(inicial?.hoja1 ?? { areas: [] });
+  const { registroDe, capturasDe } = usePosgrado();
+  // Si aún no hay acta, la hoja 1 llega prellenada con el registro y el expediente del aspirante
+  const [h, setH] = useState<Hoja1>(() => inicial?.hoja1 ?? hoja1Prellenada(a, registroDe(a.id), capturasDe(a.id)));
   const [criterios, setCriterios] = useState<ActaEntrevista["criterios"]>(inicial?.criterios ?? {});
   const [proyeccion, setProyeccion] = useState(inicial?.proyeccion ?? "");
   const [observaciones, setObservaciones] = useState(inicial?.observaciones ?? "");
@@ -255,7 +273,10 @@ function FormularioActa({ a, inicial, onGuardar, onCancelar, yo }: { a: Aspirant
   return (
     <>
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-sm text-gray-600">Llena el acta durante o al terminar la entrevista. Al guardarla quedará firmada por ti y se pedirá la firma de los otros dos sinodales.</p>
+        <p className="text-sm text-gray-600">
+          {inicial ? "" : "La hoja 1 viene prellenada con el registro y el expediente del aspirante; confírmala o corrígela. "}Llena el acta durante o al terminar la
+          entrevista. Al guardarla quedará firmada por ti y se pedirá la firma de los otros dos sinodales.
+        </p>
         <button type="button" onClick={ejemplo} className="inline-flex items-center gap-1.5 rounded-full border border-gray-300 bg-white px-3 py-1 text-xs text-gray-700 hover:bg-gray-50">
           <Wand2 size={12} /> Solo cascarón: llenar con datos de ejemplo
         </button>

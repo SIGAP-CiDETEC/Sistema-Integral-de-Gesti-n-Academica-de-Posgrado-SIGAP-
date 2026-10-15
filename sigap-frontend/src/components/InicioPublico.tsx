@@ -8,7 +8,7 @@ import { useContenido } from "@/lib/contenido";
 import { useConvocatorias } from "@/lib/convocatoria";
 
 /**
- * Página pública de inicio (sin sesión). Las convocatorias A y B las configura el Administrador (RF-81).
+ * Página pública de inicio (sin sesión). Las fechas de las convocatorias A y B las define Posgrado y se abren/cierran solas (RF-81).
  * - Muestra información para aspirantes (RF-08).
  * - Cada convocatoria abierta habilita su registro (precondición CU-ADM-01).
  * - Quien ya tiene cuenta entra por /login.

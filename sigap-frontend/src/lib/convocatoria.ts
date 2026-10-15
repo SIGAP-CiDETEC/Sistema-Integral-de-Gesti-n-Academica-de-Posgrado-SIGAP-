@@ -4,16 +4,29 @@ import { useMemo, useSyncExternalStore } from "react";
 import { CONVOCATORIAS_INFO, convocatoriaActual, type Convocatoria, type IdConvocatoria } from "./config";
 
 /**
- * Convocatorias de admisión, editables por el Administrador (RF-81, US-AD-03).
- * Hay dos por ciclo: A (ingreso enero–junio) y B (ingreso agosto–diciembre);
- * cada una se abre o se cierra por separado.
- * SOLO CASCARÓN: se guarda en el navegador. Con backend: GET/PUT /convocatorias.
+ * Convocatorias de admisión (RF-81). Hay dos por ciclo: A (ingreso enero–junio) y B (ingreso agosto–diciembre).
+ * El Departamento de Posgrado define sus fechas de registro y cada una se ABRE y se CIERRA SOLA según esas fechas
+ * (ya no la abre ni la cierra el Administrador). El Administrador solo configura parámetros como el límite de archivos.
+ * SOLO CASCARÓN: se guarda en el navegador. Con backend: GET/PUT /convocatorias y un proceso programado que las cierra.
  */
 export type ConfigConvocatoria = {
   nombre: string;
   inicio: string; // AAAA-MM-DD
   cierre: string;
-  activa: boolean;
+  /** Ya no se usa: el estado se calcula con las fechas (se conserva por datos guardados antes) */
+  activa?: boolean;
+};
+
+export type EstadoConvocatoria = "Abierta" | "Próxima" | "Cerrada";
+/** Fecha de hoy AAAA-MM-DD (hora local). */
+export const hoyISO = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+/** Abierta del día de inicio al día de cierre (incluidos); antes, Próxima; después, Cerrada. */
+export const estadoPorFechas = (c: Pick<ConfigConvocatoria, "inicio" | "cierre">, hoy = hoyISO()): EstadoConvocatoria =>
+  hoy < c.inicio ? "Próxima" : hoy > c.cierre ? "Cerrada" : "Abierta";
+export const TONO_ESTADO_CONV: Record<EstadoConvocatoria, string> = {
+  Abierta: "bg-emerald-50 text-emerald-700",
+  Próxima: "bg-sky-50 text-sky-800",
+  Cerrada: "bg-gray-100 text-gray-600",
 };
 
 export type ConfigConvocatorias = {
@@ -28,14 +41,16 @@ export type ConfigConvocatorias = {
 export const IDS_CONVOCATORIA: IdConvocatoria[] = ["A", "B"];
 
 export const CONVOCATORIAS_DEFECTO: ConfigConvocatorias = {
-  A: { nombre: "Convocatoria de admisión A-27", inicio: "2026-10-05", cierre: "2026-11-20", activa: true },
-  B: { nombre: "Convocatoria de admisión B-27", inicio: "2027-04-05", cierre: "2027-05-21", activa: false },
+  A: { nombre: "Convocatoria de admisión A-27", inicio: "2026-10-05", cierre: "2026-11-20" },
+  B: { nombre: "Convocatoria de admisión B-27", inicio: "2027-04-05", cierre: "2027-05-21" },
   limiteMB: 5,
 };
 
 /** Convocatoria lista para mostrarse en las páginas públicas. */
 export type ConvocatoriaVista = Convocatoria & {
   id: IdConvocatoria;
+  estado: EstadoConvocatoria;
+  cierreISO: string;
   periodo: string;
   semestre: string;
   inicioISO: string;
@@ -92,13 +107,16 @@ function interpretar(raw: string | null): ConfigConvocatorias {
   }
 }
 
-function vista(id: IdConvocatoria, c: ConfigConvocatoria): ConvocatoriaVista {
+function vista(id: IdConvocatoria, c: ConfigConvocatoria, hoy: string): ConvocatoriaVista {
   const info = CONVOCATORIAS_INFO[id];
+  const estado = estadoPorFechas(c, hoy);
   return {
     ...convocatoriaActual,
     id,
     nombre: c.nombre,
-    activa: c.activa,
+    estado,
+    activa: estado === "Abierta",
+    cierreISO: c.cierre,
     periodo: info.periodo,
     semestre: info.semestre,
     inicioISO: c.inicio,
@@ -113,7 +131,8 @@ export function useConvocatorias() {
   const cargada = useSyncExternalStore(suscribir, () => true, () => false);
   return useMemo(() => {
     const config = interpretar(raw);
-    const lista = IDS_CONVOCATORIA.map((id) => vista(id, config[id]));
+    const hoy = hoyISO();
+    const lista = IDS_CONVOCATORIA.map((id) => vista(id, config[id], hoy));
     return { config, lista, activas: lista.filter((c) => c.activa), cargada };
   }, [raw, cargada]);
 }

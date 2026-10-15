@@ -28,12 +28,14 @@ export type Contexto = {
   /** Datos ya capturados en cualquier formato */
   c: Capturas;
   hoy: Date;
+  /** Sesión del Colegio que resolvió la admisión (la registra Posgrado); solo existe ya cargado en el navegador */
+  colegio?: { fecha?: string; hora?: string; numero?: string } | null;
 };
 
 export type CampoFormato = {
   id: string;
   label: string;
-  tipo: "text" | "textarea" | "radio" | "ranking" | "multi";
+  tipo: "text" | "textarea" | "radio" | "ranking" | "multi" | "tabla";
   opciones?: string[];
   /** Valor sugerido a partir del registro u otros datos */
   auto?: (ctx: Contexto) => Valor | undefined;
@@ -47,7 +49,15 @@ export type CampoFormato = {
   seccion?: string;
   /** Validación extra: si devuelve false, el campo cuenta como "falta" */
   valido?: (v: string) => boolean;
+  /** Solo tipo "tabla": columnas y número de filas (cada fila se guarda como celdas separadas por tabulador) */
+  columnas?: ColumnaTabla[];
+  filas?: number;
 };
+export type ColumnaTabla = { id: string; label: string; requerida?: boolean; defecto?: string; maxLength?: number };
+
+/** Filas de un campo tipo "tabla" (solo las que tienen algo escrito). */
+export const filasTabla = (v: Valor | undefined): string[][] =>
+  (Array.isArray(v) ? v : []).map((f) => f.split("\t")).filter((celdas) => celdas.some((x) => x.trim()));
 
 export type Rol = "aspirante" | "asesor" | "jefe" | "sinodo" | "comision";
 
@@ -80,6 +90,8 @@ export type Formato = {
   destino: string;
   /** El aspirante solo revisa sus datos y los confirma; el documento lo emite y firma otra área */
   confirmaAspirante?: boolean;
+  /** El aspirante no lo firma, pero recaba las firmas y sube el escaneo (p. ej. SIP-04) */
+  subeFirmado?: boolean;
   /** Páginas (base 0) que ve y descarga el aspirante; el resto lo llena otra persona */
   paginasAspirante?: number[];
   /** No se muestra al aspirante (p. ej. MTC-EC: lo llenará el profesor del sínodo cuando exista ese actor) */
@@ -94,6 +106,9 @@ export const fechaLarga = (d: Date) => `${d.getDate()} de ${MESES[d.getMonth()]}
 export const partesFecha = (d: Date) => ({ dia: String(d.getDate()), mes: MESES[d.getMonth()], anio: String(d.getFullYear()) });
 
 const str = (v: Valor | undefined) => (Array.isArray(v) ? v.join(", ") : v ?? "");
+
+/** AAAA-MM-DD → dd/mm/aaaa */
+const ddmmaaaa = (iso?: string) => (iso && /^\d{4}-\d{2}-\d{2}$/.test(iso) ? iso.split("-").reverse().join("/") : undefined);
 
 const unidadProcedencia = (r: Respuestas) =>
   r.institucion === "IPN" && r.unidadIpn && r.unidadIpn !== "Otra unidad del IPN"
@@ -313,13 +328,13 @@ export const FORMATOS: Formato[] = [
   },
   {
     clave: "sip-04",
-    destino: "Aspirante (lo emite UTEyCV)",
+    destino: "Control Escolar (UTEyCV)",
     codigo: "SIP-04",
     nombre: "Dictamen del proceso de admisión",
-    descripcion: "Lo emite la Comisión de Admisión. Revisa que tus datos sean correctos y confírmalos; después solo esperas el dictamen firmado.",
-    fase: "dictamen",
-    llena: "area",
-    confirmaAspirante: true,
+    descripcion: "Llénalo con tus datos y elige tu dedicación. Imprímelo, recaba las firmas de la Comisión de Admisión y del Coordinador del programa, y súbelo escaneado.",
+    fase: "inscripcion",
+    llena: "aspirante",
+    subeFirmado: true,
     plantilla: "sip-04.pdf",
     pdf: "listo",
     campos: [
@@ -327,7 +342,25 @@ export const FORMATOS: Formato[] = [
       C.apellidoMaterno,
       C.nombre,
       C.programa,
-      { ...C.estatus, id: "estatus", label: "Dedicación", ayuda: "Completo: al menos 40 h/semana; parcial: al menos 20 h/semana (REP Art. 13)." },
+      {
+        id: "fechaSesion",
+        label: "Fecha de la sesión del Colegio de Profesores (dd/mm/aaaa)",
+        tipo: "text",
+        auto: ({ colegio }) => ddmmaaaa(colegio?.fecha),
+        ayuda: "Aparece en la publicación de tu resultado (6 · Dictamen final).",
+        valido: (v) => /^\d{2}\/\d{2}\/\d{4}$/.test(v.trim()),
+        seccion: "Sesión del Colegio",
+      },
+      {
+        id: "horaSesion",
+        label: "Hora de la sesión (hh:mm)",
+        tipo: "text",
+        auto: ({ colegio }) => colegio?.hora,
+        ayuda: "Aparece en la publicación de tu resultado (6 · Dictamen final).",
+        valido: (v) => /^\d{1,2}:\d{2}$/.test(v.trim()),
+        seccion: "Sesión del Colegio",
+      },
+      { ...C.estatus, id: "estatus", label: "Dedicación", ayuda: "Tú la eliges (RN-10). Completo: al menos 40 h/semana; parcial: al menos 20 h/semana (REP Art. 13)." },
     ],
     firmas: [
       { rol: "comision", label: "Miembros de la Comisión de Admisión" },
@@ -339,12 +372,11 @@ export const FORMATOS: Formato[] = [
     destino: "Control Escolar (UTEyCV)",
     codigo: "SIP-01",
     nombre: "Solicitud de inscripción",
-    descripcion: "Se llena con tu registro, tu CV (SIP-02) y tu carta protesta (SIP-05). Tu foto se coloca sola.",
+    descripcion: "Se llena con tu registro, tu CV (SIP-02) y tu carta protesta (SIP-05); tú anotas las materias de tu primer semestre. Tu foto se coloca sola.",
     fase: "inscripcion",
     llena: "aspirante",
     plantilla: "sip-01.pdf",
     pdf: "listo",
-    capturaOtros: "Programa semestral (cursos del 1er semestre): lo captura tu asesor académico.",
     campos: [
       C.apellidoPaterno, C.apellidoMaterno, C.nombre,
       C.calle, C.numExt, C.numInt, C.colonia, C.alcaldia, C.cp, C.estadoDom, C.pais,
@@ -352,6 +384,20 @@ export const FORMATOS: Formato[] = [
       C.unidad, C.programa,
       C.licPrograma, C.licInstitucion, C.licEstado, C.licFecha,
       C.estatus,
+      {
+        id: "materias",
+        label: "Programa semestral (1er semestre): materias que cursarás",
+        tipo: "tabla",
+        filas: 6,
+        columnas: [
+          { id: "clave", label: "Clave", maxLength: 8 },
+          { id: "curso", label: "Actividad académica (curso)", requerida: true, maxLength: 70 },
+          { id: "profesor", label: "Profesor", maxLength: 40 },
+          { id: "unidad", label: "Unidad académica", defecto: "CIDETEC", maxLength: 30 },
+        ],
+        ayuda: "Escribe las unidades de aprendizaje que cursarás en tu primer semestre (al menos una), como aparecen en tu programa.",
+        seccion: "Programa semestral",
+      },
       { ...C.fecha, id: "fechaInscripcion" },
       {
         id: "avisoPrivacidad",
@@ -374,7 +420,7 @@ export const FORMATOS: Formato[] = [
     destino: "Control Escolar (UTEyCV)",
     codigo: "SIP-08",
     nombre: "Programa individual de actividades",
-    descripcion: "Lo prepara tu asesor académico con Control Escolar (UTEyCV); tú lo revisas, lo firmas y lo subes.",
+    descripcion: "Lo elabora Control Escolar (UTEyCV); tú lo revisas, lo firmas y lo subes.",
     fase: "inscripcion",
     llena: "asesor",
     plantilla: "sip-08.pdf",
@@ -413,7 +459,7 @@ export function resolver(campo: CampoFormato, ctx: Contexto): Valor | undefined 
   return v === "" ? undefined : v;
 }
 
-export const esVacio = (v: Valor | undefined) => (Array.isArray(v) ? v.length === 0 : !v || !v.trim());
+export const esVacio = (v: Valor | undefined) => (Array.isArray(v) ? v.every((x) => !x.replace(/\t/g, "").trim()) : !v || !v.trim());
 
 export function camposVisibles(f: Formato, ctx: Contexto) {
   const v = (id: string) => {
@@ -429,6 +475,8 @@ export function faltantes(f: Formato, ctx: Contexto) {
     if (c.sistema) return false;
     const v = resolver(c, ctx);
     if (esVacio(v)) return !c.opcional;
+    // Tabla: toda fila con algo escrito debe tener sus columnas obligatorias
+    if (c.tipo === "tabla") return filasTabla(v).some((celdas) => (c.columnas ?? []).some((col, i) => col.requerida && !celdas[i]?.trim()));
     return !!c.valido && typeof v === "string" && !c.valido(v);
   });
 }

@@ -4,7 +4,7 @@ import { FaseEncabezado, FuenteFase } from "@/components/expediente/FaseEncabeza
 import { FormatosFase } from "@/components/expediente/FormatosFase";
 import { EstadoInscripcionAspirante } from "@/components/expediente/EstadoInscripcion";
 
-/** Proceso de inscripción: después de la admisión (dictamen SIP-04 publicado). */
+/** Proceso de inscripción: después de la admisión (resultado publicado; aquí se llena el SIP-04). */
 export default function Inscripcion() {
   return (
     <>

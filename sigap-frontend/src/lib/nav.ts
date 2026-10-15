@@ -55,7 +55,7 @@ export const NAV: Record<Rol, NavItem[]> = {
     { label: "Inscripción", href: "/aspirante/inscripcion", icon: "matricula" },
     { label: "Notificaciones", href: "/aspirante/notificaciones", icon: "notificaciones" },
   ],
-  // Vistas del alumno: fuera del alcance actual (el proceso de admisión termina con el dictamen SIP-04)
+  // Vistas del alumno: fuera del alcance actual (el proceso de admisión termina con la resolución del Colegio)
   alumno: [
     { label: "Inicio", href: "/alumno", icon: "home" },
     { label: "Horario y profesores", href: "/alumno/horario", icon: "horario" },
@@ -66,16 +66,16 @@ export const NAV: Record<Rol, NavItem[]> = {
     { label: "Aspirantes", href: "/posgrado/aspirantes", icon: "expedientes" },
     { label: "Entrevistas", href: "/posgrado/entrevistas", icon: "entrevistas" },
     { label: "Evaluación", href: "/posgrado/evaluacion", icon: "evaluacion" },
+    { label: "Calificaciones", href: "/posgrado/calificaciones", icon: "resultados" },
     { label: "Comisión y dictamen", href: "/posgrado/comision", icon: "dictamen" },
     { label: "Comunicados", href: "/posgrado/comunicados", icon: "comunicados" },
     { label: "Inicio del aspirante", href: "/posgrado/inicio-aspirante", icon: "contenido" },
-    { label: "Calendario de convocatorias", href: "/posgrado/calendario", icon: "calendario" },
+    { label: "Convocatorias y calendario", href: "/posgrado/calendario", icon: "calendario" },
     { label: "Bitácora", href: "/posgrado/bitacora", icon: "bitacora" },
   ],
   // Control Escolar: solo lo que le toca del proceso de admisión
   uteycv: [
     { label: "Inicio", href: "/uteycv", icon: "home" },
-    { label: "Dictamen SIP-04", href: "/uteycv/dictamen", icon: "dictamen" },
     { label: "Inscripciones", href: "/uteycv/inscripciones", icon: "matricula" },
     { label: "Bitácora", href: "/uteycv/bitacora", icon: "bitacora" },
   ],
@@ -85,11 +85,11 @@ export const NAV: Record<Rol, NavItem[]> = {
     { label: "Aspirantes", href: "/subdireccion/aspirantes", icon: "expedientes" },
     { label: "Bitácora", href: "/subdireccion/bitacora", icon: "bitacora" },
   ],
-  // Profesores del Colegio: sínodo de entrevistas (acta MTC-EC) y calificaciones de su área
+  // Profesores: eligen entrevistas (acta MTC-EC) y califican los grupos del propedéutico que imparten
   profesor: [
     { label: "Inicio", href: "/profesor", icon: "home" },
     { label: "Mis entrevistas", href: "/profesor/entrevistas", icon: "entrevistas" },
-    { label: "Calificaciones", href: "/profesor/evaluacion", icon: "evaluacion" },
+    { label: "Calificaciones del propedéutico", href: "/profesor/evaluacion", icon: "evaluacion" },
   ],
   admin: [
     { label: "Inicio", href: "/admin", icon: "home" },

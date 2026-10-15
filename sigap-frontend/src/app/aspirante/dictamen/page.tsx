@@ -1,20 +1,12 @@
 import { FaseEncabezado, FuenteFase } from "@/components/expediente/FaseEncabezado";
-import { FormatosFase } from "@/components/expediente/FormatosFase";
+import { PublicacionResultados } from "@/components/expediente/PublicacionResultados";
 
+/** 6 · Dictamen final: dónde se publican los resultados y, ya publicados, el resultado del aspirante. */
 export default function FaseDictamen() {
   return (
     <>
       <FaseEncabezado id="dictamen" />
-      <div className="space-y-6">
-        <section className="rounded-xl border border-gray-200 bg-white p-5">
-          <h2 className="font-semibold text-gray-900">Resultado</h2>
-          <p className="mt-2 text-sm text-gray-600">
-            Tu resultado se publicará el <strong>30 de abril</strong>. Si es favorable, Control Escolar (UTEyCV)
-            publicará aquí tu dictamen SIP-04 y recibirás un correo. Con tu dictamen concluye tu proceso de admisión.
-          </p>
-        </section>
-        <FormatosFase fase="dictamen" />
-      </div>
+      <PublicacionResultados />
       <FuenteFase id="dictamen" />
     </>
   );

@@ -12,8 +12,8 @@ export const PROGRAMA = "Maestría en Tecnología de Cómputo";
 /**
  * Áreas de CIDETEC que intervienen en la admisión.
  * - Departamento de Posgrado: registro, validación de documentos, entrevistas, evaluación, comisión.
- * - UTEyCV (Unidad de Tecnología Educativa y Campus Virtual): Control Escolar — cartas SIP-05 y SIP-06
- *   y dictamen SIP-04. El proceso de admisión termina con el dictamen (la matrícula es otro proceso).
+ * - UTEyCV (Unidad de Tecnología Educativa y Campus Virtual): Control Escolar — inscripción de los admitidos
+ *   (SIP-01, SIP-04, SIP-05, SIP-06 y SIP-08). El proceso de admisión termina con la resolución del Colegio.
  * - La constancia de inglés la valida solo el Departamento de Posgrado.
  */
 export const AREAS = {

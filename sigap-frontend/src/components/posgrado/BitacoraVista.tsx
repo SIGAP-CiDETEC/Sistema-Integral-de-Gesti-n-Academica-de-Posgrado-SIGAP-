@@ -15,9 +15,9 @@ import { useSesion } from "@/lib/sesion";
 export function BitacoraVista({ subtitulo }: { subtitulo: string }) {
   const { bitacora, cargado, porId, reiniciar } = usePosgrado();
   const { sesion } = useSesion();
-  // Posgrado abre el expediente; UTEyCV su pantalla del dictamen SIP-04; la Subdirección su vista de consulta
+  // Posgrado abre el expediente; UTEyCV su pantalla de inscripción; la Subdirección su vista de consulta
   const rol = sesion?.rol ?? "posgrado";
-  const enlace = (id: string) => (rol === "uteycv" ? `/uteycv/dictamen?id=${id}` : rol === "subdireccion" ? `/subdireccion/aspirantes/${id}` : `/posgrado/aspirantes/${id}`);
+  const enlace = (id: string) => (rol === "uteycv" ? `/uteycv/inscripciones?id=${id}` : rol === "subdireccion" ? `/subdireccion/aspirantes/${id}` : `/posgrado/aspirantes/${id}`);
   const [usuario, setUsuario] = useState("");
   if (!cargado) return null;
   const usuarios = [...new Set(bitacora.map((b) => b.usuario))];

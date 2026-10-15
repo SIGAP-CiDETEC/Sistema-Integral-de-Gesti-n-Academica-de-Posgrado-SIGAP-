@@ -75,7 +75,6 @@ export default function SubdireccionInicio() {
                 ["Procedencia IPN", `${r.ipn} de ${r.total}`],
                 ["Entrevistas realizadas", `${r.entrevistas} (${r.entrevistasAprobadas} aprobadas)`],
                 ["Evaluaciones acreditadas", `${r.acreditadas} de ${r.evaluadas}`],
-                ["Dictámenes SIP-04 publicados", r.dictamenes],
                 ["Inscritos con número SICEP", r.inscritos],
               ].map(([k, v]) => (
                 <div key={String(k)} className="flex justify-between gap-3 border-b border-gray-100 pb-2 last:border-0">

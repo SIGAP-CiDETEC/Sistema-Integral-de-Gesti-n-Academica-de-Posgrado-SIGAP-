@@ -3,6 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { REGISTRO_DEMO } from "@/lib/aspirante-datos";
 import type { Capturas, Contexto, Valor } from "@/lib/formatos";
+import { useSesionColegio } from "@/lib/posgrado/revision";
 import type { SegundaOportunidad } from "@/lib/posgrado/datos";
 import type { Respuestas } from "@/lib/registro-form";
 
@@ -119,8 +120,10 @@ export function ExpedienteProvider({ children }: { children: React.ReactNode }) 
     });
   }, []);
 
+  // Sesión del Colegio (la registra Posgrado): se usa solo ya cargado en el navegador, para no diferir del servidor
+  const colegio = useSesionColegio();
   const api = useMemo<Api>(() => {
-    const ctx: Contexto = { r: estado.registro, c: estado.capturas, hoy: new Date() };
+    const ctx: Contexto = { r: estado.registro, c: estado.capturas, hoy: new Date(), colegio: cargado ? colegio : null };
     return {
       ...estado,
       cargado,
@@ -178,7 +181,7 @@ export function ExpedienteProvider({ children }: { children: React.ReactNode }) 
         }),
       reiniciar: () => actualizar((e) => ({ ...e, ...INICIAL })),
     };
-  }, [estado, cargado, actualizar]);
+  }, [estado, cargado, actualizar, colegio]);
 
   return <Ctx.Provider value={api}>{children}</Ctx.Provider>;
 }

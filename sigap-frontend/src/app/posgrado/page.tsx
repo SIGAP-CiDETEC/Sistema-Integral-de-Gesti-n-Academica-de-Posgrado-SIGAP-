@@ -16,8 +16,7 @@ const BANDEJAS: { b: Bandeja; accion: string; href: string }[] = [
   { b: "En evaluación", accion: "Gestionar", href: "/posgrado/evaluacion" },
   { b: "Segunda oportunidad", accion: "Gestionar", href: "/posgrado/evaluacion" },
   { b: "Esperando resolución del Colegio", accion: "Registrar resolución", href: "/posgrado/comision" },
-  { b: "Turnado a UTEyCV", accion: "Ver", href: "/posgrado/aspirantes?bandeja=Turnado a UTEyCV" },
-  { b: "Dictamen publicado", accion: "Ver", href: "/posgrado/aspirantes?bandeja=Dictamen publicado" },
+  { b: "Admitido", accion: "Ver", href: "/posgrado/aspirantes?bandeja=Admitido" },
 ];
 
 /** Operación de admisión: vista general de la convocatoria (mockup "Operación de admisión"). */

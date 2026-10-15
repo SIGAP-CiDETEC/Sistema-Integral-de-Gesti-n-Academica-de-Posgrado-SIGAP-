@@ -24,10 +24,11 @@
 
 **Criterios de aceptación**
 - El formulario se divide en secciones: datos personales, formación académica, experiencia profesional, habilidades, motivos, proyectos, intereses, personalidad y situación personal y familiar.
+- Al terminar el registro, el sistema me lleva a completar mi **SIP-02** (currículum) con los datos que ya capturé.
 - Cada sección se valida antes de avanzar (campos obligatorios, formato de CURP, correo y teléfono).
 - Si estudió en el IPN, puede elegir su unidad académica de la lista completa de unidades del IPN.
 - Solo puede registrarse a una convocatoria **abierta**.
-- Al terminar, el sistema le asigna un **ID temporal** (`ASP-AAAA-NNN`) y se lo muestra junto con su contraseña de acceso.
+- Después de completar el SIP-02, el sistema le asigna un **ID temporal** (p. ej. `MTC-A27001`: programa, convocatoria y consecutivo) y se lo muestra junto con su contraseña de acceso.
 
 **Referencias:** CU-ADM-01 · RF-01, RF-02, RF-81
 **Pantalla:** `/registro`, `/registro/exito`
@@ -38,7 +39,7 @@
 **Como** aspirante, **quiero** entrar al sistema con mi ID temporal, **para** dar seguimiento a mi proceso.
 
 **Criterios de aceptación**
-- El inicio de sesión acepta el ID temporal (`ASP-…`) y la contraseña.
+- El inicio de sesión acepta el ID temporal (`MTC-A27001`) y la contraseña.
 - Con credenciales incorrectas se muestra un mensaje de error sin revelar cuál dato falló.
 - Al entrar, llega a su inicio de aspirante.
 
@@ -53,7 +54,7 @@
 **Criterios de aceptación**
 - "Mi admisión" muestra el estado general, las 6 fases y cuál es la actual.
 - Indica el **siguiente paso** concreto (p. ej. "Sube tus documentos", "Consulta tu cita", "Elige tu modalidad").
-- Cada fase explica qué hace el aspirante y qué hace cada área (Posgrado, Profesores, UTEyCV).
+- Cada fase explica qué hace el aspirante y qué hace cada área (Posgrado y Profesores).
 - Las fases que aún no le corresponden aparecen bloqueadas con el requisito para habilitarse.
 
 **Referencias:** RF-49 · CU-ADM-01
@@ -80,6 +81,7 @@
 **Criterios de aceptación**
 - La lista de documentos se adapta a mi registro: título y cédula (o constancia de trámite de titulación si no estoy titulado), certificado, constancia de inglés, CURP (solo para mexicanos), acta de nacimiento, identificación oficial (INE o pasaporte) y documentos apostillados si soy extranjero.
 - Solo se aceptan PDF que no excedan el límite de tamaño configurado en la convocatoria.
+- La fotografía debe ser a color, de frente, con fondo blanco y **rostro descubierto** (sin lentes, gorra, sombrero ni accesorios, con orejas y frente visibles), en JPG o PNG de **máximo 2 MB**; el sistema rechaza archivos más pesados.
 - Cada documento muestra su estado: falta, por revisar, aprobado, con observación o en prórroga.
 - Se muestran las notas de ayuda (p. ej. la validación ante la DFLE para constancias distintas a CENLEX puede tardar más de 40 días).
 
@@ -93,6 +95,8 @@
 
 **Criterios de aceptación**
 - Recibo un aviso en el sistema (y por correo) con el documento y el motivo de la observación.
+- Mientras tenga observaciones, **solo puedo reemplazar el documento observado**; los demás quedan bloqueados.
+- Los documentos **aprobados** quedan bloqueados y ya no se pueden reemplazar.
 - Al reemplazar el archivo, el documento vuelve a quedar **por revisar** para Posgrado.
 - Si Posgrado me dio prórroga, veo la fecha límite y puedo seguir con mi proceso mientras tanto.
 
@@ -106,9 +110,10 @@
 
 **Criterios de aceptación**
 - La fase 3 se habilita cuando mi expediente está validado.
+- Veo mi cita **solo cuando Posgrado publica la entrevista** (después de que se completa el sínodo de 3 profesores); antes aparece "Aún no tienes cita".
 - Veo fecha, hora, modalidad (presencial o en línea) y sala o enlace; **no** se muestran los nombres del sínodo.
 - Recibo recordatorios automáticos **un día antes** y **una hora antes** de la entrevista.
-- Si Posgrado reprograma la cita, recibo un aviso con los nuevos datos.
+- Si Posgrado actualiza el horario, recibo un aviso con los nuevos datos.
 
 **Referencias:** CU-ADM-04 · RF-10, RF-11
 **Pantalla:** `/aspirante/entrevista`
@@ -134,6 +139,7 @@
 **Criterios de aceptación**
 - Veo las fechas y la modalidad vigentes de cada opción (las configura Posgrado).
 - Si elijo propedéutico, elijo un grupo de cada curso (Matemáticas Discretas y Continuas, Programación, Seminario de Inducción) y el sistema **impide** grupos con choque de horario.
+- De cada grupo veo su horario y su **lugar**; **no** se me muestra el nombre del docente.
 - Al confirmar, la elección queda fija; para cambiarla debo solicitarlo por correo a Posgrado.
 - Si elijo examen, recibo recordatorios **cada 5 días, un día antes y el mismo día** del examen.
 
@@ -169,29 +175,30 @@
 
 ---
 
-### HU-ASP-13 · Revisar y confirmar mis datos del dictamen (SIP-04)
-**Como** aspirante admitido, **quiero** revisar mis datos del dictamen y elegir mi dedicación, **para** que mi dictamen salga correcto.
+### HU-ASP-13 · Consultar dónde y cuándo se publican los resultados
+**Como** aspirante, **quiero** saber dónde y cuándo se publicarán los resultados del proceso de admisión, **para** estar pendiente de mi resultado.
 
 **Criterios de aceptación**
-- La fase 6 solo se habilita a quien acreditó su evaluación (RF-22).
-- Veo los datos que llevará mi SIP-04 y debo elegir mi dedicación: **tiempo completo** o **tiempo parcial** (RN-10).
-- Al confirmar, UTEyCV puede continuar con las firmas.
+- La fase 6 (Dictamen final) es **informativa**: solo la ve el aspirante y no requiere que haga ningún trámite.
+- Indica que los resultados se publican en SIGAP, que recibiré un aviso por correo y en mis notificaciones, y muestra el calendario de mi convocatoria.
+- Mientras mi resultado está en la Comisión de Admisión, se indica que todavía no se publica.
 
-**Referencias:** CU-ADM-07 · RF-22 · RN-10
-**Pantalla:** `/aspirante/dictamen`, `/aspirante/formatos/sip-04`
+**Referencias:** RF-22, RF-50
+**Pantalla:** `/aspirante/dictamen`
 
 ---
 
-### HU-ASP-14 · Descargar mi dictamen firmado
-**Como** aspirante admitido, **quiero** descargar mi dictamen SIP-04 firmado, **para** tener el documento oficial que concluye mi admisión.
+### HU-ASP-14 · Conocer mi resultado de admisión
+**Como** aspirante, **quiero** ver mi resultado cuando Posgrado publique la resolución del Colegio de Profesores, **para** saber si fui admitido y qué sigue.
 
 **Criterios de aceptación**
-- Recibo un aviso cuando UTEyCV publica mi dictamen.
-- Puedo descargar el SIP-04 firmado desde mi sesión.
-- El sistema indica que con el dictamen concluye mi proceso de admisión.
+- Recibo un aviso cuando se publica mi resultado.
+- Si fui **Aceptado** o **Condicionado**, veo la fecha y hora de la sesión del Colegio y un acceso a mi **inscripción**; con esto concluye mi proceso de admisión.
+- El dictamen **SIP-04** lo lleno yo en Inscripción (con mi dedicación, RN-10); antes de ser admitido aparece bloqueado.
+- Si no fui aceptado, mi proceso concluye con un mensaje general.
 
-**Referencias:** RF-22 · CU-ADM-07
-**Pantalla:** `/aspirante/dictamen`
+**Referencias:** CU-ADM-07 · RF-22 · RN-10
+**Pantalla:** `/aspirante/dictamen`, `/aspirante/inscripcion`
 
 ---
 
@@ -199,7 +206,7 @@
 **Como** aspirante, **quiero** ver todos los avisos de mi proceso en el sistema, **para** no depender solo del correo.
 
 **Criterios de aceptación**
-- Recibo avisos de observaciones, citas, recordatorios, resultados y dictamen, por correo y dentro de SIGAP.
+- Recibo avisos de observaciones, citas, recordatorios y resultados, por correo y dentro de SIGAP.
 - Cada aviso indica fecha, área que lo envía y asunto.
 - Los recordatorios programados se distinguen de los ya enviados.
 

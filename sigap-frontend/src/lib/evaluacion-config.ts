@@ -90,7 +90,21 @@ export function useConfigEvaluacion() {
   return useMemo(() => {
     let config = CONFIG_EVALUACION_DEFECTO;
     try {
-      if (raw) config = { ...CONFIG_EVALUACION_DEFECTO, ...(JSON.parse(raw) as ConfigEvaluacion) };
+      if (raw) {
+        const g = JSON.parse(raw) as ConfigEvaluacion;
+        // Configuraciones guardadas antes de que existieran el lugar y el docente de cada grupo
+        const materias = (g.materias ?? MATERIAS).map((m) => {
+          const base = MATERIAS.find((x) => x.id === m.id);
+          return {
+            ...m,
+            grupos: m.grupos.map((gr) => {
+              const bg = base?.grupos.find((x) => x.id === gr.id) ?? base?.grupos[0];
+              return { ...gr, lugar: gr.lugar ?? bg?.lugar, docente: gr.docente ?? bg?.docente };
+            }),
+          };
+        });
+        config = { ...CONFIG_EVALUACION_DEFECTO, ...g, materias };
+      }
     } catch {
       /* usar la de la convocatoria */
     }

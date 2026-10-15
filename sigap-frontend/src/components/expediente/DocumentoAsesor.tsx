@@ -14,9 +14,9 @@ const fechaCorta = (iso: string) =>
   new Date(iso).toLocaleDateString("es-MX", { day: "numeric", month: "long", year: "numeric" });
 
 /**
- * Documentos que prepara el asesor académico con Control Escolar — UTEyCV (SIP-08):
+ * Documentos que prepara Control Escolar — UTEyCV (SIP-08):
  * el aspirante lo recibe, lo revisa, lo imprime, lo firma y sube el escaneo.
- * Con backend: el asesor captura las materias en su sesión y el sistema notifica al aspirante.
+ * Con backend: UTEyCV lo elabora en su sesión y el sistema notifica al aspirante.
  */
 export function DocumentoAsesor({ formato: f }: { formato: Formato }) {
   const { ctx, recibidos, firmados, recibir, subirFirmado, registro } = useExpediente();
@@ -54,7 +54,7 @@ export function DocumentoAsesor({ formato: f }: { formato: Formato }) {
   };
 
   const pasos = [
-    { titulo: "Tu asesor prepara tu programa con UTEyCV", hecho: !!recibido },
+    { titulo: "Control Escolar (UTEyCV) prepara tu programa", hecho: !!recibido },
     { titulo: "Revísalo, imprímelo y fírmalo", hecho: !!firmado },
     { titulo: "Sube el escaneo firmado", hecho: !!firmado },
   ];
@@ -85,11 +85,11 @@ export function DocumentoAsesor({ formato: f }: { formato: Formato }) {
       {!recibido ? (
         <section className="rounded-xl border border-gray-200 bg-white p-5 text-sm text-gray-700">
           <p className="flex items-center gap-2 font-medium text-gray-900">
-            <Clock size={16} className="text-gray-400" /> Tu asesor académico está preparando tu programa individual
+            <Clock size={16} className="text-gray-400" /> Control Escolar (UTEyCV) está preparando tu programa individual
           </p>
           <p className="mt-2">
-            Con base en el artículo 12 del Reglamento de Estudios de Posgrado, tu asesor define contigo las unidades de aprendizaje
-            que cursarás. Cuando lo registre, te avisaremos por correo y en tus notificaciones para que lo revises y lo firmes.
+            Con base en el artículo 12 del Reglamento de Estudios de Posgrado, Control Escolar elabora tu programa individual de actividades.
+            Cuando lo publique, te avisaremos por correo y en tus notificaciones para que lo revises y lo firmes.
           </p>
           <FirmasOtros firmas={f.firmas} recibe={f.destino} />
         </section>
@@ -101,7 +101,7 @@ export function DocumentoAsesor({ formato: f }: { formato: Formato }) {
                 <h2 className="font-semibold text-gray-900">Tu programa individual</h2>
                 <p className="mt-0.5 text-sm text-gray-500">Revisa tus datos y las materias asignadas antes de firmarlo.</p>
               </div>
-              <span className="rounded-full bg-amber-50 px-2.5 py-1 text-[11px] text-amber-800">Materias y asesor de ejemplo</span>
+              <span className="rounded-full bg-amber-50 px-2.5 py-1 text-[11px] text-amber-800">Materias de ejemplo</span>
             </div>
 
             <dl className="mt-4 grid gap-x-6 gap-y-3 text-sm sm:grid-cols-2">
@@ -178,7 +178,7 @@ export function DocumentoAsesor({ formato: f }: { formato: Formato }) {
           <aside className="space-y-4 lg:sticky lg:top-6 lg:self-start">
             <section className="rounded-xl border border-gray-200 bg-white p-5">
               <p className="flex items-center gap-2 text-sm font-medium text-emerald-700">
-                <FileCheck2 size={16} /> Tu asesor lo registró el {fechaCorta(recibido.fecha)}
+                <FileCheck2 size={16} /> Control Escolar lo publicó el {fechaCorta(recibido.fecha)}
               </p>
               <button
                 type="button"
@@ -213,7 +213,7 @@ export function DocumentoAsesor({ formato: f }: { formato: Formato }) {
 
       {/* Solo cascarón */}
       <div className="border-t border-dashed border-gray-300 pt-4">
-        <p className="text-xs text-gray-500">Vista de prueba (solo cascarón) — simula lo que hacen tu asesor y tú:</p>
+        <p className="text-xs text-gray-500">Vista de prueba (solo cascarón) — simula lo que hacen Control Escolar y tú:</p>
         <div className="mt-2 flex flex-wrap gap-2">
           {!recibido && (
             <button
@@ -221,7 +221,7 @@ export function DocumentoAsesor({ formato: f }: { formato: Formato }) {
               onClick={() => recibir(f.clave, { nombre: `${f.codigo}_programa.pdf`, bytes: 210_000, fecha: new Date().toISOString() })}
               className="inline-flex items-center gap-1.5 rounded-full border border-gray-300 bg-white px-3 py-1 text-xs text-gray-700 hover:bg-gray-50"
             >
-              <Wand2 size={12} /> Simular que tu asesor ya lo preparó
+              <Wand2 size={12} /> Simular que Control Escolar ya lo publicó
             </button>
           )}
           {recibido && !firmado && (

@@ -2,10 +2,12 @@
 
 import { usePosgrado } from "@/components/posgrado/PosgradoProvider";
 import {
+  fechaCorta,
   firmasActa,
   integrarResultado,
   evaluacionPendiente,
   nombreArea,
+  lugaresLibres,
   nombreProfesor,
   type ActaEntrevista,
   type AreaEvalId,
@@ -85,5 +87,26 @@ export function useAccionesProfesor() {
     );
   };
 
-  return { firmar, simularFirmasRestantes, capturar };
+  /** El profesor elige una entrevista con lugar libre y se integra al sínodo. */
+  const elegirEntrevista = (a: AspiranteP, profesor: string) => {
+    const e = a.entrevista;
+    if (!e || e.sinodo.includes(profesor) || lugaresLibres(e) === 0) return;
+    const nueva = { ...e, sinodo: [...e.sinodo, profesor] };
+    const libres = lugaresLibres(nueva);
+    actualizar(
+      a.id,
+      { entrevista: nueva },
+      `${nombreProfesor(profesor)} eligió la entrevista del ${fechaCorta(e.fecha)} a las ${e.hora} h · sínodo ${nueva.sinodo.length} de 3${libres ? "" : " (completo)"}`,
+    );
+  };
+
+  /** El profesor deja su lugar (solo antes de que se llene el acta). */
+  const dejarLugar = (a: AspiranteP, profesor: string) => {
+    const e = a.entrevista;
+    if (!e || !e.sinodo.includes(profesor) || a.actaEntrevista) return;
+    const nueva = { ...e, sinodo: e.sinodo.filter((p) => p !== profesor) };
+    actualizar(a.id, { entrevista: nueva }, `${nombreProfesor(profesor)} dejó su lugar en la entrevista del ${fechaCorta(e.fecha)} a las ${e.hora} h · sínodo ${nueva.sinodo.length} de 3`);
+  };
+
+  return { firmar, simularFirmasRestantes, capturar, elegirEntrevista, dejarLugar };
 }

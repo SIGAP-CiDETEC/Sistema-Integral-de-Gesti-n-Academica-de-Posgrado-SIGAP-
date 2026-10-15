@@ -6,18 +6,20 @@ import { PageHeader } from "@/components/PageHeader";
 import { usePosgrado } from "@/components/posgrado/PosgradoProvider";
 import { Etiqueta, Kpi, Tarjeta } from "@/components/posgrado/ui";
 import { fechaCorta, nombreArea } from "@/lib/posgrado/datos";
-import { TONO_ENTREVISTA_PROF, capturasPendientes, entrevistasDe, estadoEntrevistaProf, useProfesorActual } from "@/lib/profesor";
+import { useConfigEvaluacion } from "@/lib/evaluacion-config";
+import { TONO_ENTREVISTA_PROF, capturasPendientes, entrevistasDe, entrevistasDisponibles, estadoEntrevistaProf, useProfesorActual } from "@/lib/profesor";
 
 /** Inicio del profesor: lo que le toca del proceso de admisión. */
 export default function ProfesorInicio() {
   const { aspirantes, cargado } = usePosgrado();
   const { profesor } = useProfesorActual();
+  const { materias } = useConfigEvaluacion();
   if (!cargado) return null;
   const yo = profesor?.id ?? "";
   const mias = entrevistasDe(aspirantes, yo);
   const estados = mias.map((a) => ({ a, e: estadoEntrevistaProf(a, yo) }));
   const porHacer = estados.filter((x) => x.e === "Por realizar" || x.e === "Por firmar");
-  const calif = capturasPendientes(aspirantes, yo).filter((c) => !c.capturada);
+  const calif = capturasPendientes(aspirantes, yo, materias).filter((c) => !c.capturada);
 
   return (
     <>
@@ -27,7 +29,7 @@ export default function ProfesorInicio() {
         <Kpi valor={estados.filter((x) => x.e === "Por realizar").length} etiqueta="Entrevistas por realizar" color="text-primary" href="/profesor/entrevistas" />
         <Kpi valor={estados.filter((x) => x.e === "Por firmar").length} etiqueta="Actas MTC-EC por firmar" color="text-amber-700" href="/profesor/entrevistas" />
         <Kpi valor={calif.length} etiqueta="Calificaciones por capturar" color="text-violet-700" href="/profesor/evaluacion" />
-        <Kpi valor={estados.filter((x) => x.e === "Dictaminada").length} etiqueta="Entrevistas dictaminadas" color="text-emerald-700" href="/profesor/entrevistas" />
+        <Kpi valor={entrevistasDisponibles(aspirantes, yo).filter((d) => !d.choque).length} etiqueta="Entrevistas disponibles para elegir" color="text-emerald-700" href="/profesor/entrevistas" />
       </div>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
@@ -64,7 +66,7 @@ export default function ProfesorInicio() {
                   <span>
                     <span className="font-medium text-gray-900">{c.a.nombre}</span>
                     <span className="block text-xs text-gray-500">
-                      {nombreArea(c.area)} · {c.tipo === "propedeutico" ? `propedéutico, grupo ${c.a.evaluacion.grupos[c.area] ?? "—"}` : c.esSegunda ? "examen de área no acreditada" : "examen de admisión"}
+                      {nombreArea(c.area)} · propedéutico, grupo {c.a.evaluacion.grupos[c.area] ?? "—"}
                     </span>
                   </span>
                   <Link href="/profesor/evaluacion" className="text-sm font-medium text-primary hover:underline">
@@ -80,7 +82,7 @@ export default function ProfesorInicio() {
       </div>
 
       <p className="mt-6 text-xs text-gray-500">
-        Posgrado programa las entrevistas y publica los resultados; tú llenas y firmas el acta del sínodo y capturas las calificaciones de tu área.
+        Posgrado programa el día y la hora de las entrevistas y publica los resultados; tú eliges en qué entrevistas participas, llenas y firmas el acta del sínodo y capturas las calificaciones de los grupos del propedéutico que impartes (el examen lo califica la Jefatura de Posgrado).
       </p>
     </>
   );

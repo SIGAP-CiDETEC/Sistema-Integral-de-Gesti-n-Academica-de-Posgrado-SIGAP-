@@ -38,7 +38,7 @@ function TarjetaFormato({ f }: { f: Formato }) {
   const bloqueo = useBloqueoFormato(f.clave);
   const e0 = estadoFormato(f, ctx, firmados[f.clave], { confirmado: confirmados[f.clave], recibido: recibidos[f.clave] });
   const e = bloqueo && !e0.completo ? { ...e0, etiqueta: "Bloqueado", tono: "gris" as const } : e0;
-  // El SIP-08 se comporta como editable cuando el asesor ya lo preparó
+  // El SIP-08 se comporta como editable cuando UTEyCV ya lo publicó
   const editable = f.llena === "aspirante" || (f.llena === "asesor" && !!recibidos[f.clave]);
   return (
 <li className="flex flex-col rounded-lg border border-gray-200 p-4">

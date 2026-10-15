@@ -105,6 +105,15 @@ export const nombreCompleto = (r: Respuestas) =>
  * (botón "Llenar con datos de ejemplo" en cada formato).
  */
 export const CAPTURAS_DEMO: Record<string, string | string[]> = {
+  // SIP-04: sesión del Colegio (si Posgrado aún no la registra en este navegador)
+  fechaSesion: "20/06/2026",
+  horaSesion: "12:00",
+  // SIP-01: materias del primer semestre (clave, curso, profesor, unidad académica)
+  materias: [
+    "MTC0101\tMatemáticas para Cómputo\tDr. Ricardo Morales Vega\tCIDETEC",
+    "MTC0102\tArquitectura de Computadoras\tDra. Adriana Castillo Ramos\tCIDETEC",
+    "MTC0103\tSeminario Departamental I\tDra. Laura Hernández Ruiz\tCIDETEC",
+  ],
   estatus: "Tiempo completo",
   calle: "Av. Instituto Politécnico Nacional",
   numExt: "2580",

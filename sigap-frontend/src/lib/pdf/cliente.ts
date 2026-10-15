@@ -41,7 +41,7 @@ export function pdfDataUrl(bytes: Uint8Array): Promise<string> {
   });
 }
 
-/** Genera un PDF con valores ya calculados (p. ej. el SIP-04 que elabora UTEyCV). */
+/** Genera un PDF con valores ya calculados (p. ej. un formato con datos del personal). */
 export async function generarPdfConValores(clave: string, plantilla: string, valores: Record<string, string>): Promise<string> {
   const bytes = await (await fetch(`/formatos/${plantilla}`)).arrayBuffer();
   const pdf = await rellenarPdf(clave, bytes, { valores, hoy: new Date() });

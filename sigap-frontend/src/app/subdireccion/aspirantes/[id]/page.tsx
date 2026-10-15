@@ -7,15 +7,14 @@ import { usePosgrado } from "@/components/posgrado/PosgradoProvider";
 import { Aviso, Etiqueta, EtiquetaBandeja, EtiquetaDoc, Migas, Progreso, Tarjeta } from "@/components/posgrado/ui";
 import { SoloConsulta } from "@/components/subdireccion/SoloConsulta";
 import { useConfigEvaluacion } from "@/lib/evaluacion-config";
+import { TONO_DICTAMEN, dictamenFinal, procedenciaSeparada } from "@/lib/reporte-aspirantes";
 import {
   TONO_INSCRIPCION,
-  TONO_UTEYCV,
   bandejaDe,
   estadoEvaluacion,
   estadoInscripcion,
   pendientesInscripcion,
   puedeInscribirse,
-  estadoUteycv,
   fechaCorta,
   fechaHora,
   firmasActa,
@@ -29,7 +28,7 @@ import {
 import { faseSubdireccion, nombreFase } from "@/lib/subdireccion";
 
 type Estado = "hecho" | "actual" | "pendiente" | "detenido";
-const ORDEN = ["registro", "documentos", "entrevista", "evaluacion", "comision", "dictamen", "admitido", "inscrito"] as const;
+const ORDEN = ["registro", "documentos", "entrevista", "evaluacion", "comision", "admitido", "inscrito"] as const;
 
 /** Proceso completo de un aspirante, en modo consulta (Subdirección Académica). */
 export default function ProcesoAspirante({ params }: PageProps<"/subdireccion/aspirantes/[id]">) {
@@ -80,7 +79,8 @@ export default function ProcesoAspirante({ params }: PageProps<"/subdireccion/as
               ["CURP", a.curp],
               ["Correo", a.correo],
               ["Teléfono", a.telefono],
-              ["Procedencia", a.procedencia],
+              ["Institución de procedencia", procedenciaSeparada(a.procedencia).institucion],
+              ["Unidad académica / escuela", procedenciaSeparada(a.procedencia).unidad || "—"],
               ["Promedio de licenciatura", a.promedio],
               ["Fecha de registro", fechaCorta(a.registradoEl)],
               ["Dedicación elegida", a.dedicacion ?? "Aún no la elige"],
@@ -98,6 +98,10 @@ export default function ProcesoAspirante({ params }: PageProps<"/subdireccion/as
           <div className="mt-4">
             <EtiquetaBandeja b={bandejaDe(a)} />
           </div>
+          <p className="mt-3 text-sm text-gray-600">
+            Dictamen:{" "}
+            {dictamenFinal(a) ? <Etiqueta tono={TONO_DICTAMEN[dictamenFinal(a)!]}>{dictamenFinal(a)}</Etiqueta> : <span className="text-gray-500">aún no hay</span>}
+          </p>
           <p className="mt-3 text-sm text-gray-600">Documentos aprobados: {aprobados} de {a.documentos.length}</p>
         </Tarjeta>
       </div>
@@ -161,24 +165,18 @@ export default function ProcesoAspirante({ params }: PageProps<"/subdireccion/as
             )}
           </Paso>
 
-          <Paso estado={estadoDe("comision")} titulo="Comisión de Admisión y Colegio de Profesores">
+          <Paso estado={estadoDe("comision")} titulo="Comisión de Admisión, Colegio de Profesores y 6 · resultado">
             {a.resolucion ? (
               <>
-                Resolución del Colegio: <b>{a.resolucion}</b>
+                Resolución del Colegio: <b>{a.resolucion}</b> (dictamen {dictamenFinal(a)?.toLowerCase()})
+                <span className="block">
+                  Resultado publicado al aspirante en SIGAP (6 · Dictamen final)
+                  {a.turnadoUteycv ? ` el ${fechaCorta(a.turnadoUteycv)}` : ""}.
+                  {a.resolucion !== "No aceptado" && " Con esto concluye su proceso de admisión."}
+                </span>
               </>
             ) : (
               "Sin resolución todavía."
-            )}
-          </Paso>
-
-          <Paso estado={estadoDe("dictamen")} titulo="6 · Dictamen SIP-04 (UTEyCV)">
-            {a.turnadoUteycv ? (
-              <>
-                Turnado a UTEyCV el {fechaCorta(a.turnadoUteycv)} · <Etiqueta tono={TONO_UTEYCV[estadoUteycv(a)]}>{estadoUteycv(a)}</Etiqueta>
-                {a.uteycv?.sip04PublicadoEl && <span className="block">Publicado al aspirante el {fechaCorta(a.uteycv.sip04PublicadoEl)}. Con esto concluye su proceso de admisión.</span>}
-              </>
-            ) : (
-              "Aún no se turna a UTEyCV."
             )}
           </Paso>
           <Paso estado={estadoDe("admitido")} titulo="Inscripción (UTEyCV)">
@@ -196,7 +194,7 @@ export default function ProcesoAspirante({ params }: PageProps<"/subdireccion/as
                 )}
               </>
             ) : (
-              "Se habilita al publicarse su dictamen SIP-04."
+              "Se habilita al publicarse su resultado de admisión (Aceptado o Condicionado)."
             )}
           </Paso>
         </ol>

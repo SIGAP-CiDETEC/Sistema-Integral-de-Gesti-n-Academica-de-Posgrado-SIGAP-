@@ -6,13 +6,12 @@ import { CheckCircle2, Mail, RefreshCw, Send, TriangleAlert } from "lucide-react
 import { PageHeader } from "@/components/PageHeader";
 import { usePosgrado } from "@/components/posgrado/PosgradoProvider";
 import { Aviso, Etiqueta, Tarjeta, botonPrimario, botonSecundario, inputBase, Regresar } from "@/components/posgrado/ui";
-import { choques, describirGrupo, type ModalidadId } from "@/lib/evaluacion";
+import { choques, describirGrupo, docenteDe, lugarDe, type ModalidadId } from "@/lib/evaluacion";
 import { fechaLargaIso, useConfigEvaluacion } from "@/lib/evaluacion-config";
 import { AvisoAspirante } from "@/components/posgrado/AvisoAspirante";
 import { EditarCalendario } from "@/components/posgrado/EditarCalendario";
 import {
   MINIMA_AREA,
-  PROFESOR_AREA,
   areasReprobadas,
   evaluacionPendiente,
   nombreProfesor,
@@ -176,7 +175,7 @@ function CambiarEleccion({ a }: { a: AspiranteP }) {
                     <option value="">Elige grupo</option>
                     {m.grupos.map((g) => (
                       <option key={g.id} value={g.id}>
-                        Grupo {g.id} — {describirGrupo(g)}
+                        Grupo {g.id} — {describirGrupo(g)} · {lugarDe(g)}
                       </option>
                     ))}
                   </select>
@@ -261,7 +260,7 @@ function Fila({ t, r }: { t: string; r: ResultadoEval }) {
 
 function Resultados({ a }: { a: AspiranteP }) {
   const { actualizar, enviarAviso } = usePosgrado();
-  const { modalidades: MODALIDADES, config } = useConfigEvaluacion();
+  const { modalidades: MODALIDADES, config, materias } = useConfigEvaluacion();
   const e = a.evaluacion;
   const so = e.segundaOportunidad;
   const nom = a.nombre.split(" ")[0];
@@ -363,7 +362,8 @@ function Resultados({ a }: { a: AspiranteP }) {
             Calificaciones del {pend.tipo === "propedeutico" ? "curso propedéutico" : pend.esSegunda ? "examen de áreas no acreditadas" : "examen de admisión"}
           </p>
           <p className="mt-0.5 text-xs text-gray-500">
-            Las captura el profesor de cada área en su sesión de Profesor. Al completarse, aquí podrás publicarlas.
+            {pend.tipo === "examen" ? "Las captura la Jefatura de Posgrado (Calificaciones)." : "Las captura el docente de cada grupo en su sesión de Profesor."} Al completarse, aquí podrás
+            publicarlas.
             {pend.tipo === "examen" && ` Examen: ${fechaLargaIso(config.examen.fecha)}, ${config.examen.hora} h, ${config.examen.lugar}.`}
           </p>
           <ul className="mt-2 divide-y divide-gray-100 text-sm">
@@ -373,7 +373,14 @@ function Resultados({ a }: { a: AspiranteP }) {
                 <li key={id} className="flex flex-wrap items-center justify-between gap-2 py-2">
                   <span>
                     <span className="text-gray-800">{nombreArea(id)}</span>
-                    <span className="block text-xs text-gray-500">{nombreProfesor(PROFESOR_AREA[id])}</span>
+                    <span className="block text-xs text-gray-500">
+                      {pend.tipo === "examen"
+                        ? "Captura: Jefatura de Posgrado"
+                        : `Docente: ${(() => {
+                            const d = docenteDe(id, e.grupos[id] ?? "", materias);
+                            return d ? nombreProfesor(d) : "sin asignar";
+                          })()} · grupo ${e.grupos[id] ?? "—"}`}
+                    </span>
                   </span>
                   {c ? (
                     <Etiqueta tono={c.calificacion >= MINIMA_AREA ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"}>

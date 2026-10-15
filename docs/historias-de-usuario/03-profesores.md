@@ -2,7 +2,7 @@
 
 [← Índice](README.md)
 
-Los profesores participan en la admisión de dos formas: como **sínodo** de la entrevista colegiada (acta MTC-EC) y como **evaluadores** de su área (Matemáticas Discretas y Continuas o Programación).
+Pueden participar los **profesores colegiados con nombramiento vigente** y los **profesores de asignatura** (RN-07). Participan en la admisión de dos formas: como **sínodo** de la entrevista colegiada (acta MTC-EC) y como **evaluadores** de su área (Matemáticas Discretas y Continuas o Programación).
 
 ---
 
@@ -10,7 +10,7 @@ Los profesores participan en la admisión de dos formas: como **sínodo** de la 
 **Como** profesor, **quiero** ver en mi inicio lo que me toca hacer, **para** no dejar pendientes entrevistas ni calificaciones.
 
 **Criterios de aceptación**
-- Veo indicadores: entrevistas por realizar, actas por firmar, calificaciones por capturar y entrevistas dictaminadas.
+- Veo indicadores: entrevistas por realizar, actas por firmar, calificaciones por capturar y entrevistas disponibles para elegir.
 - Veo las listas de entrevistas pendientes y de calificaciones por capturar, con acceso directo a cada una.
 
 **Referencias:** RF-10, RF-16
@@ -22,7 +22,8 @@ Los profesores participan en la admisión de dos formas: como **sínodo** de la 
 **Como** profesor, **quiero** ver solo las entrevistas en las que formo parte del sínodo, **para** prepararme.
 
 **Criterios de aceptación**
-- La lista muestra aspirante, fecha, hora, modalidad, sala, los 3 integrantes del sínodo y el estado del acta (por realizar, por firmar, esperando firmas, dictaminada).
+- La lista muestra aspirante, fecha, hora, modalidad, sala, los integrantes del sínodo y el estado del acta (sínodo incompleto, esperando publicación, por realizar, por firmar, esperando firmas, dictaminada).
+- El acta se puede llenar cuando el sínodo tiene 3 profesores **y** Posgrado ya publicó la entrevista al aspirante.
 - Si entro a una entrevista en la que no soy sínodo, el sistema me lo indica y no me deja llenar el acta.
 - En cada entrevista veo los datos principales del aspirante (procedencia, promedio, correo, documentos aprobados).
 
@@ -43,7 +44,7 @@ Los profesores participan en la admisión de dos formas: como **sínodo** de la 
   - si tiene dos habilidades de inglés acreditadas;
   - si tiene certificado de estudios;
   - argumentación final del aspirante.
-- El promedio y la escuela de procedencia se toman del registro del aspirante.
+- La hoja 1 llega **prellenada** con lo que el aspirante dio en su registro y expediente (áreas de interés, certificado, situación de su constancia de inglés, promedio y escuela); el sínodo la confirma o la corrige y completa lo demás durante la entrevista.
 
 **Referencias:** RF-12
 **Pantalla:** `/profesor/entrevistas/[id]`
@@ -99,14 +100,45 @@ Los profesores participan en la admisión de dos formas: como **sínodo** de la 
 
 ---
 
-### HU-PR-07 · Capturar las calificaciones de mi área
-**Como** profesor evaluador, **quiero** capturar la calificación de mi área para cada aspirante, **para** que Posgrado pueda publicar sus resultados.
+### HU-PR-07 · Capturar las calificaciones de los grupos del propedéutico que imparto
+**Como** docente del curso propedéutico, **quiero** capturar la calificación de los aspirantes de mis grupos, **para** que Posgrado pueda publicar sus resultados.
 
 **Criterios de aceptación**
-- Solo veo a los aspirantes y el área que me corresponde (p. ej. Programación), separados en curso propedéutico (con su grupo) y examen de admisión, incluido el examen de segunda oportunidad.
+- Solo veo a los aspirantes inscritos en los grupos que imparto (el docente de cada grupo lo asigna Posgrado), con el horario y lugar de cada grupo.
+- El examen de admisión **no** lo califican los profesores: lo captura la Jefatura de Posgrado (HU-PG-22).
 - La calificación es de 0 a 10; el sistema indica si el área queda acreditada (mínima aprobatoria por área: 8.0, configurable por convocatoria).
 - Una vez capturada, se muestra como capturada con su fecha y ya no se edita.
 - Cuando todas las áreas de un aspirante están capturadas, el resultado queda listo "sin publicar" para Posgrado; el aspirante no lo ve todavía.
 
 **Referencias:** RF-16 · RN-08
 **Pantalla:** `/profesor/evaluacion`
+
+---
+
+### HU-PR-08 · Elegir las entrevistas colegiadas en las que participo
+**Como** profesor (colegiado o de asignatura), **quiero** elegir en qué entrevistas colegiadas participo, **para** organizar mi tiempo.
+
+**Criterios de aceptación**
+- Veo los horarios que Posgrado publicó y que tienen lugares libres en el sínodo, mostrando **solo el día y la hora** (y cuántos lugares quedan); no veo el nombre ni los datos del aspirante.
+- Al elegir una, me integro al sínodo y ya veo los datos del aspirante en "Mis entrevistas".
+- No puedo elegir una entrevista a la misma fecha y hora que otra en la que ya participo.
+- Cuando el sínodo llega a 3 profesores, la entrevista deja de aparecer como disponible y queda lista para que Posgrado la publique al aspirante.
+- Puedo **dejar mi lugar** mientras Posgrado no haya publicado la entrevista al aspirante.
+- Elegir y dejar lugar queda en la bitácora a mi nombre.
+
+**Referencias:** RF-10, RF-56 · RN-07
+**Pantalla:** `/profesor/entrevistas`
+
+---
+
+### HU-PR-09 · Recibir el registro del aspirante y el acta prellenada
+**Como** profesor del sínodo, **quiero** recibir los documentos del aspirante en cuanto me integro a su entrevista, **para** prepararla.
+
+**Criterios de aceptación**
+- En la entrevista veo "Documentos del aspirante" con dos PDF:
+  - **Registro de admisión**: lo que el aspirante respondió en el primer formulario (formación, experiencia, motivos, intereses…);
+  - **Acta de entrevista colegiada (MTC-EC) prellenada**: la plantilla oficial con la hoja 1 llena con sus datos.
+- Los veo desde que elijo la entrevista, aunque el sínodo aún no esté completo.
+
+**Referencias:** RF-10, RF-12
+**Pantalla:** `/profesor/entrevistas/[id]`

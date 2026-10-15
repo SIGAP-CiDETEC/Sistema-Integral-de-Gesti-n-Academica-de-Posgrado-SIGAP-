@@ -5,9 +5,10 @@ import { useState } from "react";
 import { Download, Search } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { usePosgrado } from "@/components/posgrado/PosgradoProvider";
-import { EtiquetaBandeja, Progreso, Regresar, botonSecundario, inputBase } from "@/components/posgrado/ui";
+import { Etiqueta, EtiquetaBandeja, Progreso, Regresar, botonSecundario, inputBase } from "@/components/posgrado/ui";
 import { bandejaDe, fechaCorta, progresoDe } from "@/lib/posgrado/datos";
-import { FASES_SUBDIRECCION, cumpleFiltro, faseSubdireccion, nombreFase } from "@/lib/subdireccion";
+import { TONO_DICTAMEN, descargarReporteAspirantes, dictamenFinal, procedenciaSeparada } from "@/lib/reporte-aspirantes";
+import { FASES_SUBDIRECCION, cumpleFiltro } from "@/lib/subdireccion";
 import { SoloConsulta } from "./SoloConsulta";
 
 const FILTROS = [
@@ -29,20 +30,6 @@ export function ListaAspirantes({ faseInicial }: { faseInicial: string }) {
     .filter((a) => cumpleFiltro(a, fase))
     .filter((a) => !texto || [a.id, a.nombre, a.curp, a.correo, a.procedencia].some((x) => x.toLowerCase().includes(texto)))
     .sort((a, b) => a.registradoEl.localeCompare(b.registradoEl));
-
-  const exportar = () => {
-    const filas = [
-      ["ID temporal", "Número de registro", "Nombre", "CURP", "Correo", "Teléfono", "Procedencia", "Promedio", "Fecha de registro", "Fase", "Estado"],
-      ...lista.map((a) => [a.id, a.uteycv?.sicep ?? "", a.nombre, a.curp, a.correo, a.telefono, a.procedencia, a.promedio, a.registradoEl.slice(0, 10), nombreFase(faseSubdireccion(a)), bandejaDe(a)]),
-    ];
-    const csv = "﻿" + filas.map((f) => f.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
-    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
-    const el = document.createElement("a");
-    el.href = url;
-    el.download = `Aspirantes_SIGAP_${new Date().toISOString().slice(0, 10)}.csv`;
-    el.click();
-    URL.revokeObjectURL(url);
-  };
 
   return (
     <>
@@ -68,14 +55,14 @@ export function ListaAspirantes({ faseInicial }: { faseInicial: string }) {
             ))}
           </select>
         </label>
-        <button type="button" onClick={exportar} disabled={!lista.length} className={`${botonSecundario} sm:ml-auto`}>
-          <Download size={15} /> Exportar lista (CSV)
+        <button type="button" onClick={() => descargarReporteAspirantes(lista)} disabled={!lista.length} className={`${botonSecundario} sm:ml-auto`}>
+          <Download size={15} /> Descargar CSV
         </button>
       </div>
 
       <section className="overflow-hidden rounded-xl border border-gray-200 bg-white">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[980px] text-left text-sm">
+          <table className="w-full min-w-[1080px] text-left text-sm">
             <thead className="bg-gray-50 text-xs uppercase tracking-wide text-gray-500">
               <tr>
                 <th className="px-5 py-2.5 font-medium">Aspirante</th>
@@ -86,12 +73,15 @@ export function ListaAspirantes({ faseInicial }: { faseInicial: string }) {
                 <th className="px-3 py-2.5 font-medium">Registro</th>
                 <th className="px-3 py-2.5 font-medium">Avance</th>
                 <th className="px-3 py-2.5 font-medium">Estado</th>
+                <th className="px-3 py-2.5 font-medium">Dictamen</th>
                 <th className="px-5 py-2.5" />
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {lista.map((a) => {
                 const p = progresoDe(a);
+                const proc = procedenciaSeparada(a.procedencia);
+                const dic = dictamenFinal(a);
                 return (
                   <tr key={a.id} className="align-top">
                     <td className="px-5 py-3">
@@ -106,7 +96,10 @@ export function ListaAspirantes({ faseInicial }: { faseInicial: string }) {
                       <span className="block">{a.correo}</span>
                       <span className="text-gray-500">{a.telefono}</span>
                     </td>
-                    <td className="px-3 py-3 text-gray-700">{a.procedencia}</td>
+                    <td className="px-3 py-3 text-gray-700">
+                      <span className="block font-medium text-gray-900">{proc.institucion}</span>
+                      {proc.unidad && <span className="text-xs text-gray-500">{proc.unidad}</span>}
+                    </td>
                     <td className="px-3 py-3 text-center text-gray-900">{a.promedio}</td>
                     <td className="whitespace-nowrap px-3 py-3 text-xs text-gray-600">{fechaCorta(a.registradoEl)}</td>
                     <td className="px-3 py-3">
@@ -115,6 +108,7 @@ export function ListaAspirantes({ faseInicial }: { faseInicial: string }) {
                     <td className="px-3 py-3">
                       <EtiquetaBandeja b={bandejaDe(a)} />
                     </td>
+                    <td className="px-3 py-3">{dic ? <Etiqueta tono={TONO_DICTAMEN[dic]}>{dic}</Etiqueta> : <span className="text-xs text-gray-400">—</span>}</td>
                     <td className="px-5 py-3 text-right">
                       <Link href={`/subdireccion/aspirantes/${a.id}`} className="font-medium text-primary hover:underline">
                         Ver proceso
@@ -125,7 +119,7 @@ export function ListaAspirantes({ faseInicial }: { faseInicial: string }) {
               })}
               {!lista.length && (
                 <tr>
-                  <td colSpan={9} className="px-5 py-8 text-center text-gray-500">
+                  <td colSpan={10} className="px-5 py-8 text-center text-gray-500">
                     No hay aspirantes con ese filtro.
                   </td>
                 </tr>

@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo, useSyncExternalStore } from "react";
-import { PROFESORES_SINODO, PROFESOR_AREA, evaluacionPendiente, type AreaEvalId, type AspiranteP, type ProfesorP } from "./posgrado/datos";
+import { AREAS_EVAL, PROFESORES_SINODO, evaluacionPendiente, sinodoCompleto, type AreaEvalId, type AspiranteP, type ProfesorP } from "./posgrado/datos";
+import { docenteDe, type Materia } from "./evaluacion";
 import { useSesion } from "./sesion";
 
 /**
@@ -40,8 +41,9 @@ export function actuarComo(id: string | null) {
 
 export const profesorPorCorreo = (correo?: string) => PROFESORES_SINODO.find((p) => p.correo === correo?.trim().toLowerCase());
 
-/** Áreas que califica un profesor. */
-export const areasDeProfesor = (id?: string) => (Object.entries(PROFESOR_AREA) as [AreaEvalId, string][]).filter(([, p]) => p === id).map(([a]) => a);
+/** Grupos de los cursos propedéuticos con calificación (Matemáticas y Programación) que imparte el profesor. */
+export const gruposDeProfesor = (id: string | undefined, materias: Materia[]) =>
+  materias.flatMap((m) => (AREAS_EVAL.some((x) => x.id === m.id) ? m.grupos.filter((g) => !!id && docenteDe(m.id, g.id, materias) === id).map((g) => ({ materia: m, grupo: g })) : []));
 
 /** Profesor con el que se actúa (el de la cuenta, o el elegido en la vista de prueba). */
 export function useProfesorActual(): { profesor: ProfesorP | null; propio: ProfesorP | null; simulado: boolean } {
@@ -58,8 +60,10 @@ export function useProfesorActual(): { profesor: ProfesorP | null; propio: Profe
 
 // ---------- Pendientes del profesor ----------
 
-export type EstadoEntrevistaProf = "Por realizar" | "Por firmar" | "Esperando firmas" | "Dictaminada" | "Concluida";
+export type EstadoEntrevistaProf = "Sínodo incompleto" | "Esperando publicación" | "Por realizar" | "Por firmar" | "Esperando firmas" | "Dictaminada" | "Concluida";
 export const TONO_ENTREVISTA_PROF: Record<EstadoEntrevistaProf, string> = {
+  "Sínodo incompleto": "bg-gray-100 text-gray-700",
+  "Esperando publicación": "bg-gray-100 text-gray-700",
   "Por realizar": "bg-indigo-50 text-primary",
   "Por firmar": "bg-amber-50 text-amber-800",
   "Esperando firmas": "bg-sky-50 text-sky-800",
@@ -70,20 +74,61 @@ export const TONO_ENTREVISTA_PROF: Record<EstadoEntrevistaProf, string> = {
 /** Entrevistas donde el profesor forma parte del sínodo. */
 export const entrevistasDe = (lista: AspiranteP[], prof?: string) => lista.filter((a) => !!prof && !!a.entrevista?.sinodo.includes(prof));
 
+/**
+ * Entrevistas programadas con lugares libres en el sínodo que el profesor puede elegir.
+ * El profesor solo ve el día y la hora; los datos del aspirante los ve al integrarse al sínodo.
+ */
+export function entrevistasDisponibles(lista: AspiranteP[], prof?: string) {
+  if (!prof) return [];
+  return lista
+    .filter(
+      (a) =>
+        a.entrevista?.horarioPublicadoEl && !a.entrevista.notificadaEl && !a.dictamen && !a.concluido && !a.actaEntrevista && !sinodoCompleto(a.entrevista) && !a.entrevista.sinodo.includes(prof),
+    )
+    .map((a) => ({ a, choque: tieneChoque(lista, prof, a) }))
+    .sort((x, y) => `${x.a.entrevista!.fecha}${x.a.entrevista!.hora}`.localeCompare(`${y.a.entrevista!.fecha}${y.a.entrevista!.hora}`));
+}
+
+/** true si el profesor ya está en otra entrevista sin dictamen el mismo día a la misma hora. */
+export const tieneChoque = (lista: AspiranteP[], prof: string, a: AspiranteP) =>
+  lista.some(
+    (x) => x.id !== a.id && !x.dictamen && !x.concluido && x.entrevista?.sinodo.includes(prof) && x.entrevista.fecha === a.entrevista?.fecha && x.entrevista.hora === a.entrevista?.hora,
+  );
+
+/** El profesor puede dejar su lugar mientras Posgrado no haya publicado la entrevista al aspirante. */
+export const puedeDejarLugar = (a: AspiranteP, prof: string) => !!a.entrevista?.sinodo.includes(prof) && !a.entrevista.notificadaEl && !a.actaEntrevista && !a.dictamen && !a.concluido;
+
 export function estadoEntrevistaProf(a: AspiranteP, prof: string): EstadoEntrevistaProf {
   if (a.dictamen) return "Dictaminada";
   if (a.concluido) return "Concluida";
+  if (!a.actaEntrevista && !sinodoCompleto(a.entrevista)) return "Sínodo incompleto";
+  if (!a.actaEntrevista && !a.entrevista?.notificadaEl) return "Esperando publicación";
   if (!a.actaEntrevista) return "Por realizar";
   return a.actaEntrevista.firmas[prof] ? "Esperando firmas" : "Por firmar";
 }
 
-/** Calificaciones que le toca capturar (aspirante + área) al profesor. */
-export function capturasPendientes(lista: AspiranteP[], prof?: string) {
-  const mias = areasDeProfesor(prof);
+/**
+ * Calificaciones del curso propedéutico que le toca capturar al profesor: las de los aspirantes inscritos en los grupos
+ * que imparte (el docente de cada grupo lo asigna Posgrado). El examen de admisión lo califica la Jefatura de Posgrado.
+ */
+export function capturasPendientes(lista: AspiranteP[], prof: string | undefined, materias: Materia[]) {
+  if (!prof) return [];
   return lista.flatMap((a) => {
     if (a.concluido) return [];
     const p = evaluacionPendiente(a.evaluacion);
-    if (!p) return [];
-    return p.areas.filter((x) => mias.includes(x)).map((area) => ({ a, area, tipo: p.tipo, esSegunda: p.esSegunda, capturada: a.evaluacion.capturas?.[p.tipo]?.[area] }));
+    if (!p || p.tipo !== "propedeutico") return [];
+    return p.areas
+      .filter((area) => docenteDe(area, a.evaluacion.grupos[area] ?? "", materias) === prof)
+      .map((area) => ({ a, area, tipo: p.tipo, esSegunda: p.esSegunda, capturada: a.evaluacion.capturas?.[p.tipo]?.[area] }));
+  });
+}
+
+/** Calificaciones del examen de admisión que captura la Jefatura de Posgrado. */
+export function capturasExamen(lista: AspiranteP[]) {
+  return lista.flatMap((a) => {
+    if (a.concluido) return [];
+    const p = evaluacionPendiente(a.evaluacion);
+    if (!p || p.tipo !== "examen") return [];
+    return p.areas.map((area: AreaEvalId) => ({ a, area, tipo: p.tipo, esSegunda: p.esSegunda, capturada: a.evaluacion.capturas?.examen?.[area] }));
   });
 }

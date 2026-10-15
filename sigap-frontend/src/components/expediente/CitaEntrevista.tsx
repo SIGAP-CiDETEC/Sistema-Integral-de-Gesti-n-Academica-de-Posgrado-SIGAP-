@@ -17,7 +17,9 @@ export function CitaEntrevista() {
         <p className="mt-1 text-gray-600">
           El Departamento de Posgrado la programa cuando tu expediente está aprobado. Te avisaremos por correo y en tus notificaciones.
         </p>
-        <p className="mt-3 text-xs text-gray-400">Solo cascarón: prográmala desde la sesión de Posgrado (Entrevistas).</p>
+        <p className="mt-3 text-xs text-gray-400">
+          Solo cascarón: en la sesión de Posgrado (Entrevistas) captura y publica el horario; cuando 3 profesores lo elijan, publica la entrevista.
+        </p>
       </section>
     );
 
@@ -44,7 +46,7 @@ export function CitaEntrevista() {
         <h2 className="flex items-center gap-2 font-semibold text-gray-900">
           <Users size={16} /> Sínodo colegiado
         </h2>
-        <p className="mt-3 text-sm text-gray-700">Te entrevistarán 3 profesores colegiados del programa (RN-07).</p>
+        <p className="mt-3 text-sm text-gray-700">Te entrevistarán 3 profesores del programa (RN-07).</p>
         {resultadoEntrevista && resultadoEntrevista !== "Rechazado" && (
           <p className="mt-3 inline-block rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs text-emerald-700">Entrevista aprobada · continúa con tu evaluación</p>
         )}

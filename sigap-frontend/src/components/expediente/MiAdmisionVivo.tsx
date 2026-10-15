@@ -7,6 +7,7 @@ import { useConfigEvaluacion } from "@/lib/evaluacion-config";
 import { areasReprobadas, nombreArea } from "@/lib/posgrado/datos";
 import { useEstadoAdmision, useRevisionDocs } from "@/lib/posgrado/revision";
 import { useExpediente } from "./ExpedienteProvider";
+import { DeshacerConclusion } from "./BloqueoProceso";
 import { VistaAdmision } from "./VistaAdmision";
 
 const fecha = (f: string) => new Date(`${f}T12:00:00`).toLocaleDateString("es-MX", { day: "numeric", month: "short" });
@@ -15,7 +16,7 @@ const fecha = (f: string) => new Date(`${f}T12:00:00`).toLocaleDateString("es-MX
 export function MiAdmisionVivo() {
   const v = useEstadoAdmision();
   const revision = useRevisionDocs();
-  const { registro, documentos, evaluacion, capturas, recibidos, cargado } = useExpediente();
+  const { registro, documentos, evaluacion, capturas, cargado } = useExpediente();
   const { modalidades } = useConfigEvaluacion();
   if (!cargado) return null;
 
@@ -31,8 +32,8 @@ export function MiAdmisionVivo() {
   const exa = v.evaluacion.examen?.publicadoEl ? v.evaluacion.examen : undefined;
   const acreditada = !!(exa?.acreditado || pro?.acreditado);
   const so = evaluacion.segundaOportunidad;
-  // El proceso de admisión termina cuando UTEyCV publica el dictamen SIP-04 firmado
-  const dictamenPublicado = etapa === "dictamen" && !!recibidos["sip-04"];
+  // El proceso de admisión termina cuando se publica la resolución del Colegio (6 · Dictamen final)
+  const dictamenPublicado = etapa === "dictamen" && !v.concluido && (v.resolucion === "Aceptado" || v.resolucion === "Condicionado");
   const avisos: Aviso[] = [];
   if (observados.length) avisos.push({ tipo: "alerta", titulo: "Documentos con observaciones", texto: observados.map((d) => `${d.nombre}: ${revision[d.id].observacion ?? "revísalo"}`).join(" · ") });
   prorrogas.forEach((d) => avisos.push({ tipo: "info", titulo: `Prórroga: ${d.nombre}`, texto: `Puedes continuar tu proceso; entrégalo antes del ${fecha(revision[d.id].prorrogaHasta!)}.` }));
@@ -44,10 +45,8 @@ export function MiAdmisionVivo() {
   if (so?.decision === "examen" && !exa)
     avisos.push({ tipo: "info", titulo: "Examen de áreas no acreditadas", texto: `Presentarás ${so.areas.map(nombreArea).join(" y ")} el ${modalidades.examen.fechas}. Te enviaremos recordatorios.` });
   if (acreditada) avisos.push({ tipo: "exito", titulo: "Evaluación acreditada", texto: "Tu resultado pasa a la Comisión de Admisión del Colegio de Profesores." });
-  if (v.resolucion && v.resolucion !== "No aceptado" && !dictamenPublicado)
-    avisos.push({ tipo: "exito", titulo: "¡Fuiste admitido!", texto: "Control Escolar (UTEyCV) prepara tu dictamen SIP-04." });
   if (dictamenPublicado)
-    avisos.push({ tipo: "exito", titulo: "Tu dictamen está disponible", texto: "Con tu dictamen SIP-04 concluye tu proceso de admisión." });
+    avisos.push({ tipo: "exito", titulo: "¡Fuiste admitido(a)!", texto: "Se publicó tu resultado (6 · Dictamen final) y con él concluye tu proceso de admisión. Sigue tu inscripción." });
   if (!avisos.length) avisos.push({ tipo: "info", titulo: "Sin novedades", texto: "Te avisaremos por correo y aquí cuando haya cambios en tu solicitud." });
 
   const concluido = v.concluido ?? (so?.decision === "no" ? "Decidió no presentar el examen" : undefined);
@@ -71,7 +70,7 @@ export function MiAdmisionVivo() {
         : { titulo: "Consulta tus resultados", texto: "Se publican al terminar el propedéutico o el examen.", href: "/aspirante/resultados", accion: "Ir a resultados" },
     dictamen: dictamenPublicado
       ? { titulo: "Inicia tu inscripción", texto: "Tu dictamen ya está publicado: integra tu expediente de inscripción.", href: "/aspirante/inscripcion", accion: "Ir a inscripción" }
-      : { titulo: "Revisa tu dictamen", texto: "Confirma tus datos del SIP-04.", href: "/aspirante/formatos/sip-04", accion: "Revisar SIP-04" },
+      : { titulo: "Espera la publicación de tu resultado", texto: "Consulta dónde y cuándo se publica.", href: "/aspirante/dictamen", accion: "Ver publicación" },
   };
 
   const solicitud: SolicitudAdmision = {
@@ -88,5 +87,14 @@ export function MiAdmisionVivo() {
   // RF-21 / RF-68: al aprobar la evaluación pasa de Aspirante a Admitido (tiempo completo o parcial)
   const tipo = acreditada && v.resolucion !== "No aceptado" ? `Admitido${dedicacion ? ` (${dedicacion.toLowerCase()})` : ""}` : "Aspirante";
 
-  return <VistaAdmision solicitud={solicitud} estado={concluido ? "Proceso concluido" : dictamenPublicado ? "Proceso de admisión concluido" : ETAPAS[indiceEtapa(etapa)].estado} tipoAlumno={tipo} />;
+  return (
+    <>
+      <VistaAdmision solicitud={solicitud} estado={concluido ? "Proceso concluido" : dictamenPublicado ? "Proceso de admisión concluido" : ETAPAS[indiceEtapa(etapa)].estado} tipoAlumno={tipo} />
+      {concluido && (
+        <div className="mt-6 rounded-xl border border-gray-200 bg-white px-5 pb-4">
+          <DeshacerConclusion />
+        </div>
+      )}
+    </>
+  );
 }
