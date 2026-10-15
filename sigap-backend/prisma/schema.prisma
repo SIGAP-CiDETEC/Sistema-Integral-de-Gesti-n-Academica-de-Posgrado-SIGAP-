@@ -1,0 +1,126 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum EstadoPostulacion {
+  BORRADOR
+  ENVIADA
+  EN_REVISION
+  OBSERVADA
+  VALIDADA
+  RECHAZADA
+}
+
+model Aspirante {
+  id                String         @id @default(cuid())
+  nombres           String
+  apellidoPaterno   String
+  apellidoMaterno   String?
+  correo            String         @unique
+  telefono          String?
+  postulaciones     Postulacion[]
+  creadoEn          DateTime       @default(now())
+  actualizadoEn     DateTime       @updatedAt
+}
+
+model Convocatoria {
+  id                String         @id @default(cuid())
+  nombre            String
+  descripcion       String?
+  fechaInicio       DateTime
+  fechaFin          DateTime
+  activa            Boolean        @default(false)
+  postulaciones     Postulacion[]
+  creadoEn          DateTime       @default(now())
+  actualizadoEn     DateTime       @updatedAt
+}
+
+model Programa {
+  id                String         @id @default(cuid())
+  nombre            String
+  codigo            String?        @unique
+  descripcion       String?
+  postulaciones     Postulacion[]
+  creadoEn          DateTime       @default(now())
+  actualizadoEn     DateTime       @updatedAt
+}
+
+model Postulacion {
+  id                String             @id @default(cuid())
+  folio             String             @unique
+  aspiranteId       String
+  convocatoriaId    String
+  programaId        String
+  estado            EstadoPostulacion  @default(BORRADOR)
+  respuestasRegistro Json              @default("{}")
+  enviadaEn         DateTime?
+  aspirante         Aspirante          @relation(fields: [aspiranteId], references: [id])
+  convocatoria      Convocatoria       @relation(fields: [convocatoriaId], references: [id])
+  programa          Programa           @relation(fields: [programaId], references: [id])
+  documentos        DocumentoPostulacion[]
+  revisiones        RevisionDocumento[]
+  creadoEn          DateTime           @default(now())
+  actualizadoEn     DateTime           @updatedAt
+
+  @@index([aspiranteId])
+  @@index([convocatoriaId, estado])
+  @@index([programaId])
+}
+
+model CatalogoDocumento {
+  id                String                 @id @default(cuid())
+  clave             String                 @unique
+  nombre            String
+  descripcion       String?
+  obligatorio       Boolean                @default(true)
+  documentos        DocumentoPostulacion[]
+}
+
+model DocumentoPostulacion {
+  id                String              @id @default(cuid())
+  postulacionId     String
+  catalogoId        String
+  nombreArchivo     String?
+  urlArchivo        String?
+  tipoMime          String?
+  tamanoBytes       Int?
+  estado            EstadoPostulacion   @default(BORRADOR)
+  postulacion       Postulacion         @relation(fields: [postulacionId], references: [id], onDelete: Cascade)
+  catalogo          CatalogoDocumento   @relation(fields: [catalogoId], references: [id])
+  revisiones        RevisionDocumento[]
+  creadoEn          DateTime            @default(now())
+  actualizadoEn     DateTime            @updatedAt
+
+  @@unique([postulacionId, catalogoId])
+}
+
+model RevisionDocumento {
+  id                    String                @id @default(cuid())
+  documentoId           String
+  postulacionId         String
+  revisor               String
+  estado                EstadoPostulacion
+  observaciones         String?
+  fechaRevision         DateTime              @default(now())
+  documento             DocumentoPostulacion  @relation(fields: [documentoId], references: [id], onDelete: Cascade)
+  postulacion           Postulacion            @relation(fields: [postulacionId], references: [id], onDelete: Cascade)
+
+  @@index([postulacionId, fechaRevision])
+}
+
+model EventoBitacora {
+  id              String   @id @default(cuid())
+  entidad         String
+  entidadId       String
+  accion          String
+  actor           String?
+  detalle         Json?
+  creadoEn        DateTime @default(now())
+
+  @@index([entidad, entidadId, creadoEn])
+}
