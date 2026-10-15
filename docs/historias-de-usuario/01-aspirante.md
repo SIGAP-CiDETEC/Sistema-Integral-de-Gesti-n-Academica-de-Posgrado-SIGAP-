@@ -141,7 +141,7 @@
 - Si elijo propedéutico, elijo un grupo de cada curso (Matemáticas Discretas y Continuas, Programación, Seminario de Inducción) y el sistema **impide** grupos con choque de horario.
 - De cada grupo veo su horario y su **lugar**; **no** se me muestra el nombre del docente.
 - Al confirmar, la elección queda fija; para cambiarla debo solicitarlo por correo a Posgrado.
-- Si elijo examen, recibo recordatorios **cada 5 días, un día antes y el mismo día** del examen.
+- Si elijo examen, recibo **3 recordatorios** del examen: una semana antes, un día antes y el mismo día.
 
 **Referencias:** CU-ADM-06 · RF-15
 **Pantalla:** `/aspirante/evaluacion`

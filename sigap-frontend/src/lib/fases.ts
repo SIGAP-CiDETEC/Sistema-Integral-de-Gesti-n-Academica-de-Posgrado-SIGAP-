@@ -73,7 +73,7 @@ export const FASES: Fase[] = [
     tuHaces: ["Elegir cursos propedéuticos o solo examen", "Si eliges propedéutico, elegir tu grupo en cada curso"],
     areasHacen: [
       { area: "posgrado", texto: "Te envía fechas y horarios por correo y en tus notificaciones" },
-      { area: "posgrado", texto: "Si eliges examen, te envía recordatorios cada 5 días, un día antes y el mismo día" },
+      { area: "posgrado", texto: "Si eliges examen, te envía recordatorios 3 recordatorios: una semana antes, un día antes y el mismo día" },
       { area: "profesores", texto: "El docente de cada curso propedéutico registra tus calificaciones (RF-16)" },
       { area: "posgrado", texto: "La Jefatura de Posgrado registra la calificación del examen de admisión (RF-16)" },
     ],
@@ -93,7 +93,7 @@ export const FASES: Fase[] = [
     areasHacen: [
       { area: "posgrado", texto: "Publica los resultados del curso propedéutico" },
       { area: "posgrado", texto: "Publica los resultados del examen de admisión" },
-      { area: "posgrado", texto: "Si presentas examen, te envía recordatorios cada 5 días, un día antes y el mismo día" },
+      { area: "posgrado", texto: "Si presentas examen, te envía recordatorios 3 recordatorios: una semana antes, un día antes y el mismo día" },
     ],
     requisito: "Se habilita cuando Posgrado publica tus resultados.",
     fuente: "RF-16, RF-17, RN-08",

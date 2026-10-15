@@ -5,7 +5,7 @@ import { useSyncExternalStore } from "react";
 /**
  * Recordatorios automáticos al aspirante (correo y notificación en SIGAP).
  * - Entrevista colegiada: un día antes y una hora antes de la cita.
- * - Examen de admisión: cada 5 días hasta el examen, un día antes y el mismo día.
+ * - Examen de admisión: 3 recordatorios — una semana antes, un día antes y el mismo día.
  * Con backend: los programa una cola de trabajos (BullMQ) al confirmar la cita o la elección del examen.
  * Solo cascarón: se calculan con las fechas registradas y se consideran "enviados" cuando ya pasó su hora
  * (o si se simula el paso del tiempo).
@@ -46,8 +46,8 @@ export function recordatoriosEntrevista(e: { fecha: string; hora: string; modali
 }
 
 /**
- * Recordatorios del examen: cada 5 días contando hacia atrás desde el examen (mientras sean posteriores
- * a la elección), un día antes y el mismo día a las 7:00 h.
+ * Recordatorios del examen (3 como máximo): una semana antes y un día antes (si son posteriores a la elección)
+ * y el mismo día a las 7:00 h.
  */
 export function recordatoriosExamen(ex: { fecha: string; hora: string; lugar: string }, desde: string, nombre: string, areas?: string): Recordatorio[] {
   const examen = fechaHora(ex.fecha, ex.hora);
@@ -60,13 +60,13 @@ export function recordatoriosExamen(ex: { fecha: string; hora: string; lugar: st
     return d;
   };
   const out: Recordatorio[] = [];
-  for (let n = 5; dia(n) > inicio && n <= 120; n += 5)
+  if (dia(7) > inicio)
     out.push({
-      id: `ex-${n}d-${ex.fecha}`,
-      cuando: iso(dia(n)),
+      id: `ex-7d-${ex.fecha}`,
+      cuando: iso(dia(7)),
       tipo: "examen",
-      asunto: `Recordatorio: faltan ${n} días para ${que}`,
-      mensaje: `${hola}Faltan ${n} días para ${que}: ${larga(examen)} a las ${ex.hora} h en ${ex.lugar}.${firma}`,
+      asunto: `Recordatorio: falta una semana para ${que}`,
+      mensaje: `${hola}Falta una semana para ${que}: ${larga(examen)} a las ${ex.hora} h en ${ex.lugar}.${firma}`,
     });
   const antes = dia(1);
   if (antes > inicio)
