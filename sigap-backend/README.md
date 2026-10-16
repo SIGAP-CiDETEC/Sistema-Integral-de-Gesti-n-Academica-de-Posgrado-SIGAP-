@@ -40,3 +40,18 @@ prisma/
 ```
 
 Módulos de dominio sugeridos para la siguiente iteración: `auth`, `convocatorias`, `aspirantes`, `expedientes`, `entrevistas`, `evaluaciones`, `dictamenes` e `inscripciones`.
+
+
+## Recordatorios de evaluación
+
+El esquema persiste recordatorios por postulación y canal en `RecordatorioProgramado`, con clave de idempotencia, fecha del evento, fecha programada, estado de entrega, intentos y error de último envío. Cada recordatorio se registra por separado para correo y notificación dentro de SIGAP; la clave idempotente debe incluir la postulación, el tipo de recordatorio, el canal y la fecha del evento para evitar duplicados entre aspirantes.
+
+Reglas de programación alineadas con `sigap-frontend/src/lib/recordatorios.ts`:
+
+- **Examen de admisión:** hasta tres avisos: una semana antes, un día antes y el mismo día a las 07:00. Los avisos de una semana y un día antes solo se programan si todavía son posteriores a la fecha/hora en que el aspirante eligió el examen.
+- **Entrevista colegiada:** un día antes y una hora antes de la cita.
+- Si cambia o se cancela la fecha del evento, el backend debe cancelar los avisos pendientes anteriores y regenerarlos; los envíos ya realizados se conservan como historial.
+- La programación y el envío real deben ejecutarse en el backend mediante una cola de trabajos (por ejemplo, BullMQ); la simulación de envío del frontend con `localStorage` no constituye evidencia de entrega.
+- Definir una zona horaria institucional y usarla consistentemente al convertir fechas locales a `DateTime` de PostgreSQL. No asumir que las 07:00 locales equivalen a UTC.
+
+El esquema agrega la estructura persistente, pero no implementa por sí solo el planificador ni el envío de correo/notificaciones. Tras configurar `DATABASE_URL`, valida con `npm run prisma:validate` y genera la migración inicial en el entorno de desarrollo con `npm run prisma:migrate -- --name init`.
