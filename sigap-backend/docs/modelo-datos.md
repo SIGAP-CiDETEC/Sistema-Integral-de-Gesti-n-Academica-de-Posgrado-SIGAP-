@@ -1,6 +1,6 @@
-# Modelo de datos inicial
+# Modelo de datos de SIGAP
 
-El modelo se obtuvo leyendo el flujo actual del frontend. Mantiene las respuestas variables del formulario y normaliza la información que necesita relaciones, historial y validaciones.
+El modelo relacional se alinea con el flujo de admisión vigente en `sigap-frontend`. Las respuestas variables del registro y los bloques variables de los formatos se guardan en JSON; las entidades que necesitan relaciones, búsquedas, historial y restricciones tienen tablas propias.
 
 ## Relaciones principales
 
@@ -9,37 +9,53 @@ erDiagram
   ASPIRANTE ||--o{ POSTULACION : inicia
   CONVOCATORIA ||--o{ POSTULACION : recibe
   PROGRAMA ||--o{ POSTULACION : solicita
+  UNIDAD_ACADEMICA ||--o{ PROGRAMA : organiza
   POSTULACION ||--o{ DOCUMENTO_POSTULACION : integra
-  CATALOGO_DOCUMENTO ||--o{ DOCUMENTO_POSTULACION : define
   DOCUMENTO_POSTULACION ||--o{ REVISION_DOCUMENTO : conserva_historial
+  POSTULACION ||--o{ FORMATO_POSTULACION : genera
+  CATALOGO_FORMATO ||--o{ FORMATO_POSTULACION : define
+  CONVOCATORIA ||--o| CONFIGURACION_EVALUACION : configura
+  CONFIGURACION_EVALUACION ||--o{ MATERIA_PROPEDEUTICA : define
+  MATERIA_PROPEDEUTICA ||--o{ GRUPO_PROPEDEUTICO : ofrece
+  GRUPO_PROPEDEUTICO ||--o{ SESION_GRUPO : agenda
+  POSTULACION ||--o| ELECCION_EVALUACION : elige
+  ELECCION_EVALUACION ||--o{ GRUPO_ELEGIDO : selecciona
   POSTULACION ||--o| ENTREVISTA : agenda
   ENTREVISTA ||--o{ INTEGRANTE_SINODO : asigna
   ENTREVISTA ||--o| ACTA_ENTREVISTA : documenta
-  POSTULACION ||--o| ELECCION_EVALUACION : elige
-  ELECCION_EVALUACION ||--o{ RESULTADO_EVALUACION : publica
+  ACTA_ENTREVISTA ||--o{ FIRMA_ACTA_ENTREVISTA : firma
+  POSTULACION ||--o{ RESULTADO_EVALUACION : evalua
   RESULTADO_EVALUACION ||--o{ CALIFICACION_AREA : desglosa
-  POSTULACION ||--o| DICTAMEN_COLEGIO : resuelve
-  POSTULACION ||--o| GESTION_ESCOLAR : formaliza
+  POSTULACION ||--o| REGISTRO_RESOLUCION_COLEGIO : resuelve
+  POSTULACION ||--o| INSCRIPCION : continua
+  POSTULACION ||--o{ RECORDATORIO_PROGRAMADO : avisa
+  USUARIO ||--o{ NOTIFICACION : recibe
+  USUARIO ||--o{ USUARIO_ROL : tiene
+  ROL ||--o{ USUARIO_ROL : asigna
+  ROL ||--o{ ROL_PERMISO : incluye
+  PERMISO ||--o{ ROL_PERMISO : autoriza
 ```
 
-## Correspondencia con el frontend
+## Decisiones relevantes
 
-| Flujo visible | Modelos principales | Decisión de persistencia |
-|---|---|---|
-| Formulario de registro (`RegistroWizard`, `registro-form.ts`) | `Aspirante`, `Postulacion`, `Convocatoria`, `Programa`, `UnidadAcademica` | Contacto e identidad van en `Aspirante`; programa/semestre y respuestas del cuestionario se guardan por postulación. `respuestasRegistro` es JSON para acomodar preguntas dinámicas. |
-| Convocatorias y calendario | `Convocatoria`, `Grupo`, `SesionGrupo` | Ventana de registro, semestre y límite de archivo por convocatoria; horarios de cada grupo como filas consultables. |
-| Expediente y validación documental | `CatalogoDocumento`, `DocumentoPostulacion`, `RevisionDocumento` | Un registro vigente por documento requerido y postulación. Cada dictamen de revisión se conserva con usuario, estado, observación y prórroga. |
-| Entrevista MTC-EC | `Entrevista`, `Profesor`, `IntegranteSinodo`, `ActaEntrevista` | La cita se relaciona 1:1 con postulación. El sínodo y sus firmas son filas aparte. Respuestas/campos variables del acta y criterios se conservan como JSON. |
-| Propedéutico y examen | `EleccionEvaluacion`, `Materia`, `Grupo`, `EleccionGrupo`, `ResultadoEvaluacion`, `CalificacionArea`, `SegundaOportunidad` | Modalidad y grupos elegidos se relacionan con el aspirante; resultados separados por evaluación y calificaciones por área/profesor. La fecha de publicación diferencia captura de resultado visible. |
-| Dictamen SIP-04 e inscripción | `DictamenColegio`, `GestionEscolar`, `CatalogoFormato`, `FormatoPostulacion` | El dictamen, su publicación y los formatos firmados tienen fechas y metadatos auditables; SICEP es único cuando se asigna. |
-| Roles, avisos y administración | `Usuario`, `Rol`, `Permiso`, `UsuarioRol`, `RolPermiso`, `Aviso`, `Comunicado`, `Notificacion`, `EventoBitacora` | Permisos por área; avisos/notificaciones por expediente y bitácora append-only a nivel de aplicación. |
+- **Registro e identidad:** `Aspirante` contiene identidad, contacto, CURP e ID temporal; `Postulacion` relaciona al aspirante con convocatoria y programa. `respuestasRegistro` conserva las respuestas cambiantes del wizard.
+- **Convocatorias A/B:** cada convocatoria guarda ventana de registro, límite de archivo y calendario publicado. `ConfiguracionEvaluacion` separa las fechas y modalidad del propedéutico, examen, materias, grupos, docentes y sesiones. El estado Abierta/Próxima/Cerrada debe calcularse a partir de las fechas.
+- **Documentos:** `CatalogoDocumento`, `DocumentoPostulacion` y `RevisionDocumento` separan los requisitos del archivo entregado y su historial. Se registran observaciones y prórrogas; la regla para que el aspirante reemplace únicamente documentos observados se valida en el servicio.
+- **Formatos SIP/MTC:** `CatalogoFormato` define cada formato, su fase, destino, plantilla y configuración de campos; `FormatoPostulacion` conserva capturas, PDF generado, PDF firmado y estado por postulación.
+- **Entrevista MTC-EC:** `Entrevista`, `IntegranteSinodo`, `ActaEntrevista` y `FirmaActaEntrevista` conservan fecha, modalidad, sala, publicación, integrantes, criterios, resolución y firmas.
+- **Evaluación:** `EleccionEvaluacion` guarda modalidad y segunda oportunidad; `GrupoElegido` guarda un grupo por materia. `ResultadoEvaluacion` y `CalificacionArea` separan propedéutico/examen y las notas de Matemáticas y Programación, con profesor, fecha de captura y publicación.
+- **Resolución e inscripción:** `RegistroResolucionColegio` representa la resolución publicada por Posgrado. `Inscripcion` es el proceso posterior de UTEyCV y guarda dedicación, firmas SIP, publicación del SIP-08, SICEP y formalización.
+- **Cuentas y comunicaciones:** `Usuario`, `Rol`, `Permiso` y tablas de unión implementan permisos por área. `Aviso`, `Comunicado` y `Notificacion` persisten comunicaciones y estado de lectura/envío.
+- **Recordatorios:** `RecordatorioProgramado` registra cada tipo por postulación y canal, con clave idempotente, hora programada, estado, intentos y errores de entrega.
 
 ## Reglas que requieren lógica de servicio
 
-- La entrevista debe tener exactamente tres integrantes con colegiatura vigente. Tras las tres firmas del sínodo se registra el dictamen del acta.
-- La etapa siguiente depende de la validación documental, resultado de entrevista y publicación de resultados. No se debe permitir cambiarla sin comprobar esos requisitos.
-- El resultado integrado debe calcular el promedio y acreditar todas las áreas aplicables; la calificación mínima pertenece a la convocatoria.
-- El archivo se acepta según tipo y límite de la convocatoria. PostgreSQL guarda URL y metadatos; carga, antivirus, acceso y retención del binario corresponden al proveedor de almacenamiento.
-- La bitácora debe escribirse en la misma operación de negocio que cambia el estado, idealmente dentro de una transacción Prisma.
+1. Rechazar selecciones de grupos con choques de horario y comprobar que cada grupo pertenece a la materia seleccionada.
+2. Programar hasta tres recordatorios del examen: una semana antes, un día antes y el mismo día a las 07:00. Los dos primeros solo se generan si aún son posteriores a la elección. Para entrevista: un día y una hora antes. Usar una zona horaria institucional consistente.
+3. Aplicar la calificación mínima configurada para la convocatoria; integrar promedio y acreditación solo cuando se hayan capturado todas las áreas requeridas.
+4. Habilitar la segunda oportunidad solo para las áreas no acreditadas del propedéutico y respetar la decisión registrada del aspirante.
+5. No aplicar/publicar el dictamen de entrevista hasta que haya tres integrantes válidos y las tres firmas requeridas. Prisma no impone por sí solo esta regla de negocio.
+6. Cancelar y regenerar los recordatorios pendientes si cambia la fecha del evento; conservar el historial de los ya enviados.
+7. Ejecutar cambios de estado y bitácora en transacciones. El envío real de correo/notificaciones requiere un trabajador/cola; el estado simulado en `localStorage` del frontend no acredita entrega.
 
-Los datos del frontend que hoy son listas fijas (unidades, áreas, materias, criterios del MTC-EC y catálogo documental) deben cargarse como catálogos y revisarse con Posgrado/UTEyCV antes de habilitar captura real. El esquema inicial prioriza el flujo que ya existe; no reemplaza la revisión institucional de privacidad y reglas académicas.
+Los binarios deben guardarse en almacenamiento de archivos y en PostgreSQL solo sus URL y metadatos. Antes de usar datos reales deben confirmarse los catálogos oficiales, la política de retención, la zona horaria y la matriz institucional de permisos.
