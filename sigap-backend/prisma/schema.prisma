@@ -254,6 +254,7 @@ model MateriaPropedeutica {
   nombre                String
   configuracion         ConfiguracionEvaluacion @relation(fields: [configuracionId], references: [id], onDelete: Cascade)
   grupos                GrupoPropedeutico[]
+  elecciones            GrupoElegido[]
 
   @@unique([configuracionId, clave])
 }
