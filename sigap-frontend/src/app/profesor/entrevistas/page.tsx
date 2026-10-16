@@ -6,7 +6,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { usePosgrado } from "@/components/posgrado/PosgradoProvider";
 import { Etiqueta, Regresar, Tarjeta } from "@/components/posgrado/ui";
 import { useAccionesProfesor } from "@/components/profesor/useAccionesProfesor";
-import { fechaCorta, firmasActa, lugaresLibres, nombreProfesor } from "@/lib/posgrado/datos";
+import { fechaCorta, lugaresLibres, nombreProfesor } from "@/lib/posgrado/datos";
 import {
   TONO_ENTREVISTA_PROF,
   entrevistasDe,
@@ -17,7 +17,7 @@ import {
   type EstadoEntrevistaProf,
 } from "@/lib/profesor";
 
-const ORDEN: EstadoEntrevistaProf[] = ["Por firmar", "Por realizar", "Esperando publicación", "Sínodo incompleto", "Esperando firmas", "Dictaminada", "Concluida"];
+const ORDEN: EstadoEntrevistaProf[] = ["Por llenar acta", "Por subir firmada", "Esperando publicación", "Sínodo incompleto", "Dictaminada", "Concluida"];
 
 const diaLargo = (iso: string) => {
   const t = new Date(`${iso}T12:00:00`).toLocaleDateString("es-MX", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
@@ -33,7 +33,7 @@ export default function MisEntrevistas() {
   const yo = profesor?.id ?? "";
   const disponibles = entrevistasDisponibles(aspirantes, yo);
   const lista = entrevistasDe(aspirantes, yo)
-    .map((a) => ({ a, e: estadoEntrevistaProf(a, yo) }))
+    .map((a) => ({ a, e: estadoEntrevistaProf(a) }))
     .sort((x, y) => ORDEN.indexOf(x.e) - ORDEN.indexOf(y.e) || x.a.entrevista!.fecha.localeCompare(y.a.entrevista!.fecha));
 
   return (
@@ -111,7 +111,7 @@ export default function MisEntrevistas() {
                   </td>
                   <td className="px-3 py-3">
                     <Etiqueta tono={TONO_ENTREVISTA_PROF[e]}>{e === "Dictaminada" ? `Dictaminada · ${a.dictamen!.resolucion}` : e}</Etiqueta>
-                    {a.actaEntrevista && !a.dictamen && <span className="mt-0.5 block text-xs text-gray-500">{firmasActa(a)} de 3 firmas</span>}
+                    {a.actaEntrevista && !a.dictamen && <span className="mt-0.5 block text-xs text-gray-500">La llenó {nombreProfesor(a.actaEntrevista.capturadaPor)}</span>}
                   </td>
                   <td className="px-5 py-3 text-right">
                     <span className="inline-flex flex-wrap items-center justify-end gap-3">
@@ -121,7 +121,7 @@ export default function MisEntrevistas() {
                         </button>
                       )}
                       <Link href={`/profesor/entrevistas/${a.id}`} className="font-medium text-primary hover:underline">
-                        {e === "Por realizar" ? "Llenar acta" : e === "Por firmar" ? "Revisar y firmar" : "Ver"}
+                        {e === "Por llenar acta" ? "Llenar acta" : e === "Por subir firmada" ? "Descargar o subir firmada" : "Ver"}
                       </Link>
                     </span>
                   </td>

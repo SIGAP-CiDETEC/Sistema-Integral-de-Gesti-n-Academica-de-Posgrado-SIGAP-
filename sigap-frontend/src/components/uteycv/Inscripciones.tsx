@@ -80,7 +80,7 @@ function Detalle({ a }: { a: AspiranteP }) {
   if (!puedeInscribirse(a))
     return (
       <Aviso tono="alerta" titulo="Aún no es admitido(a)">
-        La inscripción se habilita cuando Posgrado publica la resolución del Colegio de Profesores (Aceptado o Condicionado).
+        La inscripción se habilita cuando Posgrado publica la resolución del Colegio de Profesores (Aceptado o Con reservas).
       </Aviso>
     );
 

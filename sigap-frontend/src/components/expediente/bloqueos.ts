@@ -21,7 +21,7 @@ export function useDocumentosFaltantes() {
 export function useBloqueoFormato(clave: string): string | null {
   const faltan = useDocumentosFaltantes();
   const estado = useEstadoAdmision();
-  const admitido = !estado.concluido && (estado.resolucion === "Aceptado" || estado.resolucion === "Condicionado");
+  const admitido = !estado.concluido && (estado.resolucion === "Aceptado" || estado.resolucion === "Con reservas");
   if (clave === "sip-04" && !admitido) return "Se habilita cuando se publique tu resultado de admisión y seas admitido(a) por el Colegio de Profesores (RF-22).";
   if (["sip-01", "sip-04", "sip-05", "sip-06"].includes(clave) && faltan.length)
     return `Se habilita cuando subas todos tus documentos obligatorios (RN-11). Faltan: ${faltan.map((d) => d.nombre.toLowerCase()).join(", ")}.`;

@@ -44,7 +44,8 @@ export default function CalificacionesProfesor() {
           </div>
           <p className="text-sm text-gray-600">
             Calificación de 0 a 10; mínima aprobatoria por curso: {MINIMA_AREA.toFixed(1)}. Cuando se capturan los dos cursos de un aspirante, el resultado queda
-            listo y el Departamento de Posgrado lo publica (el aspirante no lo ve antes). El examen de admisión lo califica la Jefatura de Posgrado.
+            listo y el Departamento de Posgrado lo publica (el aspirante no lo ve antes). Puedes corregir una calificación hasta una semana después de
+            capturarla, mientras no se publique. El examen de admisión lo califica la Jefatura de Posgrado.
           </p>
           <section className="overflow-hidden rounded-xl border border-gray-200 bg-white">
             <div className="overflow-x-auto">

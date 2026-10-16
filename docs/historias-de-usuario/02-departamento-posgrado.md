@@ -41,7 +41,8 @@ Incluye al **Analista de Posgrado** y a la **Jefatura de Posgrado**. Lo que pued
 - Puedo abrir cada archivo entregado y marcarlo como **aprobado** u **observado**.
 - Al observar, el motivo es obligatorio y al aspirante le llega un aviso con el documento y el motivo (RF-07).
 - Mientras haya observaciones, el aspirante solo puede reemplazar los documentos observados; los aprobados quedan bloqueados para él.
-- Si el aspirante reemplaza un archivo observado, vuelve a aparecer como **por revisar**.
+- Si el aspirante reemplaza un archivo observado, vuelve a aparecer como **por revisar** y marcado como **resubido por el aspirante**.
+- Al **aprobar el certificado de estudios**, capturo el **promedio final de la carrera** según el certificado (promedio validado); el promedio que declaró el aspirante se conserva aparte.
 - Cada acción queda en la bitácora con mi nombre.
 
 **Referencias:** CU-ADM-03 · RF-05, RF-06, RF-07, RF-52
@@ -119,12 +120,13 @@ Incluye al **Analista de Posgrado** y a la **Jefatura de Posgrado**. Lo que pued
 ---
 
 ### HU-PG-09 · Dar seguimiento al acta del sínodo
-**Como** analista de Posgrado, **quiero** ver si el sínodo ya llenó y firmó el acta, **para** saber cuándo queda el dictamen de la entrevista.
+**Como** analista de Posgrado, **quiero** ver si el sínodo ya llenó el acta y subió la versión firmada, **para** saber cuándo queda el dictamen de la entrevista.
 
 **Criterios de aceptación**
-- Posgrado **no** captura el dictamen; lo registran los profesores en su sesión.
-- Veo el estado: "Sínodo N de 3" (mientras los profesores eligen la entrevista), "El sínodo aún no llena el acta" o "Acta llenada · N de 3 firmas", y quién ya firmó.
-- Una vez firmada por los 3, veo el dictamen (Aprobado, Con reservas o Rechazado), el acta completa y puedo descargarla en PDF.
+- Posgrado **no** captura el dictamen; lo aplica el sínodo al subir el acta MTC-EC firmada por los 3.
+- Veo el estado: "Sínodo N de 3" (mientras los profesores eligen la entrevista), "El sínodo aún no llena el acta" o "Acta llenada · por subir firmada", y quién la llenó.
+- En **Comisión y dictamen → Dictamen de entrevista colegiada** veo todas las actas: quién la llenó, quién la subió firmada y cuándo, el dictamen (Aprobado, Con reservas o Rechazado) y puedo descargarla en PDF.
+- Este dictamen es distinto del **dictamen final** del proceso de admisión.
 
 **Referencias:** RF-12 · RN-07
 **Pantalla:** `/posgrado/entrevistas`, `/posgrado/entrevistas/[id]`
@@ -191,7 +193,8 @@ Incluye al **Analista de Posgrado** y a la **Jefatura de Posgrado**. Lo que pued
 **Como** analista de Posgrado, **quiero** generar y descargar el informe de los aspirantes que acreditaron, **para** presentarlo a la Comisión de Admisión.
 
 **Criterios de aceptación**
-- El informe incluye ID, nombre, procedencia, promedio, resultado de entrevista, modalidad, calificación y propuesta de resolución.
+- Está en **Comisión y dictamen → Dictamen final**, separado del dictamen de entrevista.
+- El informe que se descarga contiene **solo el ID del aspirante y su dictamen final** (Favorable, Con reservas o No favorable); no lleva "propuesta".
 - Se descarga en CSV para abrirse en Excel.
 
 **Referencias:** RF-57
@@ -200,17 +203,12 @@ Incluye al **Analista de Posgrado** y a la **Jefatura de Posgrado**. Lo que pued
 ---
 
 ### HU-PG-15 · Registrar la resolución del Colegio de Profesores
-**Como** analista de Posgrado, **quiero** registrar el acta del Colegio y la resolución de cada aspirante, **para** publicar los resultados y cerrar la admisión.
+**Como** analista de Posgrado, **quiero** registrar el acta del Colegio y la resolución de cada aspirante, **para** tener listos los resultados que se publicarán.
 
 **Criterios de aceptación**
 - Capturo número de acta, fecha y **hora** de la sesión y el PDF del acta firmada; se requiere haber generado el informe.
-- Para cada aspirante elijo **Aceptado**, **Condicionado** o **No aceptado**.
-- Al registrar:
-  - se **publica el resultado** de cada aspirante en su fase 6 (Dictamen final);
-  - los aceptados y condicionados quedan **admitidos** y pasan automáticamente a Inscripción con UTEyCV, donde llenan su SIP-04 con la fecha y hora de la sesión;
-  - los no aceptados concluyen su proceso;
-  - cada aspirante recibe su aviso.
-- La página muestra los resultados publicados y con qué fecha.
+- Para cada aspirante elijo **Aceptado**, **Con reservas** o **No aceptado** (dictamen final: Favorable, Con reservas o No favorable).
+- Registrar la resolución **no la publica**: queda "registrada · por publicar" hasta que Posgrado publique los resultados (HU-PG-25).
 
 **Referencias:** RF-59, RF-60
 **Pantalla:** `/posgrado/comision`
@@ -271,7 +269,7 @@ Incluye al **Analista de Posgrado** y a la **Jefatura de Posgrado**. Lo que pued
 
 **Criterios de aceptación**
 - Desde la bandeja de aspirantes descargo un archivo **CSV** (UTF-8, se abre directo en Excel con acentos) con **todos** los aspirantes, sin importar los filtros.
-- Trae las mismas columnas que el CSV de la Subdirección (HU-SD-02): datos de contacto, procedencia separada en **institución** y **unidad académica / escuela**, fase, estado, resultado de entrevista, **calificación de cada curso propedéutico y su promedio**, calificación del examen y **dictamen** (Favorable, Condicionado o No favorable).
+- Trae las mismas columnas que el CSV de la Subdirección (HU-SD-02): datos de contacto, procedencia separada en **institución** y **unidad académica / escuela** y **todo el proceso de admisión** (ver HU-SD-02).
 
 **Referencias:** RF-49
 **Pantalla:** `/posgrado/aspirantes`
@@ -297,6 +295,7 @@ Incluye al **Analista de Posgrado** y a la **Jefatura de Posgrado**. Lo que pued
 - En "Calificaciones" veo a quienes eligieron solo examen y a quienes presentan el examen de las áreas que no acreditaron en el propedéutico.
 - Capturo la calificación de 0 a 10 por área; el sistema indica si queda acreditada (mínima 8.0).
 - Al completarse las áreas, el resultado queda "sin publicar" para la analista (HU-PG-12).
+- Puedo **corregir** una calificación hasta **una semana después de la primera captura**, mientras el resultado no se publique; la corrección queda en la bitácora.
 - Solo la Jefatura tiene este módulo; queda en la bitácora a su nombre.
 
 **Referencias:** RF-16 · RN-08
@@ -308,7 +307,11 @@ Incluye al **Analista de Posgrado** y a la **Jefatura de Posgrado**. Lo que pued
 **Como** Jefatura de Posgrado, **quiero** ver en una sola tabla las calificaciones de todos los aspirantes, **para** dar seguimiento a la evaluación.
 
 **Criterios de aceptación**
-- Por aspirante veo la procedencia separada (**institución** y **unidad académica**), la **calificación de cada curso propedéutico** (Matemáticas Discretas y Continuas y Programación, con su grupo), el **promedio de los 2 cursos**, la calificación del examen y el estado de la evaluación.
+- Por aspirante veo la procedencia separada (**institución** y **unidad académica**), y por separado:
+  - las **2 calificaciones del propedéutico** (Matemáticas Discretas y Continuas y Programación, con su grupo) y su **promedio**;
+  - las **2 calificaciones del examen** (las mismas dos áreas) y su **promedio**;
+  - el **promedio final**: por área, la calificación del examen sustituye a la del propedéutico; es el promedio de las 2 áreas;
+  - el estado de la evaluación.
 - Las calificaciones del propedéutico las capturan los docentes de cada grupo (HU-PR-07).
 - Descargo el concentrado en **CSV**, que además incluye grupo y docente de cada curso.
 
@@ -321,9 +324,26 @@ Incluye al **Analista de Posgrado** y a la **Jefatura de Posgrado**. Lo que pued
 **Como** Jefatura de Posgrado, **quiero** definir las fechas de inicio y cierre del registro de cada convocatoria, **para** que se abran y se cierren solas sin depender del administrador.
 
 **Criterios de aceptación**
-- Por convocatoria (A y B) capturo inicio y cierre del registro; la fecha de cierre no puede ser anterior a la de inicio.
+- Por convocatoria (A y B) capturo inicio y cierre del registro y la **fecha de publicación de resultados**; el cierre no puede ser anterior al inicio y los resultados deben ser después del cierre.
 - El estado se calcula solo con la fecha de hoy: **Próxima** (antes del inicio), **Abierta** (del inicio al cierre, incluidos) y **Cerrada** (después del cierre).
 - El inicio público y el registro reflejan el estado automáticamente; el cambio queda en la bitácora.
 
 **Referencias:** RF-81
 **Pantalla:** `/posgrado/calendario`
+
+---
+
+### HU-PG-25 · Publicar los resultados de admisión en la fecha de la convocatoria
+**Como** analista de Posgrado, **quiero** publicar los resultados de admisión a partir de la fecha que marca la convocatoria, **para** que todos los aspirantes los conozcan al mismo tiempo.
+
+**Criterios de aceptación**
+- En **Comisión y dictamen → Dictamen final** veo la fecha de publicación de resultados de la convocatoria (la puedo ajustar) y cuántos resultados registrados faltan por publicar.
+- El botón **Publicar resultados** se habilita a partir de esa fecha.
+- Al publicar:
+  - cada aspirante ve su resultado en su fase 6 (Dictamen final) y recibe su aviso;
+  - los aceptados (con o sin reservas) quedan **admitidos** y pasan automáticamente a Inscripción con UTEyCV, donde llenan su SIP-04 con la fecha y hora de la sesión del Colegio;
+  - los no aceptados concluyen su proceso.
+- La página muestra los resultados publicados y con qué fecha.
+
+**Referencias:** RF-59, RF-60
+**Pantalla:** `/posgrado/comision`

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { use, useState } from "react";
 import { BellRing, CalendarCheck, CheckCircle2, Pencil, Send } from "lucide-react";
-import { ActaVista, FirmasActa, TONO_RESOLUCION } from "@/components/profesor/ActaVista";
+import { ActaVista, SinodoActa, TONO_RESOLUCION } from "@/components/profesor/ActaVista";
 import { PageHeader } from "@/components/PageHeader";
 import { fechaRecordatorio, recordatoriosEntrevista } from "@/lib/recordatorios";
 import { usePosgrado } from "@/components/posgrado/PosgradoProvider";
@@ -14,7 +14,6 @@ import {
   PROFESORES_SINODO,
   TONO_PASO_ENTREVISTA,
   fechaCorta,
-  firmasActa,
   lugaresLibres,
   nombramientoDe,
   nombreProfesor,
@@ -265,26 +264,26 @@ function Campo({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-/** El dictamen lo registra el sínodo en su sesión de Profesor (acta MTC-EC firmada por los 3). */
+/** El dictamen lo aplica el sínodo al subir el acta MTC-EC firmada por los 3. */
 function EsperandoActa({ a }: { a: AspiranteP }) {
-  const n = firmasActa(a);
   return (
     <>
       <Tarjeta titulo="Acta del sínodo (MTC-EC)">
         <p className="text-sm text-gray-600">
-          Los profesores del sínodo llenan y firman el acta en su sesión de Profesor. Cuando firman los 3, el dictamen se aplica solo y se avisa al aspirante.
+          Un profesor del sínodo llena el acta en su sesión; los tres la imprimen y la firman, y el primero que sube el PDF firmado aplica el dictamen (se avisa
+          al aspirante).
         </p>
         <p className="mt-3 text-sm">
           Estado:{" "}
           <Etiqueta tono={a.actaEntrevista ? "bg-sky-50 text-sky-800" : "bg-gray-100 text-gray-700"}>
-            {a.actaEntrevista ? `Acta llenada · ${n} de 3 firmas` : sinodoCompleto(a.entrevista) ? "El sínodo aún no llena el acta" : `Sínodo ${a.entrevista?.sinodo.length ?? 0} de 3`}
+            {a.actaEntrevista ? "Acta llenada · por subir firmada" : sinodoCompleto(a.entrevista) ? "El sínodo aún no llena el acta" : `Sínodo ${a.entrevista?.sinodo.length ?? 0} de 3`}
           </Etiqueta>
         </p>
         <div className="mt-3">
-          <FirmasActa a={a} />
+          <SinodoActa a={a} />
         </div>
       </Tarjeta>
-      {a.actaEntrevista && <ActaVista a={a} titulo="Acta capturada (pendiente de firmas)" />}
+      {a.actaEntrevista && <ActaVista a={a} titulo="Acta llenada (pendiente de subir firmada)" />}
     </>
   );
 }

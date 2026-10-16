@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ArrowRight, BellRing, CalendarDays, CheckCircle2, Clock, Globe, RotateCcw, Wand2 } from "lucide-react";
 import { useContenido } from "@/lib/contenido";
 import type { IdConvocatoria } from "@/lib/config";
+import { fechaResultados, useConvocatorias } from "@/lib/convocatoria";
 import { simularCambioPosgrado, useEstadoAdmision, useSesionColegio } from "@/lib/posgrado/revision";
 import { useExpediente } from "./ExpedienteProvider";
 
@@ -21,8 +22,10 @@ export function PublicacionResultados() {
   const { calendarioDe } = useContenido();
   const conv = (String(registro.semestre ?? "A").charAt(0) === "B" ? "B" : "A") as IdConvocatoria;
   const calendario = calendarioDe(conv);
+  const { config } = useConvocatorias();
+  const fechaPub = fechaResultados(config, conv);
   const sesion = useSesionColegio();
-  const admitido = !v.concluido && (v.resolucion === "Aceptado" || v.resolucion === "Condicionado");
+  const admitido = !v.concluido && (v.resolucion === "Aceptado" || v.resolucion === "Con reservas");
   const enComision = v.etapa === "dictamen" && !v.resolucion;
 
   return (
@@ -45,7 +48,15 @@ export function PublicacionResultados() {
           </li>
           <li className="flex gap-2">
             <CalendarDays size={16} className="mt-0.5 shrink-0 text-primary" />
-            <span>La fecha de publicación de resultados está en el calendario de tu convocatoria.</span>
+            <span>
+              {fechaPub ? (
+                <>
+                  Se publican el <b>{fechaLarga(fechaPub)}</b>, según el calendario de tu convocatoria.
+                </>
+              ) : (
+                "La fecha de publicación de resultados está en el calendario de tu convocatoria."
+              )}
+            </span>
           </li>
         </ul>
         {calendario && (
@@ -67,7 +78,7 @@ export function PublicacionResultados() {
         {admitido ? (
           <div className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50/70 p-4 text-sm text-emerald-900">
             <p className="flex items-center gap-2 text-base font-semibold">
-              <CheckCircle2 size={18} /> ¡Fuiste admitido(a)!{v.resolucion === "Condicionado" ? " (admisión condicionada)" : ""}
+              <CheckCircle2 size={18} /> ¡Fuiste admitido(a)!{v.resolucion === "Con reservas" ? " (admisión con reservas)" : ""}
             </p>
             <p className="mt-1.5">
               Resolución del Colegio de Profesores
@@ -102,7 +113,7 @@ export function PublicacionResultados() {
 /** Solo cascarón: simula que Posgrado publica la resolución del Colegio. */
 function SimularPublicacion({ admitido }: { admitido: boolean }) {
   const btn = "inline-flex items-center gap-1.5 rounded-full border border-gray-300 bg-white px-3 py-1 text-xs text-gray-700 hover:bg-gray-50";
-  const publicar = (resolucion: "Aceptado" | "Condicionado" | "No aceptado") => {
+  const publicar = (resolucion: "Aceptado" | "Con reservas" | "No aceptado") => {
     // Si Posgrado aún no registró el acta del Colegio en este navegador, se usa una de ejemplo
     try {
       const e = JSON.parse(localStorage.getItem("sigap-posgrado") ?? "{}");
@@ -141,8 +152,8 @@ function SimularPublicacion({ admitido }: { admitido: boolean }) {
             <button type="button" className={btn} onClick={() => publicar("Aceptado")}>
               <Wand2 size={12} /> Publicar: Aceptado
             </button>
-            <button type="button" className={btn} onClick={() => publicar("Condicionado")}>
-              <Wand2 size={12} /> Publicar: Condicionado
+            <button type="button" className={btn} onClick={() => publicar("Con reservas")}>
+              <Wand2 size={12} /> Publicar: Con reservas
             </button>
             <button type="button" className={btn} onClick={() => publicar("No aceptado")}>
               <Wand2 size={12} /> Publicar: No aceptado

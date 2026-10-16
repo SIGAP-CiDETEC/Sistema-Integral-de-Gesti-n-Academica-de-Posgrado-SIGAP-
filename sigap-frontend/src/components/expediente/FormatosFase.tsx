@@ -34,10 +34,16 @@ export function FormatosFase({ fase }: { fase: FaseId }) {
 }
 
 function TarjetaFormato({ f }: { f: Formato }) {
-  const { ctx, firmados, confirmados, recibidos, cargado, borradores } = useExpediente();
+  const { ctx, firmados, confirmados, recibidos, cargado, borradores, enviadoRevision } = useExpediente();
   const bloqueo = useBloqueoFormato(f.clave);
+  // Ya se envió firmado con el expediente: queda bloqueado mientras Posgrado lo revisa
+  const enviado = f.fase === "documentos" && enviadoRevision && !!firmados[f.clave];
   const e0 = estadoFormato(f, ctx, firmados[f.clave], { confirmado: confirmados[f.clave], recibido: recibidos[f.clave] });
-  const e = bloqueo && !e0.completo ? { ...e0, etiqueta: "Bloqueado", tono: "gris" as const } : e0;
+  const e = enviado
+    ? { ...e0, etiqueta: "Enviado · bloqueado", tono: "verde" as const, completo: true, autollenados: 0 }
+    : bloqueo && !e0.completo
+      ? { ...e0, etiqueta: "Bloqueado", tono: "gris" as const }
+      : e0;
   // El SIP-08 se comporta como editable cuando UTEyCV ya lo publicó
   const editable = f.llena === "aspirante" || (f.llena === "asesor" && !!recibidos[f.clave]);
   return (

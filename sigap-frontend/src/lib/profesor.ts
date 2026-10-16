@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useSyncExternalStore } from "react";
-import { AREAS_EVAL, PROFESORES_SINODO, evaluacionPendiente, sinodoCompleto, type AreaEvalId, type AspiranteP, type ProfesorP } from "./posgrado/datos";
+import { AREAS_EVAL, PROFESORES_SINODO, evaluacionEnCaptura, sinodoCompleto, type AreaEvalId, type AspiranteP, type ProfesorP } from "./posgrado/datos";
 import { docenteDe, type Materia } from "./evaluacion";
 import { useSesion } from "./sesion";
 
@@ -60,13 +60,12 @@ export function useProfesorActual(): { profesor: ProfesorP | null; propio: Profe
 
 // ---------- Pendientes del profesor ----------
 
-export type EstadoEntrevistaProf = "Sínodo incompleto" | "Esperando publicación" | "Por realizar" | "Por firmar" | "Esperando firmas" | "Dictaminada" | "Concluida";
+export type EstadoEntrevistaProf = "Sínodo incompleto" | "Esperando publicación" | "Por llenar acta" | "Por subir firmada" | "Dictaminada" | "Concluida";
 export const TONO_ENTREVISTA_PROF: Record<EstadoEntrevistaProf, string> = {
   "Sínodo incompleto": "bg-gray-100 text-gray-700",
   "Esperando publicación": "bg-gray-100 text-gray-700",
-  "Por realizar": "bg-indigo-50 text-primary",
-  "Por firmar": "bg-amber-50 text-amber-800",
-  "Esperando firmas": "bg-sky-50 text-sky-800",
+  "Por llenar acta": "bg-indigo-50 text-primary",
+  "Por subir firmada": "bg-amber-50 text-amber-800",
   Dictaminada: "bg-emerald-50 text-emerald-700",
   Concluida: "bg-gray-100 text-gray-600",
 };
@@ -98,13 +97,13 @@ export const tieneChoque = (lista: AspiranteP[], prof: string, a: AspiranteP) =>
 /** El profesor puede dejar su lugar mientras Posgrado no haya publicado la entrevista al aspirante. */
 export const puedeDejarLugar = (a: AspiranteP, prof: string) => !!a.entrevista?.sinodo.includes(prof) && !a.entrevista.notificadaEl && !a.actaEntrevista && !a.dictamen && !a.concluido;
 
-export function estadoEntrevistaProf(a: AspiranteP, prof: string): EstadoEntrevistaProf {
+export function estadoEntrevistaProf(a: AspiranteP): EstadoEntrevistaProf {
   if (a.dictamen) return "Dictaminada";
   if (a.concluido) return "Concluida";
   if (!a.actaEntrevista && !sinodoCompleto(a.entrevista)) return "Sínodo incompleto";
   if (!a.actaEntrevista && !a.entrevista?.notificadaEl) return "Esperando publicación";
-  if (!a.actaEntrevista) return "Por realizar";
-  return a.actaEntrevista.firmas[prof] ? "Esperando firmas" : "Por firmar";
+  if (!a.actaEntrevista) return "Por llenar acta";
+  return "Por subir firmada";
 }
 
 /**
@@ -115,7 +114,7 @@ export function capturasPendientes(lista: AspiranteP[], prof: string | undefined
   if (!prof) return [];
   return lista.flatMap((a) => {
     if (a.concluido) return [];
-    const p = evaluacionPendiente(a.evaluacion);
+    const p = evaluacionEnCaptura(a.evaluacion);
     if (!p || p.tipo !== "propedeutico") return [];
     return p.areas
       .filter((area) => docenteDe(area, a.evaluacion.grupos[area] ?? "", materias) === prof)
@@ -127,7 +126,7 @@ export function capturasPendientes(lista: AspiranteP[], prof: string | undefined
 export function capturasExamen(lista: AspiranteP[]) {
   return lista.flatMap((a) => {
     if (a.concluido) return [];
-    const p = evaluacionPendiente(a.evaluacion);
+    const p = evaluacionEnCaptura(a.evaluacion);
     if (!p || p.tipo !== "examen") return [];
     return p.areas.map((area: AreaEvalId) => ({ a, area, tipo: p.tipo, esSegunda: p.esSegunda, capturada: a.evaluacion.capturas?.examen?.[area] }));
   });

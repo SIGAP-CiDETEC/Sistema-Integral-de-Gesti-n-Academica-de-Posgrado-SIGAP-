@@ -10,7 +10,7 @@ UTEyCV **no interviene en el proceso de admisión**: la admisión concluye cuand
 **Como** personal de UTEyCV, **quiero** recibir automáticamente a los aspirantes admitidos, **para** iniciar su inscripción sin esperar un turnado manual.
 
 **Criterios de aceptación**
-- En cuanto Posgrado registra y publica la resolución del Colegio, los aspirantes **Aceptados** y **Condicionados** aparecen en mi lista con la fecha de admisión.
+- En cuanto Posgrado registra y publica la resolución del Colegio, los aspirantes **Aceptados** (con o sin reservas) aparecen en mi lista con la fecha de admisión.
 - Los no aceptados no llegan a UTEyCV.
 - Veo los documentos en prórroga de cada admitido con su fecha límite.
 - El inicio muestra indicadores: admitidos, SIP-08 por elaborar, inscripciones por formalizar e inscritos.

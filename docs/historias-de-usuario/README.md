@@ -10,7 +10,7 @@
 |---|---|---|
 | Aspirante | Se registra, entrega documentos, se entrevista, se evalúa y consulta su resultado | [01-aspirante.md](01-aspirante.md) |
 | Departamento de Posgrado (Analista y Jefatura) | Valida expedientes, publica horarios y entrevistas, gestiona la evaluación, define las fechas de las convocatorias, califica el examen (Jefatura), publica resultados y registra la resolución del Colegio | [02-departamento-posgrado.md](02-departamento-posgrado.md) |
-| Profesores (colegiados y de asignatura) | Eligen sus entrevistas, reciben el registro y el acta prellenada, integran el sínodo (acta MTC-EC) y califican los grupos del propedéutico que imparten | [03-profesores.md](03-profesores.md) |
+| Profesores (colegiados y de asignatura) | Eligen sus entrevistas, reciben el registro del aspirante, integran el sínodo (acta MTC-EC) y califican los grupos del propedéutico que imparten | [03-profesores.md](03-profesores.md) |
 | Control Escolar (UTEyCV) | No interviene en la admisión: recibe a los admitidos para su inscripción | [04-uteycv.md](04-uteycv.md) |
 | Subdirección Académica | Consulta todo el proceso sin intervenir | [05-subdireccion-academica.md](05-subdireccion-academica.md) |
 | Administrador del sistema | Configura parámetros del proceso, roles, usuarios y revisa la bitácora de seguridad | [06-administrador.md](06-administrador.md) |
@@ -24,7 +24,7 @@ Convocatoria (A / B)
   └─ 3. Entrevista colegiada ................ Posgrado publica horarios → profesores los eligen → Posgrado publica la entrevista → acta MTC-EC firmada por 3
   └─ 4. Evaluación .......................... Aspirante / Profesores / Jefatura → propedéutico (lo califica el docente del grupo) o examen (lo califica la Jefatura)
   └─ 5. Resultados .......................... Posgrado publica      → segunda oportunidad si no acreditó un área
-  └─ Comisión de Admisión y Colegio ......... Posgrado             → Aceptado · Condicionado · No aceptado
+  └─ Comisión de Admisión y Colegio ......... Posgrado             → Aceptado · Con reservas · No aceptado (se publica en la fecha de la convocatoria)
   └─ 6. Dictamen final (informativo) ........ Posgrado publica      → fin del proceso de admisión
   └─ (Inscripción, proceso aparte) .......... Aspirante / UTEyCV    → SIP-04 lo llena el aspirante; SIP-08 lo elabora UTEyCV
 ```
@@ -52,9 +52,13 @@ Convocatoria (A / B)
 | Actor | Historias |
 |---|---|
 | Aspirante | 15 |
-| Departamento de Posgrado | 24 |
+| Departamento de Posgrado | 25 |
 | Profesores | 9 |
 | UTEyCV | 1 |
 | Subdirección Académica | 4 |
 | Administrador | 5 |
-| **Total** | **58** |
+| **Total** | **59** |
+
+## Pendientes fuera del alcance de la admisión
+
+- **SIP-10 · Solicitud de reinscripción** (módulo del alumno): llevará la misma tabla de materias que el SIP-01, con botón **+** para agregar materias. Se construirá cuando se tenga la plantilla oficial del SIP-10.

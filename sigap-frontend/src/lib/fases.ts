@@ -130,7 +130,7 @@ export const FASES: Fase[] = [
       { area: "uteycv", texto: "Revisa tu expediente de inscripción y carga las versiones con todas las firmas (RF-27, RF-28)" },
       { area: "uteycv", texto: "Registra tu número SICEP; con él inicias sesión como alumno (RF-29 a RF-31)" },
     ],
-    requisito: "Se habilita cuando se publica tu resultado de admisión (Aceptado o Condicionado) y no te falta ningún documento (RN-11).",
+    requisito: "Se habilita cuando se publica tu resultado de admisión (Aceptado o Con reservas) y no te falta ningún documento (RN-11).",
     fuente: "Módulos 6, 7, 8 y 19 · RF-24 a RF-31, RF-68, RF-69, RN-10 a RN-12",
     aparte: true,
   },

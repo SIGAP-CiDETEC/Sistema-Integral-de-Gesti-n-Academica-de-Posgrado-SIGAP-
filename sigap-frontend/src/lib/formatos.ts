@@ -52,6 +52,8 @@ export type CampoFormato = {
   /** Solo tipo "tabla": columnas y número de filas (cada fila se guarda como celdas separadas por tabulador) */
   columnas?: ColumnaTabla[];
   filas?: number;
+  /** Solo tipo "tabla": máximo de filas que se pueden agregar con el botón + (las que no caben en la plantilla van en una hoja anexa) */
+  filasMax?: number;
 };
 export type ColumnaTabla = { id: string; label: string; requerida?: boolean; defecto?: string; maxLength?: number };
 
@@ -389,6 +391,7 @@ export const FORMATOS: Formato[] = [
         label: "Programa semestral (1er semestre): materias que cursarás",
         tipo: "tabla",
         filas: 6,
+        filasMax: 12,
         columnas: [
           { id: "clave", label: "Clave", maxLength: 8 },
           { id: "curso", label: "Actividad académica (curso)", requerida: true, maxLength: 70 },

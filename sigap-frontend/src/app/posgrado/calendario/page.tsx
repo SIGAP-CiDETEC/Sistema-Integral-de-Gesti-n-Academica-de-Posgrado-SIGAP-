@@ -7,7 +7,7 @@ import { usePosgrado } from "@/components/posgrado/PosgradoProvider";
 import { Aviso, Etiqueta, Regresar, Tarjeta, botonPeligro, botonPrimario, botonSecundario, inputBase } from "@/components/posgrado/ui";
 import { CONVOCATORIAS_INFO, type IdConvocatoria } from "@/lib/config";
 import { CALENDARIOS_EJEMPLO, actualizarContenido, reducirImagen, useContenido } from "@/lib/contenido";
-import { IDS_CONVOCATORIA, TONO_ESTADO_CONV, estadoPorFechas, guardarConvocatorias, useConvocatorias } from "@/lib/convocatoria";
+import { IDS_CONVOCATORIA, TONO_ESTADO_CONV, estadoPorFechas, fechaResultados, guardarConvocatorias, useConvocatorias } from "@/lib/convocatoria";
 import { useSesion } from "@/lib/sesion";
 
 const fh = (iso: string) => new Date(iso).toLocaleString("es-MX", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
@@ -39,14 +39,24 @@ function FechasConvocatorias() {
   const { config, lista } = useConvocatorias();
   const { registrarEnBitacora } = usePosgrado();
   const { sesion } = useSesion();
-  const [b, setB] = useState<Record<IdConvocatoria, { inicio: string; cierre: string }> | null>(null);
+  const [b, setB] = useState<Record<IdConvocatoria, { inicio: string; cierre: string; resultados: string }> | null>(null);
   const [ok, setOk] = useState("");
-  const actual = b ?? { A: { inicio: config.A.inicio, cierre: config.A.cierre }, B: { inicio: config.B.inicio, cierre: config.B.cierre } };
-  const cambios = IDS_CONVOCATORIA.filter((id) => actual[id].inicio !== config[id].inicio || actual[id].cierre !== config[id].cierre);
-  const errores = IDS_CONVOCATORIA.filter((id) => !actual[id].inicio || !actual[id].cierre || actual[id].cierre < actual[id].inicio).map(
-    (id) => `Convocatoria ${id}: la fecha de cierre debe ser igual o posterior a la de inicio.`,
+  const actual = b ?? {
+    A: { inicio: config.A.inicio, cierre: config.A.cierre, resultados: fechaResultados(config, "A") },
+    B: { inicio: config.B.inicio, cierre: config.B.cierre, resultados: fechaResultados(config, "B") },
+  };
+  const cambios = IDS_CONVOCATORIA.filter(
+    (id) => actual[id].inicio !== config[id].inicio || actual[id].cierre !== config[id].cierre || actual[id].resultados !== fechaResultados(config, id),
   );
-  const set = (id: IdConvocatoria, campo: "inicio" | "cierre", v: string) => {
+  const errores = [
+    ...IDS_CONVOCATORIA.filter((id) => !actual[id].inicio || !actual[id].cierre || actual[id].cierre < actual[id].inicio).map(
+      (id) => `Convocatoria ${id}: la fecha de cierre debe ser igual o posterior a la de inicio.`,
+    ),
+    ...IDS_CONVOCATORIA.filter((id) => !actual[id].resultados || actual[id].resultados <= actual[id].cierre).map(
+      (id) => `Convocatoria ${id}: la publicación de resultados debe ser después del cierre del registro.`,
+    ),
+  ];
+  const set = (id: IdConvocatoria, campo: "inicio" | "cierre" | "resultados", v: string) => {
     setB({ ...actual, [id]: { ...actual[id], [campo]: v } });
     setOk("");
   };
@@ -58,14 +68,16 @@ function FechasConvocatorias() {
       actualizadoEl: new Date().toISOString(),
       actualizadoPor: sesion?.correo,
     });
-    const texto = cambios.map((id) => `${config[id].nombre}: registro del ${actual[id].inicio} al ${actual[id].cierre}`).join("; ");
-    registrarEnBitacora(`Cambió las fechas de registro de las convocatorias: ${texto}`);
+    const texto = cambios
+      .map((id) => `${config[id].nombre}: registro del ${actual[id].inicio} al ${actual[id].cierre}, resultados el ${actual[id].resultados}`)
+      .join("; ");
+    registrarEnBitacora(`Cambió las fechas de las convocatorias: ${texto}`);
     setB(null);
     setOk(`${cambios.length} convocatoria(s) actualizada(s).`);
   };
 
   return (
-    <Tarjeta titulo={<span className="flex items-center gap-2"><CalendarRange size={17} className="text-primary" /> Fechas de registro</span>}>
+    <Tarjeta titulo={<span className="flex items-center gap-2"><CalendarRange size={17} className="text-primary" /> Fechas de registro y de resultados</span>}>
       <p className="mb-4 text-sm text-gray-600">
         Cada convocatoria se <b>abre</b> sola el día de inicio y se <b>cierra</b> sola al terminar el día de cierre; ya no hace falta que el Administrador la
         abra o la cierre.
@@ -79,7 +91,7 @@ function FechasConvocatorias() {
               <legend className="flex items-center gap-2 px-1 text-sm font-semibold text-gray-900">
                 {vista?.nombre ?? `Convocatoria ${id}`} <Etiqueta tono={TONO_ESTADO_CONV[estado]}>{estado}</Etiqueta>
               </legend>
-              <div className="grid gap-2 sm:grid-cols-2">
+              <div className="grid gap-2 sm:grid-cols-3">
                 <label className="text-xs text-gray-700">
                   Inicio del registro
                   <input type="date" aria-label={`Inicio del registro ${id}`} value={actual[id].inicio} onChange={(e) => set(id, "inicio", e.target.value)} className={`${inputBase} mt-0.5`} />
@@ -87,6 +99,16 @@ function FechasConvocatorias() {
                 <label className="text-xs text-gray-700">
                   Cierre del registro
                   <input type="date" aria-label={`Cierre del registro ${id}`} value={actual[id].cierre} onChange={(e) => set(id, "cierre", e.target.value)} className={`${inputBase} mt-0.5`} />
+                </label>
+                <label className="text-xs text-gray-700">
+                  Publicación de resultados
+                  <input
+                    type="date"
+                    aria-label={`Publicación de resultados ${id}`}
+                    value={actual[id].resultados}
+                    onChange={(e) => set(id, "resultados", e.target.value)}
+                    className={`${inputBase} mt-0.5`}
+                  />
                 </label>
               </div>
               <p className="mt-2 text-xs text-gray-500">{CONVOCATORIAS_INFO[id].semestre}</p>

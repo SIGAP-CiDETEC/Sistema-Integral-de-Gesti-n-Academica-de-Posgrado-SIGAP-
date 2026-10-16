@@ -9,6 +9,8 @@ import { NavIcon } from "./NavIcon";
 import { NAV, ROL_LABEL, USUARIO_DEMO, type Rol } from "@/lib/nav";
 import { cerrarSesion, usePermisos, useSesion } from "@/lib/sesion";
 import { permisoDeRuta } from "@/lib/admin/accesos";
+import { ID_EN_VIVO, useAspiranteActivo } from "@/lib/aspirante-activo";
+import { ASPIRANTES_BASE } from "@/lib/posgrado/datos";
 
 export function Sidebar({ rol }: { rol: Rol }) {
   const pathname = usePathname();
@@ -21,6 +23,9 @@ export function Sidebar({ rol }: { rol: Rol }) {
   });
   const { sesion } = useSesion();
   const personal = sesion && sesion.rol === rol ? sesion : null;
+  // Portal del aspirante: perfil de ejemplo (p. ej. ASP-2026-050) o el aspirante de este navegador
+  const activo = useAspiranteActivo();
+  const aspiranteEjemplo = rol === "aspirante" && activo !== ID_EN_VIVO ? ASPIRANTES_BASE.find((a) => a.id === activo) : undefined;
 
   // La ruta raíz del rol (/aspirante) solo se marca activa si coincide exacto
   const esActivo = (href: string) =>
@@ -93,7 +98,8 @@ export function Sidebar({ rol }: { rol: Rol }) {
         </nav>
 
         <div className="mt-auto border-t border-white/10 pt-4">
-          <p className="text-sm">{personal?.nombre ?? USUARIO_DEMO[rol]}</p>
+          <p className="text-sm">{personal?.nombre ?? aspiranteEjemplo?.nombre ?? USUARIO_DEMO[rol]}</p>
+          {aspiranteEjemplo && <p className="truncate text-[11px] text-white/60">{aspiranteEjemplo.id} · perfil de ejemplo</p>}
           {personal && <p className="truncate text-[11px] text-white/60">{personal.puesto}</p>}
           {personal && <p className="truncate text-[11px] text-white/60">{personal.correo}</p>}
           <p className="text-xs text-white/60">
