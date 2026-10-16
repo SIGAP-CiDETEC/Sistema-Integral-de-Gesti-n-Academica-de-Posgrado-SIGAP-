@@ -37,36 +37,42 @@ export function DescargarActa({ a }: { a: AspiranteP }) {
         }
       }}
     >
-      {cargando ? <Loader2 size={15} className="animate-spin" /> : <Download size={15} />} Descargar acta (PDF)
+      {cargando ? <Loader2 size={15} className="animate-spin" /> : <Download size={15} />} Descargar acta para imprimir (PDF)
     </button>
   );
 }
 
-/** Firmas del sínodo sobre el acta. */
-export function FirmasActa({ a }: { a: AspiranteP }) {
+/** Sínodo y estado del acta: quién la llenó y quién subió la versión firmada por los 3. */
+export function SinodoActa({ a }: { a: AspiranteP }) {
   const acta = a.actaEntrevista;
   return (
-    <ul className="space-y-1.5 text-sm">
-      {(a.entrevista?.sinodo ?? []).map((p) => {
-        const el = acta?.firmas[p];
-        return (
+    <div className="space-y-2 text-sm">
+      <ul className="space-y-1">
+        {(a.entrevista?.sinodo ?? []).map((p) => (
           <li key={p} className="flex flex-wrap items-center justify-between gap-2">
-            <span className="text-gray-800">
-              {nombreProfesor(p)}
-              {acta?.capturadaPor === p && <span className="ml-1 text-xs text-gray-500">(llenó el acta)</span>}
-            </span>
-            <span className={`flex items-center gap-1 text-xs ${el ? "text-emerald-700" : "text-gray-500"}`}>
-              {el ? <CheckCircle2 size={13} /> : <Clock size={13} />} {el ? `Firmó ${fechaHora(el)}` : "Pendiente de firma"}
+            <span className="text-gray-800">{nombreProfesor(p)}</span>
+            <span className="text-xs text-gray-500">
+              {acta?.capturadaPor === p && "llenó el acta"}
+              {acta?.capturadaPor === p && acta?.firmada?.subidaPor === p && " · "}
+              {acta?.firmada?.subidaPor === p && "subió el acta firmada"}
             </span>
           </li>
-        );
-      })}
-    </ul>
+        ))}
+      </ul>
+      <p className={`flex items-center gap-1.5 text-xs ${acta?.firmada ? "text-emerald-700" : "text-gray-500"}`}>
+        {acta?.firmada ? <CheckCircle2 size={13} /> : <Clock size={13} />}
+        {acta?.firmada
+          ? `Acta firmada por los 3 subida el ${fechaHora(acta.firmada.el)} (${acta.firmada.archivo})`
+          : acta
+            ? "Acta llenada: falta imprimirla, firmarla los 3 y subirla"
+            : "El acta aún no se llena"}
+      </p>
+    </div>
   );
 }
 
 /** Contenido del acta MTC-EC (solo lectura). */
-export function ActaVista({ a, titulo = "Acta de entrevista colegiada (MTC-EC)" }: { a: AspiranteP; titulo?: string }) {
+export function ActaVista({ a, titulo = "Acta de entrevista colegiada (MTC-EC)", sinDescarga = false }: { a: AspiranteP; titulo?: string; sinDescarga?: boolean }) {
   const acta = a.actaEntrevista;
   if (!acta) return null;
   const h = acta.hoja1;
@@ -81,7 +87,7 @@ export function ActaVista({ a, titulo = "Acta de entrevista colegiada (MTC-EC)" 
     ["Argumentación final del aspirante", h.argumentacion],
   ];
   return (
-    <Tarjeta titulo={titulo} accion={<DescargarActa a={a} />}>
+    <Tarjeta titulo={titulo} accion={sinDescarga ? undefined : <DescargarActa a={a} />}>
       <div className="grid gap-6 lg:grid-cols-2">
         <div>
           <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-500">Hoja 1 · Entrevista</h3>
@@ -125,7 +131,7 @@ export function ActaVista({ a, titulo = "Acta de entrevista colegiada (MTC-EC)" 
           </dl>
           <h3 className="mt-4 text-xs font-semibold uppercase tracking-wide text-gray-500">Entrevistadores</h3>
           <div className="mt-2">
-            <FirmasActa a={a} />
+            <SinodoActa a={a} />
           </div>
         </div>
       </div>

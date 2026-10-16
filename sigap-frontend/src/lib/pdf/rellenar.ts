@@ -365,9 +365,10 @@ async function sip01(doc: PDFDocument, d: DatosPdf) {
   if (v("estatus") === "Tiempo completo") marca(c, 159, 533);
   if (v("estatus") === "Tiempo parcial") marca(c, 241, 531);
   // Programa semestral: materias que anotó el aspirante (6 filas; clave, curso, profesor, unidad académica)
-  const materias = (Array.isArray(d.valores.materias) ? d.valores.materias : [])
+  const todas = (Array.isArray(d.valores.materias) ? d.valores.materias : [])
     .map((f) => f.split("\t"))
     .filter((celdas) => celdas.some((x) => x.trim()));
+  const materias = todas.slice(0, 6);
   const FILAS = [579.2, 596.9, 615.2, 632.9, 650.6, 668.2];
   materias.slice(0, 6).forEach(([clave = "", curso = "", profesor = "", unidad = ""], i) => {
     const top = FILAS[i] + 12;
@@ -414,6 +415,8 @@ async function sip01(doc: PDFDocument, d: DatosPdf) {
     const img = d.foto.tipo === "png" ? await doc.embedPng(d.foto.bytes) : await doc.embedJpg(d.foto.bytes);
     c.page.drawImage(img, { x: 506, y: c.alto - 136, width: 52, height: 64 });
   }
+  // Más de 6 materias (botón + del formulario): las demás van en una hoja anexa al final
+  if (todas.length > 6) await anexoMaterias(doc, c.font, todas.slice(6), v("nombre") ? `${v("nombre")} ${v("apellidoPaterno")} ${v("apellidoMaterno")}` : "");
   // Aviso de privacidad (página 2): lo marca el aspirante (ACEPTO / NO ACEPTO)
   if (doc.getPageCount() > 1) {
     const p2 = doc.getPage(1);
@@ -421,6 +424,35 @@ async function sip01(doc: PDFDocument, d: DatosPdf) {
     if (v("avisoPrivacidad") === "Acepto") marca(c2, 265.5, 316);
     if (v("avisoPrivacidad") === "No acepto") marca(c2, 384.5, 316);
   }
+}
+
+/** Hoja anexa del SIP-01 con las materias que no caben en las 6 filas de la plantilla. */
+async function anexoMaterias(doc: PDFDocument, font: PDFFont, filas: string[][], nombre: string) {
+  const [ancho, alto] = [doc.getPage(0).getWidth(), doc.getPage(0).getHeight()];
+  const page = doc.addPage([ancho, alto]);
+  const negrita = await doc.embedFont(StandardFonts.HelveticaBold);
+  const col = [45, 120, 330, 450];
+  let y = alto - 60;
+  page.drawText("SIP-01 · Solicitud de inscripción — Anexo: programa semestral (continuación)", { x: 45, y, size: 11, font: negrita, color: TINTA });
+  y -= 16;
+  if (nombre.trim()) page.drawText(`Aspirante: ${nombre.trim()}`, { x: 45, y, size: 9, font, color: TINTA });
+  y -= 26;
+  ["Clave", "Actividad académica (curso)", "Profesor", "Unidad académica"].forEach((t, i) => page.drawText(t, { x: col[i], y, size: 8.5, font: negrita, color: TINTA }));
+  y -= 6;
+  page.drawLine({ start: { x: 45, y }, end: { x: ancho - 45, y }, thickness: 0.6, color: TINTA });
+  const recorta = (t: string, max: number, tam: number) => {
+    let r = t;
+    while (r && font.widthOfTextAtSize(r, tam) > max) r = r.slice(0, -1);
+    return r;
+  };
+  filas.forEach(([clave = "", curso = "", profesor = "", unidad = ""], i) => {
+    y -= 18;
+    page.drawText(`${i + 7}.`, { x: 30, y, size: 7.5, font, color: TINTA });
+    [clave.toUpperCase(), curso, profesor, unidad].forEach((t, k) =>
+      page.drawText(recorta(t, (col[k + 1] ?? ancho - 45) - col[k] - 8, 8), { x: col[k], y, size: 8, font, color: TINTA }),
+    );
+    page.drawLine({ start: { x: 45, y: y - 5 }, end: { x: ancho - 45, y: y - 5 }, thickness: 0.3, color: rgb(0.7, 0.72, 0.8) });
+  });
 }
 
 // ---------------- SIP-04 · Dictamen del proceso de admisión ----------------

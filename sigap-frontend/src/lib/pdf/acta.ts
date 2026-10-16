@@ -35,7 +35,7 @@ export async function generarActaMtcEc(a: AspiranteP, acta: ActaEntrevista): Pro
     observaciones: acta.observaciones,
     continuar: acta.resolucion,
     motivo: acta.motivo,
-    ...Object.fromEntries((a.entrevista?.sinodo ?? []).map((p, i) => [`prof${i + 1}`, `${nombreProfesor(p)}${acta.firmas[p] ? " (firmado en SIGAP)" : ""}`])),
+    ...Object.fromEntries((a.entrevista?.sinodo ?? []).map((p, i) => [`prof${i + 1}`, nombreProfesor(p)])),
   };
   const bytes = await (await fetch("/formatos/mtc-ec.pdf")).arrayBuffer();
   const pdf = await rellenarPdf("mtc-ec", bytes, { valores, hoy: new Date() });

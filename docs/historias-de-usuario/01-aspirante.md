@@ -95,7 +95,11 @@
 
 **Criterios de aceptación**
 - Recibo un aviso en el sistema (y por correo) con el documento y el motivo de la observación.
-- Mientras tenga observaciones, **solo puedo reemplazar el documento observado**; los demás quedan bloqueados.
+- Mientras tenga observaciones, **solo puedo reemplazar el documento observado**; no puedo cambiar, quitar ni volver a subir ningún otro archivo, y mucho menos los que Posgrado ya aprobó.
+- Una vez que envío mi expediente a revisión, todos mis documentos (y el SIP-02 firmado) quedan bloqueados salvo los que Posgrado observe o a los que dé prórroga.
+- Al subir la corrección, el documento vuelve a revisión ("Resubido por el aspirante" para Posgrado) y queda bloqueado hasta que Posgrado responda.
+- En **Mi admisión** veo el aviso "Documentos con observaciones" con el documento y el motivo, y el botón **Ver observaciones** me lleva a 2 · Documentos.
+- Perfil de ejemplo: con el ID **ASP-2026-050** (Mariana Torres Vidal) se entra al portal del aspirante con el certificado observado, la identificación en revisión y lo demás aprobado.
 - Los documentos **aprobados** quedan bloqueados y ya no se pueden reemplazar.
 - Al reemplazar el archivo, el documento vuelve a quedar **por revisar** para Posgrado.
 - Si Posgrado me dio prórroga, veo la fecha límite y puedo seguir con mi proceso mientras tanto.
@@ -124,7 +128,7 @@
 **Como** aspirante, **quiero** saber si puedo continuar después de mi entrevista, **para** preparar mi evaluación.
 
 **Criterios de aceptación**
-- Cuando los 3 profesores del sínodo firman el acta, recibo un aviso.
+- Cuando el sínodo sube el acta firmada por los 3 profesores, recibo un aviso.
 - Si el resultado es **Aprobado** o **Con reservas**, se habilita la fase 4 (Evaluación).
 - Si es **Rechazado**, mi proceso concluye: recibo un mensaje general (sin calificaciones ni comentarios del sínodo) y las demás fases quedan bloqueadas.
 
@@ -180,7 +184,7 @@
 
 **Criterios de aceptación**
 - La fase 6 (Dictamen final) es **informativa**: solo la ve el aspirante y no requiere que haga ningún trámite.
-- Indica que los resultados se publican en SIGAP, que recibiré un aviso por correo y en mis notificaciones, y muestra el calendario de mi convocatoria.
+- Indica que los resultados se publican en SIGAP, que recibiré un aviso por correo y en mis notificaciones, la **fecha de publicación de resultados** de mi convocatoria y el calendario.
 - Mientras mi resultado está en la Comisión de Admisión, se indica que todavía no se publica.
 
 **Referencias:** RF-22, RF-50
@@ -193,7 +197,7 @@
 
 **Criterios de aceptación**
 - Recibo un aviso cuando se publica mi resultado.
-- Si fui **Aceptado** o **Condicionado**, veo la fecha y hora de la sesión del Colegio y un acceso a mi **inscripción**; con esto concluye mi proceso de admisión.
+- Si fui **Aceptado** o **Aceptado con reservas**, veo la fecha y hora de la sesión del Colegio y un acceso a mi **inscripción**; con esto concluye mi proceso de admisión.
 - El dictamen **SIP-04** lo lleno yo en Inscripción (con mi dedicación, RN-10); antes de ser admitido aparece bloqueado.
 - Si no fui aceptado, mi proceso concluye con un mensaje general.
 

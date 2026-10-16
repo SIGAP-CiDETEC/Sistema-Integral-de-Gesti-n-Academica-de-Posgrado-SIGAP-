@@ -6,6 +6,7 @@ import { documentosDeFase, esRequerido } from "@/lib/documentos";
 import { useConfigEvaluacion } from "@/lib/evaluacion-config";
 import { areasReprobadas, nombreArea } from "@/lib/posgrado/datos";
 import { useEstadoAdmision, useRevisionDocs } from "@/lib/posgrado/revision";
+import { useAspiranteActivo } from "@/lib/aspirante-activo";
 import { useExpediente } from "./ExpedienteProvider";
 import { DeshacerConclusion } from "./BloqueoProceso";
 import { VistaAdmision } from "./VistaAdmision";
@@ -15,6 +16,7 @@ const fecha = (f: string) => new Date(`${f}T12:00:00`).toLocaleDateString("es-MX
 /** Estado real de la solicitud del aspirante, a partir de lo que registró el personal (RF-13). */
 export function MiAdmisionVivo() {
   const v = useEstadoAdmision();
+  const activo = useAspiranteActivo();
   const revision = useRevisionDocs();
   const { registro, documentos, evaluacion, capturas, cargado } = useExpediente();
   const { modalidades } = useConfigEvaluacion();
@@ -33,7 +35,7 @@ export function MiAdmisionVivo() {
   const acreditada = !!(exa?.acreditado || pro?.acreditado);
   const so = evaluacion.segundaOportunidad;
   // El proceso de admisión termina cuando se publica la resolución del Colegio (6 · Dictamen final)
-  const dictamenPublicado = etapa === "dictamen" && !v.concluido && (v.resolucion === "Aceptado" || v.resolucion === "Condicionado");
+  const dictamenPublicado = etapa === "dictamen" && !v.concluido && (v.resolucion === "Aceptado" || v.resolucion === "Con reservas");
   const avisos: Aviso[] = [];
   if (observados.length) avisos.push({ tipo: "alerta", titulo: "Documentos con observaciones", texto: observados.map((d) => `${d.nombre}: ${revision[d.id].observacion ?? "revísalo"}`).join(" · ") });
   prorrogas.forEach((d) => avisos.push({ tipo: "info", titulo: `Prórroga: ${d.nombre}`, texto: `Puedes continuar tu proceso; entrégalo antes del ${fecha(revision[d.id].prorrogaHasta!)}.` }));
@@ -74,7 +76,7 @@ export function MiAdmisionVivo() {
   };
 
   const solicitud: SolicitudAdmision = {
-    idTemporal: "ASP-2026-001",
+    idTemporal: activo,
     programa: PROGRAMA,
     etapa,
     modalidad: evaluacion.modalidad ? modalidades[evaluacion.modalidad].titulo : "Por definir",

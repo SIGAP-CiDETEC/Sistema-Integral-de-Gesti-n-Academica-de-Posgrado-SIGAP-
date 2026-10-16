@@ -19,6 +19,7 @@ import {
   fechaHora,
   nombreProfesor,
   resultadoFinal,
+  type AspiranteP,
 } from "@/lib/posgrado/datos";
 
 const FORMATOS = [
@@ -117,6 +118,7 @@ export default function RevisionExpediente({ params }: PageProps<"/posgrado/aspi
                           <span className="block text-gray-900">
                             {d.nombre} {d.opcional && <span className="text-xs text-gray-400">(opcional)</span>}
                           </span>
+                          {d.resubido && d.estado === "pendiente" && <span className="block text-xs text-sky-700">Resubido por el aspirante</span>}
                           {d.observacion && d.estado !== "aprobado" && (
                             <span className={`block text-xs ${d.estado === "observado" ? "text-orange-700" : "text-gray-500"}`}>{d.observacion}</span>
                           )}
@@ -145,6 +147,8 @@ export default function RevisionExpediente({ params }: PageProps<"/posgrado/aspi
                     <div className="mt-2">
                       <EtiquetaDoc e={doc.estado} hasta={doc.prorrogaHasta} />
                     </div>
+
+                    {doc.id === "certificado" && doc.estado === "aprobado" && <PromedioValidado a={a} />}
 
                     {doc.id === "ingles" && (
                       <div className="mt-3">
@@ -291,7 +295,8 @@ export default function RevisionExpediente({ params }: PageProps<"/posgrado/aspi
                 ["Correo", a.correo],
                 ["Teléfono", a.telefono],
                 ["Procedencia", a.procedencia],
-                ["Promedio", a.promedio],
+                ["Promedio declarado", a.promedio],
+                ["Promedio validado", a.promedioValidado ?? "Al aprobar el certificado"],
                 ["Registro", fechaCorta(a.registradoEl)],
               ].map(([k, v]) => (
                 <div key={k} className="grid grid-cols-[96px_1fr] gap-2">
@@ -370,5 +375,44 @@ export default function RevisionExpediente({ params }: PageProps<"/posgrado/aspi
         </aside>
       </div>
     </>
+  );
+}
+
+/** Al aprobar el certificado de estudios, Posgrado captura el promedio final de la carrera del aspirante. */
+function PromedioValidado({ a }: { a: AspiranteP }) {
+  const { actualizar } = usePosgrado();
+  const [v, setV] = useState(a.promedioValidado ?? "");
+  const n = Number(v);
+  const ok = v.trim() !== "" && !Number.isNaN(n) && n >= 6 && n <= 10;
+  const cambio = v.trim() !== (a.promedioValidado ?? "");
+  return (
+    <div className="mt-4 rounded-lg border border-emerald-200 bg-emerald-50/50 p-3">
+      <label className="block text-sm font-medium text-gray-900" htmlFor="promedio-validado">
+        Promedio final de la carrera (según el certificado)
+      </label>
+      <p className="text-xs text-gray-500">Promedio que declaró en su registro: {a.promedio}</p>
+      <div className="mt-2 flex flex-wrap items-center gap-2">
+        <input
+          id="promedio-validado"
+          type="number"
+          step="0.01"
+          min={6}
+          max={10}
+          value={v}
+          onChange={(e) => setV(e.target.value)}
+          className={`${inputBase} w-28`}
+        />
+        <button
+          type="button"
+          className={botonPrimario}
+          disabled={!ok || !cambio}
+          onClick={() => actualizar(a.id, { promedioValidado: String(Math.round(n * 100) / 100) }, `Registró el promedio validado del certificado de estudios: ${Math.round(n * 100) / 100}`)}
+        >
+          Guardar promedio
+        </button>
+        {a.promedioValidado && !cambio && <span className="text-xs text-emerald-700">Guardado</span>}
+      </div>
+      {v.trim() !== "" && !ok && <p className="mt-1 text-xs text-red-600">Escribe un promedio entre 6 y 10.</p>}
+    </div>
   );
 }

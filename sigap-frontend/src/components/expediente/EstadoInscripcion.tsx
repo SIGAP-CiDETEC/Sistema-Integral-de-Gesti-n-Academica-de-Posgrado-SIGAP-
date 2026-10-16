@@ -16,7 +16,7 @@ export function EstadoInscripcionAspirante() {
   const v = useEstadoAdmision();
   const sesion = useSesionColegio();
   if (!cargado) return null;
-  const admitido = !v.concluido && (v.resolucion === "Aceptado" || v.resolucion === "Condicionado");
+  const admitido = !v.concluido && (v.resolucion === "Aceptado" || v.resolucion === "Con reservas");
 
   return (
     <div className="space-y-4">
@@ -24,7 +24,7 @@ export function EstadoInscripcionAspirante() {
         <section className="flex gap-3 rounded-xl border border-emerald-200 bg-emerald-50/70 p-4 text-sm text-emerald-900">
           <CheckCircle2 size={18} className="mt-0.5 shrink-0" />
           <p>
-            Fuiste admitido(a){v.resolucion === "Condicionado" ? " de forma condicionada" : ""} por el Colegio de Profesores
+            Fuiste admitido(a){v.resolucion === "Con reservas" ? " con reservas" : ""} por el Colegio de Profesores
             {sesion?.fecha ? ` en su sesión del ${new Date(`${sesion.fecha}T12:00:00`).toLocaleDateString("es-MX", { day: "numeric", month: "long", year: "numeric" })}` : ""}. Ya
             puedes integrar tu expediente de inscripción, incluido tu dictamen SIP-04; Control Escolar (UTEyCV) lo revisa y te asigna tu número de registro.
           </p>

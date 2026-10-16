@@ -7,6 +7,8 @@ import { ArrowLeft, AtSign, Eye, EyeOff, Lock, LogIn, ShieldCheck } from "lucide
 import { Logos } from "@/components/Logos";
 import { PERIODO_ESCOLAR } from "@/lib/config";
 import { guardarCuenta, leerCuenta } from "@/lib/cuenta-alumno";
+import { ID_EN_VIVO, fijarAspiranteActivo } from "@/lib/aspirante-activo";
+import { ID_EJEMPLO_OBSERVACION } from "@/lib/posgrado/datos";
 import { USUARIOS_DEMO, autenticar, iniciarSesion } from "@/lib/sesion";
 
 /**
@@ -28,10 +30,16 @@ function destinoSimulado(usuario: string, password: string): { ruta: string } | 
     iniciarSesion(cuentaPersonal);
     return { ruta: `/${cuentaPersonal.rol}` };
   }
+  // Perfil de ejemplo aparte: aspirante con un documento observado
+  if (u === ID_EJEMPLO_OBSERVACION) {
+    fijarAspiranteActivo(ID_EJEMPLO_OBSERVACION);
+    return { ruta: "/aspirante/admision" };
+  }
   const cuenta = leerCuenta();
   if (u.startsWith("ASP-") || /^MTC-[AB]\d{2}-?\d{3}$/.test(u)) {
     // RF-30 / RN-12: al concluir la inscripción, el número de registro sustituye al ID temporal
     if (cuenta) return { error: `Tu ID temporal ya no es válido. Ahora inicias sesión con tu número de registro ${cuenta.numeroRegistro}.` };
+    fijarAspiranteActivo(ID_EN_VIVO);
     return { ruta: "/aspirante" };
   }
   if (/^[A-Z]?\d{6,}$/.test(u)) {
@@ -182,11 +190,14 @@ export default function LoginPage({ searchParams }: PageProps<"/login">) {
         <div className="mt-6 border-t border-dashed border-gray-200 pt-4">
           <p className="text-center text-xs text-gray-500">Acceso de prueba (solo cascarón)</p>
           <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
-            <Link href="/aspirante" className="rounded-md border border-gray-200 py-1.5 text-center hover:bg-gray-50">
+            <Link href="/aspirante" onClick={() => fijarAspiranteActivo(ID_EN_VIVO)} className="rounded-md border border-gray-200 py-1.5 text-center hover:bg-gray-50">
               Aspirante
             </Link>
             <Link href="/alumno" className="rounded-md border border-gray-200 py-1.5 text-center hover:bg-gray-50">
               Alumno
+            </Link>
+            <Link href="/aspirante/admision" onClick={() => fijarAspiranteActivo(ID_EJEMPLO_OBSERVACION)} className="col-span-2 rounded-md border border-gray-200 py-1.5 text-center hover:bg-gray-50">
+              Aspirante con un documento observado ({ID_EJEMPLO_OBSERVACION})
             </Link>
           </div>
           <p className="mt-3 text-xs text-gray-500">Cuentas del personal (cada una con su contraseña):</p>

@@ -7,7 +7,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { usePosgrado } from "@/components/posgrado/PosgradoProvider";
 import { usePublicarEntrevistas } from "@/components/posgrado/usePublicarEntrevistas";
 import { Etiqueta, Regresar, botonPrimario, botonSecundario } from "@/components/posgrado/ui";
-import { TONO_PASO_ENTREVISTA, fechaCorta, firmasActa, lugaresLibres, nombreProfesor, pasoEntrevista, type AspiranteP } from "@/lib/posgrado/datos";
+import { TONO_PASO_ENTREVISTA, fechaCorta, lugaresLibres, nombreProfesor, pasoEntrevista, type AspiranteP } from "@/lib/posgrado/datos";
 
 type Pestana = "sin-horario" | "horarios" | "publicadas" | "dictaminadas";
 
@@ -120,7 +120,7 @@ export default function Entrevistas() {
                       {a.dictamen ? (
                         <Etiqueta tono={tono(a.dictamen.resolucion)}>{a.dictamen.resolucion}</Etiqueta>
                       ) : a.actaEntrevista ? (
-                        <Etiqueta tono="bg-sky-50 text-sky-800">Acta · {firmasActa(a)} de 3 firmas</Etiqueta>
+                        <Etiqueta tono="bg-sky-50 text-sky-800">Acta llenada · por subir firmada</Etiqueta>
                       ) : paso ? (
                         <Etiqueta tono={TONO_PASO_ENTREVISTA[paso]}>{paso}</Etiqueta>
                       ) : (

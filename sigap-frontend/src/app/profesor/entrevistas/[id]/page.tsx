@@ -1,11 +1,11 @@
 "use client";
 
 import { use, useState } from "react";
-import { CalendarCheck, CheckCircle2, PenLine, Pencil, TriangleAlert, Wand2 } from "lucide-react";
+import { CalendarCheck, CheckCircle2, PenLine, Pencil, TriangleAlert, Upload, Wand2 } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { usePosgrado } from "@/components/posgrado/PosgradoProvider";
 import { Aviso, Etiqueta, Migas, Tarjeta, botonPrimario, botonSecundario, inputBase } from "@/components/posgrado/ui";
-import { ActaVista, FirmasActa, TEXTO_CONTINUAR, TONO_RESOLUCION } from "@/components/profesor/ActaVista";
+import { ActaVista, DescargarActa, SinodoActa, TEXTO_CONTINUAR, TONO_RESOLUCION } from "@/components/profesor/ActaVista";
 import { useAccionesProfesor } from "@/components/profesor/useAccionesProfesor";
 import { DocumentosAspirante } from "@/components/profesor/DocumentosAspirante";
 import { hoja1Prellenada } from "@/lib/registro-aspirante";
@@ -14,7 +14,6 @@ import {
   CRITERIOS_ACTA,
   VALORACION_TEXTO,
   fechaCorta,
-  firmasActa,
   lugaresLibres,
   nombreProfesor,
   type ActaEntrevista,
@@ -24,13 +23,18 @@ import {
 } from "@/lib/posgrado/datos";
 import { TONO_ENTREVISTA_PROF, estadoEntrevistaProf, useProfesorActual } from "@/lib/profesor";
 
-/** Entrevista colegiada desde la sesión del profesor: llenar, firmar y consultar el acta MTC-EC. */
+/**
+ * Entrevista colegiada desde la sesión del profesor. El acta MTC-EC funciona como cola: el primer sinodal que la llena
+ * la bloquea para los demás; todos la descargan, la imprimen y la firman; el primero que sube el PDF firmado aplica el
+ * dictamen y bloquea la subida a los demás.
+ */
 export default function EntrevistaProfesor({ params }: PageProps<"/profesor/entrevistas/[id]">) {
   const { id } = use(params);
   const { porId, cargado } = usePosgrado();
   const { profesor } = useProfesorActual();
-  const { firmar, simularFirmasRestantes } = useAccionesProfesor();
-  const [editando, setEditando] = useState(false);
+  const { guardarActa, subirActaFirmada } = useAccionesProfesor();
+  const [llenando, setLlenando] = useState(false);
+  const [error, setError] = useState("");
   if (!cargado) return null;
   const a = porId(id);
   const yo = profesor?.id ?? "";
@@ -53,10 +57,17 @@ export default function EntrevistaProfesor({ params }: PageProps<"/profesor/entr
       </>
     );
 
-  const estado = estadoEntrevistaProf(a, yo);
+  const estado = estadoEntrevistaProf(a);
   const acta = a.actaEntrevista;
-  // Quien la llenó puede corregirla mientras nadie más la haya firmado
-  const puedeEditar = !!acta && !a.dictamen && acta.capturadaPor === yo && firmasActa(a) === 1;
+  const yoLaLlene = acta?.capturadaPor === yo;
+
+  const subir = (archivo: File | undefined | { name: string; type: string; size: number }) => {
+    setError("");
+    if (!archivo) return;
+    if (archivo.type !== "application/pdf" && !archivo.name.toLowerCase().endsWith(".pdf")) return setError("Sube el acta firmada en PDF.");
+    if (archivo.size > 10 * 1024 * 1024) return setError("El PDF no debe pasar de 10 MB.");
+    if (!subirActaFirmada(a, archivo.name, yo)) setError("Otro profesor del sínodo ya subió el acta firmada.");
+  };
 
   return (
     <>
@@ -84,9 +95,8 @@ export default function EntrevistaProfesor({ params }: PageProps<"/profesor/entr
         <Tarjeta titulo="Sínodo">
           <Etiqueta tono={TONO_ENTREVISTA_PROF[estado]}>{estado}</Etiqueta>
           <div className="mt-3">
-            <FirmasActa a={a} />
+            <SinodoActa a={a} />
           </div>
-          <p className="mt-3 text-xs text-gray-500">El dictamen se aplica cuando los 3 profesores firman el acta (RN-07).</p>
         </Tarjeta>
       </div>
 
@@ -101,64 +111,84 @@ export default function EntrevistaProfesor({ params }: PageProps<"/profesor/entr
           </Aviso>
         ) : estado === "Esperando publicación" ? (
           <Aviso tono="info" titulo="Sínodo completo: falta que Posgrado publique la entrevista al aspirante">
-            Podrás llenar el acta MTC-EC cuando el Departamento de Posgrado publique la cita al aspirante. Mientras tanto revisa su registro y el acta prellenada.
+            Podrás llenar el acta MTC-EC cuando el Departamento de Posgrado publique la cita al aspirante. Mientras tanto revisa su registro de admisión.
           </Aviso>
         ) : a.concluido && !a.dictamen ? (
           <Aviso tono="error" titulo="El proceso de este aspirante ya concluyó">
             {a.concluido}
           </Aviso>
-        ) : !acta || editando ? (
+        ) : llenando && (!acta || yoLaLlene) && !acta?.firmada ? (
           <FormularioActa
             a={a}
-            inicial={editando ? acta : undefined}
+            inicial={acta}
             onGuardar={(nueva) => {
-              firmar(a, { ...nueva, firmas: {} }, yo, true);
-              setEditando(false);
+              if (!guardarActa(a, nueva, yo)) setError("Otro profesor del sínodo ya llenó el acta.");
+              setLlenando(false);
             }}
-            onCancelar={editando ? () => setEditando(false) : undefined}
+            onCancelar={() => setLlenando(false)}
             yo={yo}
           />
+        ) : !acta ? (
+          <Tarjeta titulo="Acta de entrevista colegiada (MTC-EC)">
+            <p className="text-sm text-gray-600">
+              La llena <b>un solo profesor</b> del sínodo, durante o al terminar la entrevista. En cuanto alguien la llena, a los demás les aparece para
+              descargarla, imprimirla y firmarla.
+            </p>
+            <button type="button" className={`${botonPrimario} mt-4`} onClick={() => setLlenando(true)}>
+              <PenLine size={15} /> Llenar acta MTC-EC
+            </button>
+          </Tarjeta>
         ) : (
           <>
             {a.dictamen && (
               <Aviso tono={a.dictamen.resolucion === "Rechazado" ? "error" : "exito"} titulo={`Dictamen aplicado: ${a.dictamen.resolucion}`}>
-                El acta quedó firmada por los 3 sinodales el {fechaCorta(a.dictamen.registradoEl)}.{" "}
+                {acta.firmada
+                  ? `${nombreProfesor(acta.firmada.subidaPor)} subió el acta firmada por los 3 el ${fechaCorta(acta.firmada.el)}. `
+                  : `Registrado el ${fechaCorta(a.dictamen.registradoEl)}. `}
                 {a.dictamen.resolucion === "Rechazado" ? "El proceso del aspirante concluyó (RN-05)." : "El aspirante pasó a la fase de evaluación."}
               </Aviso>
             )}
-            <ActaVista a={a} />
             {!a.dictamen && (
-              <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white p-4">
-                <div className="text-sm text-gray-600">
-                  {estado === "Por firmar"
-                    ? "Revisa el acta. Al firmarla confirmas lo que registró el sínodo."
-                    : `Ya firmaste. Faltan ${3 - firmasActa(a)} firma(s) del sínodo.`}
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {puedeEditar && (
-                    <button type="button" className={botonSecundario} onClick={() => setEditando(true)}>
+              <Tarjeta titulo="Acta firmada por los 3 sinodales">
+                <ol className="list-decimal space-y-1 pl-5 text-sm text-gray-700">
+                  <li>
+                    {yoLaLlene ? "Tú llenaste el acta." : `La llenó ${nombreProfesor(acta.capturadaPor)}; ya no se puede llenar de nuevo.`} Descárgala e imprímela.
+                  </li>
+                  <li>Fírmenla los 3 profesores del sínodo.</li>
+                  <li>Súbela escaneada en PDF: el primero que la suba aplica el dictamen y se bloquea la subida para los demás.</li>
+                </ol>
+                <div className="mt-4 flex flex-wrap items-center gap-2">
+                  <DescargarActa a={a} />
+                  {yoLaLlene && (
+                    <button type="button" className={botonSecundario} onClick={() => setLlenando(true)}>
                       <Pencil size={14} /> Corregir acta
                     </button>
                   )}
-                  {estado === "Por firmar" && (
-                    <button type="button" className={botonPrimario} onClick={() => firmar(a, acta!, yo, false)}>
-                      <PenLine size={15} /> Firmar acta
-                    </button>
-                  )}
+                  <label className={`${botonPrimario} cursor-pointer`}>
+                    <Upload size={15} /> Subir acta firmada (PDF)
+                    <input type="file" accept="application/pdf" aria-label="Subir acta firmada" className="hidden" onChange={(e) => subir(e.target.files?.[0])} />
+                  </label>
                 </div>
-                <div className="w-full border-t border-dashed border-gray-300 pt-3">
+                {error && (
+                  <div className="mt-3">
+                    <Aviso tono="error" titulo={error} />
+                  </div>
+                )}
+                <div className="mt-4 border-t border-dashed border-gray-300 pt-3">
                   <button
                     type="button"
-                    onClick={() => simularFirmasRestantes(a)}
+                    onClick={() => subir({ name: `MTC-EC_${a.id}_firmada.pdf`, type: "application/pdf", size: 1000 })}
                     className="inline-flex items-center gap-1.5 rounded-full border border-gray-300 bg-white px-3 py-1 text-xs text-gray-700 hover:bg-gray-50"
                   >
-                    <Wand2 size={12} /> Solo cascarón: simular que firman los demás sinodales
+                    <Wand2 size={12} /> Solo cascarón: subir un acta firmada de ejemplo
                   </button>
                 </div>
-              </div>
+              </Tarjeta>
             )}
+            <ActaVista a={a} sinDescarga={!a.dictamen} />
           </>
         )}
+        {error && !acta && <Aviso tono="error" titulo={error} />}
       </div>
     </>
   );
@@ -248,7 +278,6 @@ function FormularioActa({ a, inicial, onGuardar, onCancelar, yo }: { a: Aspirant
       motivo: resolucion === "Aprobado" ? "" : motivo.trim(),
       capturadaPor: yo,
       capturadaEl: new Date().toISOString(),
-      firmas: {},
     });
   };
 
@@ -275,7 +304,7 @@ function FormularioActa({ a, inicial, onGuardar, onCancelar, yo }: { a: Aspirant
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-sm text-gray-600">
           {inicial ? "" : "La hoja 1 viene prellenada con el registro y el expediente del aspirante; confírmala o corrígela. "}Llena el acta durante o al terminar la
-          entrevista. Al guardarla quedará firmada por ti y se pedirá la firma de los otros dos sinodales.
+          entrevista. Al guardarla, los otros dos sinodales ya no podrán llenarla y les aparecerá para descargarla, imprimirla y firmarla.
         </p>
         <button type="button" onClick={ejemplo} className="inline-flex items-center gap-1.5 rounded-full border border-gray-300 bg-white px-3 py-1 text-xs text-gray-700 hover:bg-gray-50">
           <Wand2 size={12} /> Solo cascarón: llenar con datos de ejemplo
@@ -420,7 +449,7 @@ function FormularioActa({ a, inicial, onGuardar, onCancelar, yo }: { a: Aspirant
             </button>
           )}
           <button type="button" className={botonPrimario} disabled={!!faltan.length} onClick={guardar}>
-            <CheckCircle2 size={15} /> Guardar y firmar acta
+            <CheckCircle2 size={15} /> Guardar acta
           </button>
         </div>
       </div>

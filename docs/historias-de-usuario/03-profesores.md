@@ -10,7 +10,7 @@ Pueden participar los **profesores colegiados con nombramiento vigente** y los *
 **Como** profesor, **quiero** ver en mi inicio lo que me toca hacer, **para** no dejar pendientes entrevistas ni calificaciones.
 
 **Criterios de aceptación**
-- Veo indicadores: entrevistas por realizar, actas por firmar, calificaciones por capturar y entrevistas disponibles para elegir.
+- Veo indicadores: actas MTC-EC por llenar, actas por subir firmadas, calificaciones por capturar y entrevistas disponibles para elegir.
 - Veo las listas de entrevistas pendientes y de calificaciones por capturar, con acceso directo a cada una.
 
 **Referencias:** RF-10, RF-16
@@ -22,7 +22,7 @@ Pueden participar los **profesores colegiados con nombramiento vigente** y los *
 **Como** profesor, **quiero** ver solo las entrevistas en las que formo parte del sínodo, **para** prepararme.
 
 **Criterios de aceptación**
-- La lista muestra aspirante, fecha, hora, modalidad, sala, los integrantes del sínodo y el estado del acta (sínodo incompleto, esperando publicación, por realizar, por firmar, esperando firmas, dictaminada).
+- La lista muestra aspirante, fecha, hora, modalidad, sala, los integrantes del sínodo y el estado del acta (sínodo incompleto, esperando publicación, por llenar acta, por subir firmada, dictaminada).
 - El acta se puede llenar cuando el sínodo tiene 3 profesores **y** Posgrado ya publicó la entrevista al aspirante.
 - Si entro a una entrevista en la que no soy sínodo, el sistema me lo indica y no me deja llenar el acta.
 - En cada entrevista veo los datos principales del aspirante (procedencia, promedio, correo, documentos aprobados).
@@ -36,6 +36,7 @@ Pueden participar los **profesores colegiados con nombramiento vigente** y los *
 **Como** profesor del sínodo, **quiero** registrar las respuestas del aspirante durante la entrevista, **para** que queden en el acta oficial MTC-EC.
 
 **Criterios de aceptación**
+- El formulario del acta **solo aparece cuando pulso "Llenar acta MTC-EC"**.
 - Capturo:
   - tres áreas de interés para la tesis, en orden de preferencia y sin repetir;
   - si solicitará beca SECIHTI y si continuaría sin beca;
@@ -72,16 +73,17 @@ Pueden participar los **profesores colegiados con nombramiento vigente** y los *
 
 ---
 
-### HU-PR-05 · Firmar el acta y aplicar el dictamen
-**Como** profesor del sínodo, **quiero** firmar el acta en el sistema, **para** que el dictamen de la entrevista quede oficial cuando firmemos los tres.
+### HU-PR-05 · Subir el acta firmada por los 3 y aplicar el dictamen (cola)
+**Como** profesor del sínodo, **quiero** que el acta se maneje como cola entre los tres, **para** no duplicar el trabajo y que el dictamen quede oficial con el acta firmada.
 
 **Criterios de aceptación**
-- Al guardar el acta, queda firmada por quien la llenó; los otros dos profesores la revisan y la firman.
-- Quien la llenó puede corregirla mientras nadie más la haya firmado.
-- Con la **tercera firma**, el dictamen se aplica automáticamente:
+- El **primer** profesor del sínodo que llena el acta la bloquea: a los otros dos ya no les aparece la opción de llenarla, solo de **descargarla e imprimirla**.
+- Quien la llenó puede corregirla mientras no se haya subido firmada.
+- Los tres firman el acta impresa y cualquiera de ellos sube el **PDF firmado**; el **primero** que lo sube bloquea la subida para los demás (ven quién la subió y cuándo).
+- Al subir el acta firmada, el dictamen se aplica automáticamente:
   - **Aprobado** o **Con reservas**: el aspirante pasa a evaluación;
   - **Rechazado**: el proceso concluye (RN-05).
-- Al aplicarse el dictamen, se avisa al aspirante y se registra en la bitácora a nombre de cada profesor.
+- Al aplicarse el dictamen, se avisa al aspirante y queda en la bitácora a nombre de quien subió el acta.
 
 **Referencias:** RF-12 · RN-05, RN-07
 **Pantalla:** `/profesor/entrevistas/[id]`
@@ -92,7 +94,7 @@ Pueden participar los **profesores colegiados con nombramiento vigente** y los *
 **Como** profesor, **quiero** descargar el acta llenada sobre la plantilla oficial, **para** imprimirla o archivarla.
 
 **Criterios de aceptación**
-- El PDF contiene las dos hojas del formato MTC-EC con todos los datos capturados y los nombres de los entrevistadores, indicando quién firmó en SIGAP.
+- El PDF contiene las dos hojas del formato MTC-EC con todos los datos capturados y los nombres de los entrevistadores, listo para imprimirse y firmarse.
 - La descarga también está disponible para Posgrado.
 
 **Referencias:** RF-12
@@ -107,7 +109,7 @@ Pueden participar los **profesores colegiados con nombramiento vigente** y los *
 - Solo veo a los aspirantes inscritos en los grupos que imparto (el docente de cada grupo lo asigna Posgrado), con el horario y lugar de cada grupo.
 - El examen de admisión **no** lo califican los profesores: lo captura la Jefatura de Posgrado (HU-PG-22).
 - La calificación es de 0 a 10; el sistema indica si el área queda acreditada (mínima aprobatoria por área: 8.0, configurable por convocatoria).
-- Una vez capturada, se muestra como capturada con su fecha y ya no se edita.
+- Una vez capturada, se muestra con su fecha y la puedo **corregir hasta una semana después de la primera captura**, mientras Posgrado no publique el resultado; después ya no se edita.
 - Cuando todas las áreas de un aspirante están capturadas, el resultado queda listo "sin publicar" para Posgrado; el aspirante no lo ve todavía.
 
 **Referencias:** RF-16 · RN-08
@@ -131,14 +133,13 @@ Pueden participar los **profesores colegiados con nombramiento vigente** y los *
 
 ---
 
-### HU-PR-09 · Recibir el registro del aspirante y el acta prellenada
+### HU-PR-09 · Recibir el registro del aspirante
 **Como** profesor del sínodo, **quiero** recibir los documentos del aspirante en cuanto me integro a su entrevista, **para** prepararla.
 
 **Criterios de aceptación**
-- En la entrevista veo "Documentos del aspirante" con dos PDF:
-  - **Registro de admisión**: lo que el aspirante respondió en el primer formulario (formación, experiencia, motivos, intereses…);
-  - **Acta de entrevista colegiada (MTC-EC) prellenada**: la plantilla oficial con la hoja 1 llena con sus datos.
-- Los veo desde que elijo la entrevista, aunque el sínodo aún no esté completo.
+- En la entrevista veo "Documentos del aspirante" con el PDF del **Registro de admisión**: lo que el aspirante respondió en el primer formulario (formación, experiencia, motivos, intereses…).
+- La hoja 1 del acta MTC-EC se llena con sus datos hasta que elijo "Llenar acta MTC-EC" (HU-PR-04).
+- Lo veo desde que elijo la entrevista, aunque el sínodo aún no esté completo.
 
 **Referencias:** RF-10, RF-12
 **Pantalla:** `/profesor/entrevistas/[id]`

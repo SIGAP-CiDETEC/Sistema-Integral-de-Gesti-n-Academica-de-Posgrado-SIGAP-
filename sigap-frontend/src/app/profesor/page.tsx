@@ -17,8 +17,8 @@ export default function ProfesorInicio() {
   if (!cargado) return null;
   const yo = profesor?.id ?? "";
   const mias = entrevistasDe(aspirantes, yo);
-  const estados = mias.map((a) => ({ a, e: estadoEntrevistaProf(a, yo) }));
-  const porHacer = estados.filter((x) => x.e === "Por realizar" || x.e === "Por firmar");
+  const estados = mias.map((a) => ({ a, e: estadoEntrevistaProf(a) }));
+  const porHacer = estados.filter((x) => x.e === "Por llenar acta" || x.e === "Por subir firmada");
   const calif = capturasPendientes(aspirantes, yo, materias).filter((c) => !c.capturada);
 
   return (
@@ -26,8 +26,8 @@ export default function ProfesorInicio() {
       <PageHeader titulo="Profesor" subtitulo="Tu participación en el proceso de admisión a la Maestría en Tecnología de Cómputo" />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Kpi valor={estados.filter((x) => x.e === "Por realizar").length} etiqueta="Entrevistas por realizar" color="text-primary" href="/profesor/entrevistas" />
-        <Kpi valor={estados.filter((x) => x.e === "Por firmar").length} etiqueta="Actas MTC-EC por firmar" color="text-amber-700" href="/profesor/entrevistas" />
+        <Kpi valor={estados.filter((x) => x.e === "Por llenar acta").length} etiqueta="Actas MTC-EC por llenar" color="text-primary" href="/profesor/entrevistas" />
+        <Kpi valor={estados.filter((x) => x.e === "Por subir firmada").length} etiqueta="Actas por subir firmadas" color="text-amber-700" href="/profesor/entrevistas" />
         <Kpi valor={calif.length} etiqueta="Calificaciones por capturar" color="text-violet-700" href="/profesor/evaluacion" />
         <Kpi valor={entrevistasDisponibles(aspirantes, yo).filter((d) => !d.choque).length} etiqueta="Entrevistas disponibles para elegir" color="text-emerald-700" href="/profesor/entrevistas" />
       </div>
@@ -47,7 +47,7 @@ export default function ProfesorInicio() {
                   <span className="flex items-center gap-2">
                     <Etiqueta tono={TONO_ENTREVISTA_PROF[e]}>{e}</Etiqueta>
                     <Link href={`/profesor/entrevistas/${a.id}`} className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline">
-                      <PenLine size={14} /> {e === "Por firmar" ? "Firmar acta" : "Llenar acta"}
+                      <PenLine size={14} /> {e === "Por subir firmada" ? "Subir acta firmada" : "Llenar acta"}
                     </Link>
                   </span>
                 </li>

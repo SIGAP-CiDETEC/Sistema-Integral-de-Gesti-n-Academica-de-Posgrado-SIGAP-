@@ -21,7 +21,7 @@ export function faseSubdireccion(a: AspiranteP): FaseSub {
   if (a.concluido) return "concluido";
   if (a.etapa === "dictamen") {
     if (a.uteycv?.formalizadoEl) return "inscrito";
-    return a.resolucion === "Aceptado" || a.resolucion === "Condicionado" ? "admitido" : "comision";
+    return a.resolucion === "Aceptado" || a.resolucion === "Con reservas" ? "admitido" : "comision";
   }
   return a.etapa;
 }
@@ -32,7 +32,7 @@ export const nombreFase = (f: FaseSub) => FASES_SUBDIRECCION.find((x) => x.id ==
 export function cumpleFiltro(a: AspiranteP, filtro: string) {
   if (!filtro) return true;
   if (filtro === "proceso") return !a.concluido && !["admitido", "inscrito"].includes(faseSubdireccion(a));
-  if (filtro === "admitido") return a.resolucion === "Aceptado" || a.resolucion === "Condicionado";
+  if (filtro === "admitido") return a.resolucion === "Aceptado" || a.resolucion === "Con reservas";
   return faseSubdireccion(a) === filtro;
 }
 

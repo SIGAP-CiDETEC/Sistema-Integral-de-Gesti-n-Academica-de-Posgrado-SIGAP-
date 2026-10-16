@@ -61,72 +61,55 @@ export function ListaAspirantes({ faseInicial }: { faseInicial: string }) {
       </div>
 
       <section className="overflow-hidden rounded-xl border border-gray-200 bg-white">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[1080px] text-left text-sm">
-            <thead className="bg-gray-50 text-xs uppercase tracking-wide text-gray-500">
-              <tr>
-                <th className="px-5 py-2.5 font-medium">Aspirante</th>
-                <th className="px-3 py-2.5 font-medium">CURP</th>
-                <th className="px-3 py-2.5 font-medium">Contacto</th>
-                <th className="px-3 py-2.5 font-medium">Procedencia</th>
-                <th className="px-3 py-2.5 text-center font-medium">Promedio</th>
-                <th className="px-3 py-2.5 font-medium">Registro</th>
-                <th className="px-3 py-2.5 font-medium">Avance</th>
-                <th className="px-3 py-2.5 font-medium">Estado</th>
-                <th className="px-3 py-2.5 font-medium">Dictamen</th>
-                <th className="px-5 py-2.5" />
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {lista.map((a) => {
-                const p = progresoDe(a);
-                const proc = procedenciaSeparada(a.procedencia);
-                const dic = dictamenFinal(a);
-                return (
-                  <tr key={a.id} className="align-top">
-                    <td className="px-5 py-3">
-                      <p className="font-medium text-gray-900">{a.nombre}</p>
-                      <p className="font-mono text-xs text-gray-500">
-                        {a.id}
-                        {a.uteycv?.sicep && <span className="ml-1 text-emerald-700">· {a.uteycv.sicep}</span>}
-                      </p>
-                    </td>
-                    <td className="px-3 py-3 font-mono text-xs text-gray-700">{a.curp}</td>
-                    <td className="px-3 py-3 text-xs text-gray-700">
-                      <span className="block">{a.correo}</span>
-                      <span className="text-gray-500">{a.telefono}</span>
-                    </td>
-                    <td className="px-3 py-3 text-gray-700">
-                      <span className="block font-medium text-gray-900">{proc.institucion}</span>
-                      {proc.unidad && <span className="text-xs text-gray-500">{proc.unidad}</span>}
-                    </td>
-                    <td className="px-3 py-3 text-center text-gray-900">{a.promedio}</td>
-                    <td className="whitespace-nowrap px-3 py-3 text-xs text-gray-600">{fechaCorta(a.registradoEl)}</td>
-                    <td className="px-3 py-3">
-                      <Progreso pct={a.concluido ? 100 : p.pct} texto={a.concluido ? "Concluido" : p.texto} />
-                    </td>
-                    <td className="px-3 py-3">
-                      <EtiquetaBandeja b={bandejaDe(a)} />
-                    </td>
-                    <td className="px-3 py-3">{dic ? <Etiqueta tono={TONO_DICTAMEN[dic]}>{dic}</Etiqueta> : <span className="text-xs text-gray-400">—</span>}</td>
-                    <td className="px-5 py-3 text-right">
-                      <Link href={`/subdireccion/aspirantes/${a.id}`} className="font-medium text-primary hover:underline">
-                        Ver proceso
-                      </Link>
-                    </td>
-                  </tr>
-                );
-              })}
-              {!lista.length && (
-                <tr>
-                  <td colSpan={10} className="px-5 py-8 text-center text-gray-500">
-                    No hay aspirantes con ese filtro.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+        {/* Encabezado de columnas (solo en pantallas anchas; en pantallas chicas cada aspirante es una tarjeta) */}
+        <div className="hidden gap-4 bg-gray-50 px-5 py-2.5 text-xs font-medium uppercase tracking-wide text-gray-500 lg:grid lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1.2fr)_minmax(0,0.9fr)_minmax(0,1.3fr)_auto]">
+          <span>Aspirante</span>
+          <span>Contacto y procedencia</span>
+          <span>Avance</span>
+          <span>Estado y dictamen</span>
+          <span className="w-20" />
         </div>
+        <ul className="divide-y divide-gray-100 text-sm">
+          {lista.map((a) => {
+            const p = progresoDe(a);
+            const proc = procedenciaSeparada(a.procedencia);
+            const dic = dictamenFinal(a);
+            return (
+              <li key={a.id} data-aspirante={a.id} className="grid gap-3 px-5 py-4 sm:grid-cols-2 lg:items-start lg:gap-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1.2fr)_minmax(0,0.9fr)_minmax(0,1.3fr)_auto]">
+                <div className="min-w-0">
+                  <p className="font-medium text-gray-900">{a.nombre}</p>
+                  <p className="font-mono text-xs text-gray-500">
+                    {a.id}
+                    {a.uteycv?.sicep && <span className="ml-1 text-emerald-700">· {a.uteycv.sicep}</span>}
+                  </p>
+                  <p className="break-all font-mono text-xs text-gray-600">{a.curp}</p>
+                  <p className="mt-0.5 text-xs text-gray-500">
+                    Promedio <span className="font-medium text-gray-900">{a.promedio}</span> · Registro {fechaCorta(a.registradoEl)}
+                  </p>
+                </div>
+                <div className="min-w-0 text-xs text-gray-700">
+                  <span className="block break-all">{a.correo}</span>
+                  <span className="block text-gray-500">{a.telefono}</span>
+                  <span className="mt-1 block text-sm font-medium text-gray-900">{proc.institucion}</span>
+                  {proc.unidad && <span className="text-gray-500">{proc.unidad}</span>}
+                </div>
+                <div className="min-w-0">
+                  <Progreso pct={a.concluido ? 100 : p.pct} texto={a.concluido ? "Concluido" : p.texto} />
+                </div>
+                <div className="flex min-w-0 flex-wrap items-start gap-1.5">
+                  <EtiquetaBandeja b={bandejaDe(a)} />
+                  {dic ? <Etiqueta tono={TONO_DICTAMEN[dic]}>{dic}</Etiqueta> : <span className="text-xs text-gray-400">Sin dictamen</span>}
+                </div>
+                <div className="lg:w-20 lg:text-right">
+                  <Link href={`/subdireccion/aspirantes/${a.id}`} className="font-medium text-primary hover:underline">
+                    Ver proceso
+                  </Link>
+                </div>
+              </li>
+            );
+          })}
+          {!lista.length && <li className="px-5 py-8 text-center text-gray-500">No hay aspirantes con ese filtro.</li>}
+        </ul>
         <p className="border-t border-gray-100 px-5 py-2.5 text-xs text-gray-500">
           {lista.length} de {aspirantes.length} aspirante(s)
         </p>

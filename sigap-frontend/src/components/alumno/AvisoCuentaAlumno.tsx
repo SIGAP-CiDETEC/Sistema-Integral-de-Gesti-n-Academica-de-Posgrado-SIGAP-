@@ -18,7 +18,7 @@ export function AvisoCuentaAlumno() {
   const { cuenta } = useCuentaAlumno();
   const { concluido, resolucion } = useEstadoAdmision();
   const ruta = usePathname();
-  const aplica = !!cuenta && !concluido && (resolucion === "Aceptado" || resolucion === "Condicionado");
+  const aplica = !!cuenta && !concluido && (resolucion === "Aceptado" || resolucion === "Con reservas");
   if (!aplica || !DONDE.includes(ruta)) return null;
   return (
     <div className="mb-6 rounded-xl bg-guinda px-4 py-3 text-sm text-white">

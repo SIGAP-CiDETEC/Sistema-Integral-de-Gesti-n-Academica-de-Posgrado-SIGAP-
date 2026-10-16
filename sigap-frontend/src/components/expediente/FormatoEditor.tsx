@@ -15,6 +15,8 @@ import {
   Wand2,
   Sparkles,
   TriangleAlert,
+  Plus,
+  Trash2,
 } from "lucide-react";
 import { CAPTURAS_DEMO, REGISTRO_DEMO } from "@/lib/aspirante-datos";
 import {
@@ -110,6 +112,17 @@ export function FormatoEditor({ clave }: { clave: string }) {
       {validado && <p className="mb-4 rounded-lg bg-emerald-50 p-4 text-sm text-emerald-800">Formato validado por el personal. Puedes consultarlo y descargarlo; sus datos y archivos ya no se pueden modificar.</p>}
       {bloqueo && !firmado && !recibidos[f.clave] ? (
         <FormatoBloqueado motivo={bloqueo} />
+      ) : f.fase === "documentos" && exp.enviadoRevision && firmado ? (
+        // Ya se envió firmado con el expediente: no se puede modificar mientras Posgrado lo revisa
+        <section className="rounded-xl border border-gray-200 bg-white p-5 text-sm text-gray-700" data-formato-bloqueado>
+          <p className="flex items-center gap-2 font-medium text-gray-900">
+            <Lock size={16} /> Ya enviaste este formato firmado con tu expediente.
+          </p>
+          <p className="mt-2">No se puede modificar ni reemplazar mientras el Departamento de Posgrado revisa tu expediente.</p>
+          <p className="mt-2 text-xs text-emerald-700">
+            Archivo enviado: {firmado.nombre} · Se envió a: {f.destino}
+          </p>
+        </section>
       ) : f.llena === "asesor" ? (
         <DocumentoAsesor formato={f} />
       ) : !editable ? (
@@ -442,7 +455,8 @@ function CampoInput({
     );
   } else if (c.tipo === "tabla") {
     const cols = c.columnas ?? [];
-    const filas = Array.from({ length: Math.max(c.filas ?? 1, Array.isArray(valor) ? valor.length : 0) }, (_, i) => {
+    const guardadas = Array.isArray(valor) ? valor.length : 0;
+    const filas = Array.from({ length: Math.min(Math.max(c.filas ?? 1, guardadas), c.filasMax ?? c.filas ?? 1) }, (_, i) => {
       const celdas = (Array.isArray(valor) ? valor[i] ?? "" : "").split("\t");
       return cols.map((_, j) => celdas[j] ?? "");
     });
@@ -455,6 +469,9 @@ function CampoInput({
       });
       onChange(nuevas.map((f) => f.join("\t")));
     };
+    const maximo = c.filasMax ?? c.filas ?? 1;
+    const agregar = () => onChange([...filas.map((f) => f.join("\t")), ""]);
+    const quitar = (i: number) => onChange(filas.filter((_, k) => k !== i).map((f) => f.join("\t")));
     control = (
       <div className="overflow-x-auto">
         <table className="w-full min-w-[640px] border-collapse text-sm">
@@ -467,6 +484,7 @@ function CampoInput({
                   {col.requerida && <span className="text-red-600"> *</span>}
                 </th>
               ))}
+              <th className="w-8" />
             </tr>
           </thead>
           <tbody>
@@ -487,14 +505,28 @@ function CampoInput({
                       />
                     </td>
                   ))}
+                  <td className="py-1 text-right">
+                    {i >= (c.filas ?? 1) && (
+                      <button type="button" aria-label={`Quitar fila ${i + 1}`} onClick={() => quitar(i)} className="rounded p-1.5 text-gray-400 hover:text-red-600">
+                        <Trash2 size={14} />
+                      </button>
+                    )}
+                  </td>
                 </tr>
               );
             })}
           </tbody>
         </table>
-        <button type="button" onClick={() => onChange([...filas.map((fila) => fila.join("\t")), cols.map(() => "").join("\t")])} className="mt-3 rounded-lg border border-primary px-3 py-2 text-sm font-medium text-primary hover:bg-indigo-50">
-          + Agregar materia
-        </button>
+        <div className="mt-2 flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={agregar}
+            disabled={filas.length >= maximo}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm text-primary hover:bg-indigo-50 disabled:opacity-50"
+          >
+            <Plus size={14} /> Agregar materia
+          </button>
+        </div>
         {filas.length > (c.filas ?? 1) && <p className="mt-2 text-xs text-gray-500">Las materias adicionales se incluirán en un anexo del mismo PDF.</p>}
       </div>
     );

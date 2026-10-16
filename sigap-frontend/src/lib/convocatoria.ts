@@ -13,6 +13,8 @@ export type ConfigConvocatoria = {
   nombre: string;
   inicio: string; // AAAA-MM-DD
   cierre: string;
+  /** Fecha de publicación de resultados de admisión (desde ese día Posgrado puede publicar la resolución del Colegio) */
+  resultados?: string;
   /** Ya no se usa: el estado se calcula con las fechas (se conserva por datos guardados antes) */
   activa?: boolean;
 };
@@ -41,8 +43,8 @@ export type ConfigConvocatorias = {
 export const IDS_CONVOCATORIA: IdConvocatoria[] = ["A", "B"];
 
 export const CONVOCATORIAS_DEFECTO: ConfigConvocatorias = {
-  A: { nombre: "Convocatoria de admisión A-27", inicio: "2026-10-05", cierre: "2026-11-20" },
-  B: { nombre: "Convocatoria de admisión B-27", inicio: "2027-04-05", cierre: "2027-05-21" },
+  A: { nombre: "Convocatoria de admisión A-27", inicio: "2026-10-05", cierre: "2026-11-20", resultados: "2027-01-15" },
+  B: { nombre: "Convocatoria de admisión B-27", inicio: "2027-04-05", cierre: "2027-05-21", resultados: "2027-07-09" },
   limiteMB: 5,
 };
 
@@ -150,3 +152,6 @@ export function useConvocatoria() {
     nombres: activas.map((c) => c.nombre).join(" y ") || "Sin convocatoria activa",
   };
 }
+
+/** Fecha de publicación de resultados de una convocatoria (la de la convocatoria o la de ejemplo). */
+export const fechaResultados = (c: ConfigConvocatorias, id: IdConvocatoria) => c[id].resultados || CONVOCATORIAS_DEFECTO[id].resultados || "";

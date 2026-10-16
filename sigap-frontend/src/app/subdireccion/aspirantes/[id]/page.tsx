@@ -17,7 +17,6 @@ import {
   puedeInscribirse,
   fechaCorta,
   fechaHora,
-  firmasActa,
   nombreArea,
   nombreProfesor,
   progresoDe,
@@ -131,7 +130,7 @@ export default function ProcesoAspirante({ params }: PageProps<"/subdireccion/as
                 <span className="block text-gray-500">Sínodo: {a.entrevista.sinodo.map(nombreProfesor).join(" · ")}</span>
                 {a.actaEntrevista && (
                   <span className="block text-gray-500">
-                    Acta MTC-EC: {firmasActa(a)} de 3 firmas{a.dictamen ? "" : " (el dictamen se aplica con las 3)"}
+                    Acta MTC-EC: {a.actaEntrevista.firmada ? "firmada por los 3 y subida" : "llenada; falta subirla firmada (con eso se aplica el dictamen)"}
                   </span>
                 )}
                 {a.dictamen && (
@@ -194,7 +193,7 @@ export default function ProcesoAspirante({ params }: PageProps<"/subdireccion/as
                 )}
               </>
             ) : (
-              "Se habilita al publicarse su resultado de admisión (Aceptado o Condicionado)."
+              "Se habilita al publicarse su resultado de admisión (Aceptado o Con reservas)."
             )}
           </Paso>
         </ol>

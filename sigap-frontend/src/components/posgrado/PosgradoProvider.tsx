@@ -53,11 +53,15 @@ export type ActaColegio = {
   resoluciones: Record<string, ResolucionColegio>;
   registradaEl: string;
   informeGeneradoEl?: string;
+  /** Cuándo se registraron las resoluciones del acta (aún no las ve el aspirante) */
+  resolucionRegistradaEl?: string;
+  /** Cuándo Posgrado publicó los resultados a los aspirantes (a partir de la fecha de la convocatoria) */
+  publicadoEl?: string;
 };
 
 type Estado = {
   cambios: Record<string, Partial<AspiranteP>>;
-  docs: Record<string, Record<string, { estado: EstadoDoc; observacion?: string; prorrogaHasta?: string; el?: string }>>;
+  docs: Record<string, Record<string, { estado: EstadoDoc; observacion?: string; prorrogaHasta?: string; el?: string; archivo?: string; resubido?: boolean }>>;
   bitacora: EntradaBitacora[];
   comunicados: Comunicado[];
   avisos: AvisoP[];
@@ -177,7 +181,9 @@ export function PosgradoProvider({ children }: { children: React.ReactNode }) {
               .at(-1) || a.ultimoMovimiento,
         };
       }
-      const cambios = estado.cambios[base.id] ?? {};
+      const cambios = { ...(estado.cambios[base.id] ?? {}) };
+      // Datos guardados antes de renombrar "Condicionado" a "Con reservas"
+      if ((cambios.resolucion as string) === "Condicionado") cambios.resolucion = "Con reservas";
       a = { ...a, ...cambios, evaluacion: { ...a.evaluacion, ...(cambios.evaluacion ?? {}) }, uteycv: { ...base.uteycv, ...cambios.uteycv } };
       // La decisión de la segunda oportunidad la toma el aspirante en su sesión
       if (base.enVivo && vivo.exp.evaluacion?.segundaOportunidad) a.evaluacion = { ...a.evaluacion, segundaOportunidad: vivo.exp.evaluacion.segundaOportunidad };
@@ -210,12 +216,12 @@ export function PosgradoProvider({ children }: { children: React.ReactNode }) {
           if (!o) return d;
           // El aspirante reemplazó el archivo después de la revisión: vuelve a "Por revisar"
           const subidoEl = base.enVivo ? vivo.exp.documentos?.[d.id]?.fecha : undefined;
-          if (subidoEl && o.el && subidoEl > o.el && o.estado !== "prorroga") return d;
+          if (subidoEl && o.el && subidoEl > o.el && o.estado !== "prorroga") return { ...d, resubido: o.estado === "observado" || undefined };
           // Prórroga: aplica aunque no haya archivo; si el aspirante ya lo subió, vuelve a revisión
           if (o.estado === "prorroga") return d.archivo ? { ...d, estado: "pendiente", prorrogaHasta: o.prorrogaHasta, observacion: "Entregado dentro de la prórroga" } : { ...d, ...o };
           if (d.estado === "falta") return d;
           // Ejemplo: documento con prórroga que "se entregó" (solo cascarón)
-          return { ...d, ...o, archivo: d.archivo ?? (o.estado === "pendiente" || o.estado === "aprobado" ? `${d.id}_entregado.pdf` : undefined) };
+          return { ...d, ...o, archivo: o.archivo ?? d.archivo ?? (o.estado === "pendiente" || o.estado === "aprobado" ? `${d.id}_entregado.pdf` : undefined) };
         });
       return a;
     });
@@ -273,7 +279,11 @@ export function PosgradoProvider({ children }: { children: React.ReactNode }) {
           registrar(
             {
               ...e,
-              docs: { ...e.docs, [id]: { ...e.docs[id], [docId]: { estado: estadoDoc, observacion, prorrogaHasta, el: new Date().toISOString() } } },
+              docs: {
+                ...e.docs,
+                // Conserva el archivo que el aspirante haya vuelto a subir
+                [id]: { ...e.docs[id], [docId]: { estado: estadoDoc, observacion, prorrogaHasta, el: new Date().toISOString(), archivo: e.docs[id]?.[docId]?.archivo } },
+              },
               cambios: { ...e.cambios, [id]: { ...e.cambios[id], ultimoMovimiento: new Date().toISOString() } },
             },
             `${verbo[estadoDoc]}${estadoDoc === "prorroga" ? " entregar" : ":"} ${doc?.nombre ?? docId}${observacion ? ` — “${observacion}”` : ""}`,

@@ -64,16 +64,3 @@ export function hoja1Prellenada(a: AspiranteP, r: Respuestas, capturas: Record<s
   };
 }
 
-/** Acta MTC-EC con solo la hoja 1 prellenada (para imprimir o revisar antes de la entrevista). */
-export const actaPrellenada = (hoja1: ActaEntrevista["hoja1"]): ActaEntrevista => ({
-  hoja1,
-  criterios: {},
-  proyeccion: "",
-  observaciones: "",
-  resolucion: "" as ActaEntrevista["resolucion"],
-  motivo: "",
-  capturadaPor: "",
-  capturadaEl: "",
-  firmas: {},
-});
-

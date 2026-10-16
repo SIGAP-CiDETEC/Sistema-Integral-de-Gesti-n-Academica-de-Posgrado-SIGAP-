@@ -20,6 +20,8 @@ export type DocAspirante = {
   opcional?: boolean;
   /** Fecha límite (AAAA-MM-DD) cuando tiene prórroga */
   prorrogaHasta?: string;
+  /** El aspirante lo volvió a subir después de una observación (queda pendiente de validar otra vez) */
+  resubido?: boolean;
 };
 
 export type Entrevista = {
@@ -55,7 +57,8 @@ export type CriterioActa = (typeof CRITERIOS_ACTA)[number]["id"];
 /**
  * Acta de entrevista colegiada (MTC-EC) que llena el sínodo en la sesión de Profesor.
  * Hoja 1: lo que responde el aspirante en la entrevista. Hoja 2: conclusiones del sínodo.
- * El dictamen se aplica cuando firman los 3 profesores del sínodo.
+ * Funciona como una cola: el primer profesor del sínodo que la llena la bloquea para los demás; todos la descargan,
+ * la imprimen y la firman en papel; el primero que sube el PDF firmado por los 3 aplica el dictamen y bloquea la subida.
  */
 export type ActaEntrevista = {
   hoja1: {
@@ -78,8 +81,10 @@ export type ActaEntrevista = {
   motivo: string;
   capturadaPor: string;
   capturadaEl: string;
-  /** id de profesor → fecha de firma */
-  firmas: Record<string, string>;
+  /** Acta impresa y firmada por los 3 sinodales que subió uno de ellos (con esto se aplica el dictamen) */
+  firmada?: { archivo: string; subidaPor: string; el: string };
+  /** Firmas en el sistema de versiones anteriores del cascarón (ya no se usan) */
+  firmas?: Record<string, string>;
 };
 /** El sínodo se integra con 3 profesores; los lugares libres los eligen los propios profesores. */
 export const LUGARES_SINODO = 3;
@@ -95,8 +100,10 @@ export const TONO_PASO_ENTREVISTA: Record<PasoEntrevista, string> = {
   "Lista para publicar": "bg-sky-50 text-sky-800",
   "Publicada al aspirante": "bg-emerald-50 text-emerald-700",
 };
-export const firmasActa = (a: { actaEntrevista?: ActaEntrevista; entrevista?: Entrevista }) =>
-  (a.entrevista?.sinodo ?? []).filter((p) => !!a.actaEntrevista?.firmas[p]).length;
+/** Estado del acta MTC-EC: sin llenar → llenada (por subir firmada) → firmada (dictamen aplicado). */
+export type EstadoActa = "Sin llenar" | "Por subir firmada" | "Firmada";
+export const estadoActa = (a: { actaEntrevista?: ActaEntrevista }): EstadoActa =>
+  !a.actaEntrevista ? "Sin llenar" : a.actaEntrevista.firmada ? "Firmada" : "Por subir firmada";
 
 /** Áreas que se califican en el propedéutico y en el examen de admisión. */
 export type AreaEvalId = "matematicas" | "programacion";
@@ -127,7 +134,14 @@ export type EvaluacionP = {
   /** Calificaciones que captura cada profesor por área antes de integrar el resultado */
   capturas?: Partial<Record<"propedeutico" | "examen", Partial<Record<AreaEvalId, CapturaArea>>>>;
 };
-export type CapturaArea = { calificacion: number; por: string; el: string };
+/** el = última captura; primeraEl = primera captura (desde ahí corre la semana para poder corregirla). */
+export type CapturaArea = { calificacion: number; por: string; el: string; primeraEl?: string };
+
+/** Días que tiene quien captura para corregir una calificación (desde la primera captura). */
+export const DIAS_EDICION_CALIFICACION = 7;
+export const limiteEdicion = (c: CapturaArea) => new Date(new Date(c.primeraEl ?? c.el).getTime() + DIAS_EDICION_CALIFICACION * 86_400_000);
+/** Se puede corregir hasta una semana después de la primera captura y mientras el resultado no se publique. */
+export const puedeEditarCaptura = (c: CapturaArea | undefined, publicado: boolean, ahora = new Date()) => !!c && !publicado && ahora <= limiteEdicion(c);
 
 /** Calificación mínima aprobatoria por área (ejemplo; se configura por convocatoria). */
 export const MINIMA_AREA = 8;
@@ -138,6 +152,19 @@ export function evaluacionPendiente(e: EvaluacionP): { tipo: "propedeutico" | "e
   if (e.modalidad === "propedeutico" && !e.propedeutico) return { tipo: "propedeutico", areas: AREAS_EVAL.map((x) => x.id), esSegunda: false };
   if (e.modalidad === "examen" && !e.examen) return { tipo: "examen", areas: AREAS_EVAL.map((x) => x.id), esSegunda: false };
   if (e.segundaOportunidad?.decision === "examen" && !e.examen) return { tipo: "examen", areas: e.segundaOportunidad.areas, esSegunda: true };
+  return null;
+}
+
+/**
+ * Evaluación cuyas calificaciones se capturan o todavía se pueden corregir: la pendiente o, si ya se integró
+ * el resultado, la que aún no publica Posgrado.
+ */
+export function evaluacionEnCaptura(e: EvaluacionP): { tipo: "propedeutico" | "examen"; areas: AreaEvalId[]; esSegunda: boolean } | null {
+  const pend = evaluacionPendiente(e);
+  if (pend) return pend;
+  if (e.examen && !e.examen.publicadoEl)
+    return { tipo: "examen", areas: (Object.keys(e.examen.areas ?? {}) as AreaEvalId[]).filter(Boolean), esSegunda: e.segundaOportunidad?.decision === "examen" };
+  if (e.propedeutico && !e.propedeutico.publicadoEl && !e.examen) return { tipo: "propedeutico", areas: AREAS_EVAL.map((x) => x.id), esSegunda: false };
   return null;
 }
 
@@ -171,7 +198,7 @@ export function estadoEvaluacion(e: EvaluacionP): { t: string; tono: string } {
 export const areasReprobadas = (r?: ResultadoEval): AreaEvalId[] =>
   r?.areas ? (Object.entries(r.areas) as [AreaEvalId, ResultadoArea][]).filter(([, x]) => !x.acreditado).map(([k]) => k) : r && !r.acreditado ? AREAS_EVAL.map((a) => a.id) : [];
 
-export type ResolucionColegio = "Aceptado" | "Condicionado" | "No aceptado";
+export type ResolucionColegio = "Aceptado" | "Con reservas" | "No aceptado";
 
 export type Prioridad = "Alta" | "Media" | "Normal";
 export type Dedicacion = "Tiempo completo" | "Tiempo parcial";
@@ -198,6 +225,10 @@ export type UteycvP = {
 };
 
 /** Fecha ISO de hace n días (para que los ejemplos tengan tiempos de espera realistas). */
+/** Aspirante de ejemplo con un documento observado (perfil aparte para mostrar el bloqueo de los demás documentos). */
+export const ID_EJEMPLO_OBSERVACION = "ASP-2026-050";
+export const OBSERVACION_EJEMPLO = "Falta la segunda hoja del certificado, donde aparece el promedio general. Escanea el certificado completo en un solo PDF.";
+
 const hace = (dias: number) => new Date(Date.now() - dias * 86_400_000).toISOString();
 /** Fecha AAAA-MM-DD dentro de n días. */
 export const enDias = (dias: number) => {
@@ -212,7 +243,11 @@ export type AspiranteP = {
   correo: string;
   telefono: string;
   procedencia: string;
+  /** Promedio que declaró el aspirante en su registro */
   promedio: string;
+  /** Promedio final de la carrera que captura Posgrado al aprobar el certificado de estudios */
+  promedioValidado?: string;
+  /** Fecha en que Posgrado validó el promedio final */
   promedioValidadoEl?: string;
   registradoEl: string;
   /** Último movimiento en su expediente (lo actualiza cualquier acción de Posgrado o del aspirante) */
@@ -272,7 +307,7 @@ const DOCS_BASE: { id: string; nombre: string; opcional?: boolean }[] = [
   { id: "identificacion", nombre: "Identificación oficial" },
 ];
 
-const docs = (estados: Partial<Record<string, EstadoDoc>>, obs: Record<string, string> = {}, prorroga: Record<string, string> = {}): DocAspirante[] =>
+const docs = (estados: Partial<Record<string, EstadoDoc>>, obs: Record<string, string> = {}, prorroga: Record<string, string> = {}, resubidos: string[] = []): DocAspirante[] =>
   DOCS_BASE.map((d) => {
     const estado = estados[d.id] ?? "aprobado";
     return {
@@ -281,6 +316,7 @@ const docs = (estados: Partial<Record<string, EstadoDoc>>, obs: Record<string, s
       archivo: estado === "falta" || estado === "prorroga" ? undefined : `${d.id}.pdf`,
       observacion: obs[d.id],
       prorrogaHasta: prorroga[d.id],
+      resubido: resubidos.includes(d.id) || undefined,
     };
   });
 
@@ -349,7 +385,7 @@ export const ASPIRANTES_BASE: AspiranteP[] = [
     ultimoMovimiento: hace(3),
     registradoEl: "2026-02-18",
     etapa: "documentos",
-    documentos: docs({ titulo: "pendiente", certificado: "pendiente", ingles: "pendiente", acta: "falta" }, { ingles: "Constancia de institución particular; Posgrado verifica el nivel." }),
+    documentos: docs({ titulo: "pendiente", certificado: "pendiente", ingles: "pendiente", acta: "falta" }, { ingles: "Constancia de institución particular; Posgrado verifica el nivel." }, {}, ["titulo"]),
     evaluacion: { grupos: {} },
     formatos: F(["sip-02"]),
   },
@@ -418,6 +454,22 @@ export const ASPIRANTES_BASE: AspiranteP[] = [
     entrevista: entrevistaDe("2026-03-19", "11:00", ["lh"]),
     evaluacion: { grupos: {} },
     formatos: F(["sip-02", "sip-05", "sip-06"]),
+  },
+  {
+    // Perfil de ejemplo (entra con ASP-2026-050): un documento observado y los demás aprobados o en revisión
+    id: ID_EJEMPLO_OBSERVACION,
+    nombre: "Mariana Torres Vidal",
+    curp: "TOVM980315MDFRDR04",
+    correo: "mariana.torres@correo.mx",
+    telefono: "5591234567",
+    procedencia: "IPN — UPIITA",
+    promedio: "8.9",
+    ultimoMovimiento: hace(1),
+    registradoEl: "2026-02-20",
+    etapa: "documentos",
+    documentos: docs({ certificado: "observado", identificacion: "pendiente" }, { certificado: OBSERVACION_EJEMPLO }),
+    evaluacion: { grupos: {} },
+    formatos: F(["sip-02"]),
   },
   {
     id: "ASP-2026-022",
@@ -578,7 +630,7 @@ export const ASPIRANTES_BASE: AspiranteP[] = [
     entrevista: entrevistaDe("2026-03-18", "09:00", ["mt", "er", "rm"]),
     dictamen: dictamenDe("Aprobado", "Buen proyecto."),
     evaluacion: { modalidad: "examen", grupos: {}, examen: { calificacion: 8.7, acreditado: true, registradoEl: "2026-06-08T14:00:00", publicadoEl: "2026-06-09T10:00:00", areas: { matematicas: { calificacion: 8.5, acreditado: true }, programacion: { calificacion: 8.9, acreditado: true } } } },
-    resolucion: "Condicionado",
+    resolucion: "Con reservas",
     turnadoUteycv: hace(9),
     formatos: F(["sip-02", "sip-05", "sip-06", "mtc-ec"]),
     uteycv: {
@@ -711,8 +763,8 @@ export function resultadoFinal(e: EvaluacionP): ResultadoEval | undefined {
   return e.examen ?? e.propedeutico;
 }
 
-/** Admitido por el Colegio (Aceptado o Condicionado): con eso concluye su proceso de admisión. */
-export const esAdmitido = (a: Pick<AspiranteP, "resolucion" | "concluido">) => !a.concluido && (a.resolucion === "Aceptado" || a.resolucion === "Condicionado");
+/** Admitido por el Colegio (Aceptado o Con reservas): con eso concluye su proceso de admisión. */
+export const esAdmitido = (a: Pick<AspiranteP, "resolucion" | "concluido">) => !a.concluido && (a.resolucion === "Aceptado" || a.resolucion === "Con reservas");
 
 // ---------- Inscripción (Control Escolar) ----------
 
