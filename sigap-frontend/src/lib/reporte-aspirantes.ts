@@ -4,16 +4,21 @@ import { descargarCsv, fechaArchivo, type CeldaCsv } from "./csv";
 import type { Respuestas } from "./registro-form";
 
 /** Dictamen final del proceso de admisión (resolución del Colegio de Profesores). */
-export type DictamenFinal = "Favorable" | "Con reservas" | "No favorable";
+export type DictamenFinal = "Aceptado" | "Condicionado" | "No aceptado";
 export const DICTAMEN_FINAL: Record<ResolucionColegio, DictamenFinal> = {
-  Aceptado: "Favorable",
-  "Con reservas": "Con reservas",
-  "No aceptado": "No favorable",
+  Aceptado: "Aceptado",
+  "Con reservas": "Condicionado",
+  "No aceptado": "No aceptado",
+};
+export const TEXTO_DICTAMEN_FINAL: Record<ResolucionColegio, string> = {
+  Aceptado: "Aceptado",
+  "Con reservas": "Condicionado al cumplimiento documental para proceder a su inscripción",
+  "No aceptado": "No aceptado, invitado a participar en los siguientes procesos de inscripción",
 };
 export const TONO_DICTAMEN: Record<DictamenFinal, string> = {
-  Favorable: "bg-emerald-50 text-emerald-700",
-  "Con reservas": "bg-amber-50 text-amber-800",
-  "No favorable": "bg-red-50 text-red-700",
+  Aceptado: "bg-emerald-50 text-emerald-700",
+  Condicionado: "bg-amber-50 text-amber-800",
+  "No aceptado": "bg-red-50 text-red-700",
 };
 export const dictamenFinal = (a: AspiranteP): DictamenFinal | undefined => (a.resolucion ? DICTAMEN_FINAL[a.resolucion] : undefined);
 
@@ -171,7 +176,6 @@ const ENCABEZADOS = [
   "3. Profesores entrevistadores",
   "3. Acta MTC-EC",
   "3. Dictamen de entrevista",
-  "3. Con reservas",
   "3. Motivo de las reservas",
   "¿Solicitará beca SECIHTI?",
   "¿Continuaría sin beca?",
@@ -186,8 +190,8 @@ const ENCABEZADOS = [
   // 5 · Resultados de la evaluación
   "5. Resultados de la evaluación",
   // 6 · Dictamen final
-  "6. Resolución del Colegio",
   "6. Dictamen final",
+  "6. Resolución del Colegio",
   "6. Con reservas",
   "6. Motivo de las reservas",
   "6. Día de publicación del resultado",
@@ -237,7 +241,6 @@ export function filaReporte(a: AspiranteP, registro: Respuestas = {}): CeldaCsv[
     e ? e.sinodo.map(nombreProfesor).join("; ") : "",
     acta?.firmada ? `Firmada y subida por ${nombreProfesor(acta.firmada.subidaPor)}` : acta ? `Llenada por ${nombreProfesor(acta.capturadaPor)} · falta subirla firmada` : a.dictamen ? "Registrada" : "",
     a.dictamen?.resolucion ?? "",
-    a.dictamen ? (a.dictamen.resolucion === "Con reservas" ? "Sí" : "No") : "",
     a.dictamen?.resolucion === "Con reservas" ? acta?.motivo || a.dictamen.comentarios : "",
     texto("becaSecihti", acta?.hoja1.becaSecihti ?? ""),
     texto("sinBeca", acta?.hoja1.sinBeca ?? ""),
@@ -249,7 +252,7 @@ export function filaReporte(a: AspiranteP, registro: Respuestas = {}): CeldaCsv[
     examen.promedio ?? "",
     promedioFinal(a) ?? "",
     resultados,
-    a.resolucion ?? "",
+    a.resolucion ? TEXTO_DICTAMEN_FINAL[a.resolucion] : "",
     dictamenFinal(a) ?? "",
     a.resolucion ? (a.resolucion === "Con reservas" ? "Sí" : "No") : "",
     a.resolucion === "Con reservas" ? a.motivoReservas ?? "" : "",

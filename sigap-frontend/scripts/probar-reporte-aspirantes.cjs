@@ -47,12 +47,22 @@ assert(!reporte.encabezados.includes('Hora de registro'));
 for (const nombre of ['5. Día de publicación del propedéutico', '5. Hora de publicación del propedéutico', '5. Día de publicación del examen', '5. Hora de publicación del examen']) assert(!reporte.encabezados.includes(nombre));
 assert.equal(valor('6. Hora de publicación del resultado'), '09:15');
 descargarReporteAspirantes([{ ...base, resolucion: 'Con reservas', motivoReservas: 'Entregar certificado', dictamen: { resolucion: 'Con reservas', comentarios: 'Reforzar programación' }, actaEntrevista: undefined }], () => ({ ...registro, becaSecihti: 'Sí', sinBeca: 'No' }));
-assert.equal(valor('3. Con reservas'), 'Sí');
+assert(!reporte.encabezados.includes('3. Con reservas'));
 assert.equal(valor('3. Motivo de las reservas'), 'Reforzar programación');
 assert.equal(valor('6. Con reservas'), 'Sí');
 assert.equal(valor('6. Motivo de las reservas'), 'Entregar certificado');
 assert.equal(valor('¿Solicitará beca SECIHTI?'), 'Sí');
 assert.equal(valor('¿Continuaría sin beca?'), 'No');
+assert.equal(reporte.encabezados[51], '6. Resolución del Colegio', 'AZ debe contener la clasificación');
+for (const [resolucion, clasificacion, dictamen] of [
+  ['Aceptado', 'Aceptado', 'Aceptado'],
+  ['Con reservas', 'Condicionado', 'Condicionado al cumplimiento documental para proceder a su inscripción'],
+  ['No aceptado', 'No aceptado', 'No aceptado, invitado a participar en los siguientes procesos de inscripción'],
+]) {
+  descargarReporteAspirantes([{ ...base, resolucion }], () => registro);
+  assert.equal(reporte.filas[0][51], clasificacion);
+  assert.equal(valor('6. Dictamen final'), dictamen);
+}
 descargarReporteAspirantes(ASPIRANTES_BASE, () => registro);
 assert.equal(new Set(reporte.encabezados).size, reporte.encabezados.length);
 for (const fila of reporte.filas) assert.equal(fila.length, reporte.encabezados.length);
