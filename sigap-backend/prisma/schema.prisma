@@ -9,11 +9,87 @@ datasource db {
 
 enum EstadoPostulacion {
   BORRADOR
+  REGISTRO_INCOMPLETO
   ENVIADA
   EN_REVISION
   OBSERVADA
   VALIDADA
+  ENTREVISTA_PROGRAMADA
+  EN_EVALUACION
+  ESPERANDO_RESOLUCION
+  ADMITIDA
+  NO_ADMITIDA
+  CONCLUIDA
   RECHAZADA
+}
+
+enum EstadoDocumento {
+  PENDIENTE
+  APROBADO
+  OBSERVADO
+  PRORROGA
+}
+
+enum ModalidadEvaluacion {
+  PROPEDEUTICO
+  EXAMEN
+}
+
+enum TipoResultadoEvaluacion {
+  PROPEDEUTICO
+  EXAMEN
+}
+
+enum AreaEvaluacion {
+  MATEMATICAS
+  PROGRAMACION
+}
+
+enum ResolucionEntrevista {
+  APROBADO
+  CON_RESERVAS
+  RECHAZADO
+}
+
+enum ResolucionColegio {
+  ACEPTADO
+  CONDICIONADO
+  NO_ACEPTADO
+}
+
+enum ModalidadEntrevista {
+  PRESENCIAL
+  EN_LINEA
+}
+
+enum ModalidadCurso {
+  PRESENCIAL
+  EN_LINEA
+  MIXTA
+}
+
+enum DiaSemana {
+  LUNES
+  MARTES
+  MIERCOLES
+  JUEVES
+  VIERNES
+  SABADO
+}
+
+enum TipoNombramientoProfesor {
+  COLEGIADO
+  ASIGNATURA
+}
+
+enum DecisionSegundaOportunidad {
+  EXAMEN
+  NO_PRESENTAR
+}
+
+enum DedicacionInscripcion {
+  TIEMPO_COMPLETO
+  TIEMPO_PARCIAL
 }
 
 enum TipoRecordatorio {
@@ -38,26 +114,37 @@ enum EstadoRecordatorio {
 
 model Aspirante {
   id                String         @id @default(cuid())
+  idTemporal        String?        @unique
   nombres           String
   apellidoPaterno   String
   apellidoMaterno   String?
+  curp              String?        @unique
   correo            String         @unique
   telefono          String?
+  sip02CompletadoEn DateTime?
   postulaciones     Postulacion[]
   creadoEn          DateTime       @default(now())
   actualizadoEn     DateTime       @updatedAt
 }
 
 model Convocatoria {
-  id                String         @id @default(cuid())
-  nombre            String
-  descripcion       String?
-  fechaInicio       DateTime
-  fechaFin          DateTime
-  activa            Boolean        @default(false)
-  postulaciones     Postulacion[]
-  creadoEn          DateTime       @default(now())
-  actualizadoEn     DateTime       @updatedAt
+  id                    String                    @id @default(cuid())
+  clave                 String
+  nombre                String
+  descripcion           String?
+  fechaInicio           DateTime
+  fechaFin              DateTime
+  activa                Boolean                   @default(false)
+  limiteArchivoMB       Int                       @default(5)
+  calendarioImagenUrl   String?
+  calendarioPublicadoEn DateTime?
+  postulaciones         Postulacion[]
+  configuracionEvaluacion ConfiguracionEvaluacion?
+  creadoEn              DateTime                  @default(now())
+  actualizadoEn         DateTime                  @updatedAt
+
+  @@unique([clave, nombre])
+  @@index([fechaInicio, fechaFin])
 }
 
 model Programa {
@@ -71,22 +158,27 @@ model Programa {
 }
 
 model Postulacion {
-  id                String                  @id @default(cuid())
-  folio             String                  @unique
-  aspiranteId       String
-  convocatoriaId    String
-  programaId        String
-  estado            EstadoPostulacion       @default(BORRADOR)
-  respuestasRegistro Json                   @default("{}")
-  enviadaEn         DateTime?
-  aspirante         Aspirante               @relation(fields: [aspiranteId], references: [id])
-  convocatoria      Convocatoria            @relation(fields: [convocatoriaId], references: [id])
-  programa          Programa                 @relation(fields: [programaId], references: [id])
-  documentos        DocumentoPostulacion[]
-  revisiones        RevisionDocumento[]
-  recordatorios     RecordatorioProgramado[]
-  creadoEn          DateTime                @default(now())
-  actualizadoEn     DateTime                @updatedAt
+  id                    String                    @id @default(cuid())
+  folio                 String                    @unique
+  aspiranteId           String
+  convocatoriaId        String
+  programaId            String
+  estado                EstadoPostulacion         @default(BORRADOR)
+  respuestasRegistro    Json                      @default("{}")
+  enviadaEn             DateTime?
+  aspirante             Aspirante                 @relation(fields: [aspiranteId], references: [id])
+  convocatoria          Convocatoria              @relation(fields: [convocatoriaId], references: [id])
+  programa              Programa                  @relation(fields: [programaId], references: [id])
+  documentos            DocumentoPostulacion[]
+  revisiones            RevisionDocumento[]
+  entrevista            Entrevista?
+  eleccionEvaluacion    EleccionEvaluacion?
+  resultadosEvaluacion  ResultadoEvaluacion[]
+  resolucionColegio     RegistroResolucionColegio?
+  inscripcion           Inscripcion?
+  recordatorios         RecordatorioProgramado[]
+  creadoEn              DateTime                  @default(now())
+  actualizadoEn         DateTime                  @updatedAt
 
   @@index([aspiranteId])
   @@index([convocatoriaId, estado])
@@ -110,7 +202,9 @@ model DocumentoPostulacion {
   urlArchivo        String?
   tipoMime          String?
   tamanoBytes       Int?
-  estado            EstadoPostulacion   @default(BORRADOR)
+  estado            EstadoDocumento    @default(PENDIENTE)
+  observacion       String?
+  prorrogaHasta     DateTime?
   postulacion       Postulacion         @relation(fields: [postulacionId], references: [id], onDelete: Cascade)
   catalogo          CatalogoDocumento   @relation(fields: [catalogoId], references: [id])
   revisiones        RevisionDocumento[]
@@ -118,39 +212,266 @@ model DocumentoPostulacion {
   actualizadoEn     DateTime            @updatedAt
 
   @@unique([postulacionId, catalogoId])
+  @@index([postulacionId, estado])
 }
 
 model RevisionDocumento {
-  id                    String                @id @default(cuid())
-  documentoId           String
-  postulacionId         String
-  revisor               String
-  estado                EstadoPostulacion
-  observaciones         String?
-  fechaRevision         DateTime              @default(now())
-  documento             DocumentoPostulacion  @relation(fields: [documentoId], references: [id], onDelete: Cascade)
-  postulacion           Postulacion            @relation(fields: [postulacionId], references: [id], onDelete: Cascade)
+  id              String                @id @default(cuid())
+  documentoId     String
+  postulacionId   String
+  revisor         String
+  estado          EstadoDocumento
+  observaciones   String?
+  fechaRevision   DateTime              @default(now())
+  documento       DocumentoPostulacion  @relation(fields: [documentoId], references: [id], onDelete: Cascade)
+  postulacion     Postulacion            @relation(fields: [postulacionId], references: [id], onDelete: Cascade)
 
   @@index([postulacionId, fechaRevision])
+  @@index([documentoId, fechaRevision])
+}
+
+model ConfiguracionEvaluacion {
+  id                    String              @id @default(cuid())
+  convocatoriaId        String              @unique
+  inicioPropedeutico    DateTime
+  finPropedeutico       DateTime
+  modalidadCurso        ModalidadCurso      @default(PRESENCIAL)
+  duracionPropedeutico  String
+  fechaExamen           DateTime
+  horaExamen            String
+  lugarExamen           String
+  calificacionMinima    Float               @default(8)
+  convocatoria          Convocatoria        @relation(fields: [convocatoriaId], references: [id], onDelete: Cascade)
+  materias              MateriaPropedeutica[]
+  creadoEn              DateTime            @default(now())
+  actualizadoEn         DateTime            @updatedAt
+}
+
+model MateriaPropedeutica {
+  id                    String                  @id @default(cuid())
+  configuracionId       String
+  clave                 String
+  nombre                String
+  configuracion         ConfiguracionEvaluacion @relation(fields: [configuracionId], references: [id], onDelete: Cascade)
+  grupos                GrupoPropedeutico[]
+
+  @@unique([configuracionId, clave])
+}
+
+model Profesor {
+  id                    String                  @id @default(cuid())
+  nombre                String
+  correo                String                  @unique
+  tipoNombramiento      TipoNombramientoProfesor
+  vigenteHasta          DateTime?
+  lineaInvestigacion    String?
+  grupos                GrupoPropedeutico[]
+  integracionesSinodo   IntegranteSinodo[]
+  firmasActa            FirmaActaEntrevista[]
+  calificaciones        CalificacionArea[]
+  creadoEn              DateTime                @default(now())
+  actualizadoEn         DateTime                @updatedAt
+}
+
+model GrupoPropedeutico {
+  id                    String              @id @default(cuid())
+  materiaId             String
+  clave                 String
+  lugar                 String?
+  docenteId             String?
+  materia               MateriaPropedeutica @relation(fields: [materiaId], references: [id], onDelete: Cascade)
+  docente               Profesor?           @relation(fields: [docenteId], references: [id])
+  sesiones              SesionGrupo[]
+  elecciones            GrupoElegido[]
+
+  @@unique([materiaId, clave])
+  @@index([docenteId])
+}
+
+model SesionGrupo {
+  id                    String             @id @default(cuid())
+  grupoId               String
+  dia                   DiaSemana
+  inicio                String
+  fin                   String
+  grupo                 GrupoPropedeutico  @relation(fields: [grupoId], references: [id], onDelete: Cascade)
+
+  @@unique([grupoId, dia, inicio, fin])
+}
+
+model EleccionEvaluacion {
+  id                          String                    @id @default(cuid())
+  postulacionId               String                    @unique
+  modalidad                   ModalidadEvaluacion
+  elegidaEn                   DateTime                  @default(now())
+  segundaOportunidad           DecisionSegundaOportunidad?
+  segundaOportunidadEn         DateTime?
+  areasSegundaOportunidad      Json?
+  postulacion                 Postulacion               @relation(fields: [postulacionId], references: [id], onDelete: Cascade)
+  grupos                      GrupoElegido[]
+}
+
+model GrupoElegido {
+  id                    String              @id @default(cuid())
+  eleccionId            String
+  materiaId             String
+  grupoId               String
+  eleccion              EleccionEvaluacion  @relation(fields: [eleccionId], references: [id], onDelete: Cascade)
+  materia               MateriaPropedeutica @relation(fields: [materiaId], references: [id], onDelete: Cascade)
+  grupo                 GrupoPropedeutico   @relation(fields: [grupoId], references: [id], onDelete: Cascade)
+
+  @@unique([eleccionId, materiaId])
+  @@index([grupoId])
+}
+
+model ResultadoEvaluacion {
+  id                    String                    @id @default(cuid())
+  postulacionId         String
+  tipo                  TipoResultadoEvaluacion
+  calificacion          Float?
+  acreditado            Boolean?
+  registradoEn          DateTime?
+  publicadoEn           DateTime?
+  postulacion           Postulacion               @relation(fields: [postulacionId], references: [id], onDelete: Cascade)
+  areas                 CalificacionArea[]
+
+  @@unique([postulacionId, tipo])
+  @@index([tipo, publicadoEn])
+}
+
+model CalificacionArea {
+  id                    String                    @id @default(cuid())
+  resultadoId           String
+  area                  AreaEvaluacion
+  calificacion          Float
+  acreditado            Boolean
+  profesorId            String?
+  capturadaEn           DateTime                  @default(now())
+  resultado             ResultadoEvaluacion       @relation(fields: [resultadoId], references: [id], onDelete: Cascade)
+  profesor              Profesor?                 @relation(fields: [profesorId], references: [id])
+
+  @@unique([resultadoId, area])
+  @@index([profesorId, capturadaEn])
+}
+
+model Entrevista {
+  id                    String                @id @default(cuid())
+  postulacionId         String                @unique
+  fechaHora             DateTime
+  modalidad             ModalidadEntrevista
+  sala                  String
+  horarioPublicadoEn    DateTime?
+  publicadaAspiranteEn  DateTime?
+  postulacion           Postulacion           @relation(fields: [postulacionId], references: [id], onDelete: Cascade)
+  sinodo                IntegranteSinodo[]
+  acta                  ActaEntrevista?
+  creadoEn              DateTime              @default(now())
+  actualizadoEn         DateTime              @updatedAt
+
+  @@index([fechaHora, publicadaAspiranteEn])
+}
+
+model IntegranteSinodo {
+  id                    String       @id @default(cuid())
+  entrevistaId          String
+  profesorId            String
+  elegidoEn             DateTime     @default(now())
+  firmadoEn             DateTime?
+  entrevista            Entrevista   @relation(fields: [entrevistaId], references: [id], onDelete: Cascade)
+  profesor              Profesor     @relation(fields: [profesorId], references: [id])
+
+  @@unique([entrevistaId, profesorId])
+  @@index([profesorId, firmadoEn])
+}
+
+model ActaEntrevista {
+  id                    String                 @id @default(cuid())
+  entrevistaId          String                 @unique
+  hoja1                 Json?
+  criterios             Json?
+  proyeccion            String?
+  observaciones         String?
+  resolucion            ResolucionEntrevista?
+  motivo                String?
+  capturadaPor          String?
+  capturadaEn           DateTime?
+  entrevista            Entrevista             @relation(fields: [entrevistaId], references: [id], onDelete: Cascade)
+  firmas                FirmaActaEntrevista[]
+  creadoEn              DateTime               @default(now())
+  actualizadoEn         DateTime               @updatedAt
+}
+
+model FirmaActaEntrevista {
+  id                    String          @id @default(cuid())
+  actaId                String
+  profesorId            String
+  firmadoEn             DateTime        @default(now())
+  acta                  ActaEntrevista  @relation(fields: [actaId], references: [id], onDelete: Cascade)
+  profesor              Profesor        @relation(fields: [profesorId], references: [id])
+
+  @@unique([actaId, profesorId])
+}
+
+model RegistroResolucionColegio {
+  id                    String             @id @default(cuid())
+  postulacionId         String             @unique
+  resolucion            ResolucionColegio
+  fechaSesion           DateTime?
+  numeroSesion          String?
+  registradaEn          DateTime           @default(now())
+  publicadaEn           DateTime?
+  registradaPor         String?
+  postulacion           Postulacion        @relation(fields: [postulacionId], references: [id], onDelete: Cascade)
+}
+
+model Inscripcion {
+  id                    String                @id @default(cuid())
+  postulacionId         String                @unique
+  dedicacion             DedicacionInscripcion?
+  sip08PublicadoEn       DateTime?
+  fotoRecibida           Boolean              @default(false)
+  sip01FirmadoEn         DateTime?
+  sip04FirmadoEn         DateTime?
+  sip05FirmadoEn         DateTime?
+  sip06FirmadoEn         DateTime?
+  sip08FirmadoEn         DateTime?
+  sicep                  String?              @unique
+  formalizadaEn          DateTime?
+  postulacion            Postulacion          @relation(fields: [postulacionId], references: [id], onDelete: Cascade)
+  documentosFirmados     DocumentoInscripcion[]
+  creadoEn               DateTime             @default(now())
+  actualizadoEn          DateTime             @updatedAt
+}
+
+model DocumentoInscripcion {
+  id                    String       @id @default(cuid())
+  inscripcionId         String
+  claveFormato          String
+  nombreArchivo         String
+  urlArchivo            String
+  recibidoEn            DateTime     @default(now())
+  inscripcion           Inscripcion  @relation(fields: [inscripcionId], references: [id], onDelete: Cascade)
+
+  @@unique([inscripcionId, claveFormato])
 }
 
 model RecordatorioProgramado {
-  id                  String             @id @default(cuid())
-  claveIdempotencia   String             @unique
-  postulacionId       String
-  tipo                TipoRecordatorio
-  canal               CanalRecordatorio
-  estado              EstadoRecordatorio @default(PENDIENTE)
-  eventoFecha         DateTime
-  programadoPara      DateTime
-  asunto              String
-  mensaje             String
-  intentos            Int                @default(0)
-  enviadoEn           DateTime?
-  ultimoError         String?
-  postulacion         Postulacion        @relation(fields: [postulacionId], references: [id], onDelete: Cascade)
-  creadoEn            DateTime           @default(now())
-  actualizadoEn       DateTime           @updatedAt
+  id                    String             @id @default(cuid())
+  claveIdempotencia     String             @unique
+  postulacionId         String
+  tipo                  TipoRecordatorio
+  canal                 CanalRecordatorio
+  estado                EstadoRecordatorio @default(PENDIENTE)
+  eventoFecha           DateTime
+  programadoPara        DateTime
+  asunto                String
+  mensaje               String
+  intentos              Int                @default(0)
+  enviadoEn             DateTime?
+  ultimoError           String?
+  postulacion           Postulacion        @relation(fields: [postulacionId], references: [id], onDelete: Cascade)
+  creadoEn              DateTime           @default(now())
+  actualizadoEn         DateTime           @updatedAt
 
   @@unique([postulacionId, tipo, canal, programadoPara])
   @@index([estado, programadoPara])
