@@ -30,6 +30,15 @@ enum EstadoDocumento {
   PRORROGA
 }
 
+enum EstadoFormato {
+  BORRADOR
+  GENERADO
+  PENDIENTE_FIRMA
+  FIRMADO
+  VALIDADO
+  OBSERVADO
+}
+
 enum ModalidadEvaluacion {
   PROPEDEUTICO
   EXAMEN
@@ -214,6 +223,7 @@ model Postulacion {
   programa              Programa                  @relation(fields: [programaId], references: [id])
   documentos            DocumentoPostulacion[]
   revisiones            RevisionDocumento[]
+  formatos              FormatoPostulacion[]
   entrevista            Entrevista?
   eleccionEvaluacion    EleccionEvaluacion?
   resultadosEvaluacion  ResultadoEvaluacion[]
@@ -486,6 +496,45 @@ model Inscripcion {
   documentosFirmados     DocumentoInscripcion[]
   creadoEn               DateTime             @default(now())
   actualizadoEn          DateTime             @updatedAt
+}
+
+model CatalogoFormato {
+  id                    String                @id @default(cuid())
+  clave                 String                @unique
+  codigo                String
+  nombre                String
+  fase                  String
+  llenaPor              String
+  destino               String
+  plantillaUrl          String?
+  definicion            Json?
+  oculto                Boolean               @default(false)
+  activo                Boolean               @default(true)
+  formatos              FormatoPostulacion[]
+  creadoEn              DateTime              @default(now())
+  actualizadoEn         DateTime              @updatedAt
+}
+
+model FormatoPostulacion {
+  id                    String          @id @default(cuid())
+  postulacionId         String
+  catalogoFormatoId     String
+  estado                EstadoFormato   @default(BORRADOR)
+  capturas              Json            @default("{}")
+  urlPdfGenerado        String?
+  urlPdfFirmado         String?
+  observaciones         String?
+  generadoEn            DateTime?
+  subidoEn              DateTime?
+  validadoEn            DateTime?
+  validadoPor           String?
+  postulacion           Postulacion     @relation(fields: [postulacionId], references: [id], onDelete: Cascade)
+  catalogoFormato       CatalogoFormato @relation(fields: [catalogoFormatoId], references: [id])
+  creadoEn              DateTime        @default(now())
+  actualizadoEn         DateTime        @updatedAt
+
+  @@unique([postulacionId, catalogoFormatoId])
+  @@index([postulacionId, estado])
 }
 
 model DocumentoInscripcion {
