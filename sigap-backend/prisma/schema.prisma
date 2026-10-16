@@ -112,6 +112,36 @@ enum EstadoRecordatorio {
   CANCELADO
 }
 
+enum AreaPersonal {
+  ASPIRANTES
+  PROFESORES
+  POSGRADO
+  UTEYCV
+  SUBDIRECCION
+  ADMINISTRADOR
+}
+
+enum CanalAviso {
+  CORREO
+  NOTIFICACION_SIGAP
+}
+
+enum TipoNotificacion {
+  SISTEMA
+  DOCUMENTO
+  ENTREVISTA
+  EVALUACION
+  RESULTADO
+  INSCRIPCION
+  RECORDATORIO
+}
+
+enum EstadoNotificacion {
+  PENDIENTE
+  ENVIADA
+  FALLIDA
+}
+
 model Aspirante {
   id                String         @id @default(cuid())
   idTemporal        String?        @unique
@@ -123,6 +153,7 @@ model Aspirante {
   telefono          String?
   sip02CompletadoEn DateTime?
   postulaciones     Postulacion[]
+  usuario           Usuario?
   creadoEn          DateTime       @default(now())
   actualizadoEn     DateTime       @updatedAt
 }
@@ -152,9 +183,21 @@ model Programa {
   nombre            String
   codigo            String?        @unique
   descripcion       String?
+  unidadAcademicaId String?
+  unidadAcademica   UnidadAcademica? @relation(fields: [unidadAcademicaId], references: [id])
   postulaciones     Postulacion[]
   creadoEn          DateTime       @default(now())
   actualizadoEn     DateTime       @updatedAt
+}
+
+model UnidadAcademica {
+  id                String    @id @default(cuid())
+  codigo            String?   @unique
+  nombre            String
+  institucion       String    @default("IPN")
+  programas         Programa[]
+  creadoEn          DateTime  @default(now())
+  actualizadoEn     DateTime  @updatedAt
 }
 
 model Postulacion {
@@ -270,6 +313,7 @@ model Profesor {
   integracionesSinodo   IntegranteSinodo[]
   firmasActa            FirmaActaEntrevista[]
   calificaciones        CalificacionArea[]
+  usuario               Usuario?
   creadoEn              DateTime                @default(now())
   actualizadoEn         DateTime                @updatedAt
 }
@@ -454,6 +498,138 @@ model DocumentoInscripcion {
   inscripcion           Inscripcion  @relation(fields: [inscripcionId], references: [id], onDelete: Cascade)
 
   @@unique([inscripcionId, claveFormato])
+}
+
+model Usuario {
+  id                    String                     @id @default(cuid())
+  nombre                String
+  correo                String                     @unique
+  identificadorAcceso   String?                    @unique
+  hashContrasena        String
+  area                  AreaPersonal
+  activo                Boolean                    @default(true)
+  aspiranteId           String?                    @unique
+  profesorId            String?                    @unique
+  aspirante             Aspirante?                 @relation(fields: [aspiranteId], references: [id])
+  profesor              Profesor?                  @relation(fields: [profesorId], references: [id])
+  roles                 UsuarioRol[]
+  notificaciones        Notificacion[]
+  avisosCreados         Aviso[]
+  comunicadosCreados    Comunicado[]
+  destinatarios         DestinatarioComunicado[]
+  creadoEn              DateTime                   @default(now())
+  actualizadoEn         DateTime                   @updatedAt
+
+  @@index([area, activo])
+}
+
+model Rol {
+  id                    String       @id @default(cuid())
+  nombre                String       @unique
+  descripcion           String?
+  esBase                Boolean      @default(false)
+  usuarios              UsuarioRol[]
+  permisos              RolPermiso[]
+  creadoEn              DateTime     @default(now())
+  actualizadoEn         DateTime     @updatedAt
+}
+
+model Permiso {
+  id                    String       @id @default(cuid())
+  clave                 String       @unique
+  descripcion           String?
+  roles                 RolPermiso[]
+}
+
+model UsuarioRol {
+  id                    String    @id @default(cuid())
+  usuarioId             String
+  rolId                 String
+  usuario               Usuario   @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  rol                   Rol       @relation(fields: [rolId], references: [id], onDelete: Cascade)
+  asignadoEn            DateTime  @default(now())
+
+  @@unique([usuarioId, rolId])
+  @@index([rolId])
+}
+
+model RolPermiso {
+  id                    String    @id @default(cuid())
+  rolId                 String
+  permisoId             String
+  rol                   Rol       @relation(fields: [rolId], references: [id], onDelete: Cascade)
+  permiso               Permiso   @relation(fields: [permisoId], references: [id], onDelete: Cascade)
+
+  @@unique([rolId, permisoId])
+  @@index([permisoId])
+}
+
+model Aviso {
+  id                    String        @id @default(cuid())
+  titulo                String
+  mensaje               String
+  publico               Boolean       @default(false)
+  areaDestinataria      AreaPersonal?
+  activo                Boolean       @default(true)
+  iniciaEn              DateTime?
+  terminaEn             DateTime?
+  publicadoEn           DateTime?
+  creadoPorId           String?
+  creadoPor             Usuario?      @relation(fields: [creadoPorId], references: [id])
+  creadoEn              DateTime      @default(now())
+  actualizadoEn         DateTime      @updatedAt
+
+  @@index([activo, iniciaEn, terminaEn])
+}
+
+model Notificacion {
+  id                    String             @id @default(cuid())
+  usuarioId             String
+  tipo                  TipoNotificacion
+  canal                 CanalAviso         @default(NOTIFICACION_SIGAP)
+  estado                EstadoNotificacion @default(PENDIENTE)
+  titulo                String
+  mensaje               String
+  referenciaEntidad     String?
+  referenciaId          String?
+  enviadaEn             DateTime?
+  leidaEn               DateTime?
+  ultimoError           String?
+  usuario               Usuario            @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  creadoEn              DateTime           @default(now())
+
+  @@index([usuarioId, leidaEn, creadoEn])
+  @@index([estado, creadoEn])
+  @@index([referenciaEntidad, referenciaId])
+}
+
+model Comunicado {
+  id                    String                    @id @default(cuid())
+  titulo                String
+  contenido             String
+  areaDestinataria      AreaPersonal?
+  publico               Boolean                   @default(false)
+  publicadoEn           DateTime?
+  creadoPorId           String?
+  creadoPor             Usuario?                  @relation(fields: [creadoPorId], references: [id])
+  destinatarios         DestinatarioComunicado[]
+  creadoEn              DateTime                  @default(now())
+  actualizadoEn         DateTime                  @updatedAt
+
+  @@index([publicadoEn, areaDestinataria])
+}
+
+model DestinatarioComunicado {
+  id                    String      @id @default(cuid())
+  comunicadoId          String
+  usuarioId             String
+  recibidoEn            DateTime    @default(now())
+  leidoEn               DateTime?
+  comunicado            Comunicado  @relation(fields: [comunicadoId], references: [id], onDelete: Cascade)
+  usuario               Usuario     @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@unique([comunicadoId, usuarioId])
+  @@index([usuarioId, leidoEn])
 }
 
 model RecordatorioProgramado {
