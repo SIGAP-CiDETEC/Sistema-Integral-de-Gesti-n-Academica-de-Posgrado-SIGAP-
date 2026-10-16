@@ -4,6 +4,7 @@ import Link from "next/link";
 import { use, useState } from "react";
 import { CalendarClock, CheckCircle2, Circle, FileText, History, Mail, ShieldAlert, Wand2, XCircle } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
+import { PromedioDefinitivo } from "@/components/posgrado/PromedioDefinitivo";
 import { usePosgrado } from "@/components/posgrado/PosgradoProvider";
 import { Aviso, EtiquetaBandeja, EtiquetaDoc, Migas, Tarjeta, botonPeligro, botonPrimario, botonSecundario, inputBase } from "@/components/posgrado/ui";
 import { ETAPAS } from "@/lib/admision";
@@ -89,6 +90,7 @@ export default function RevisionExpediente({ params }: PageProps<"/posgrado/aspi
         </ol>
       </div>
 
+      <PromedioDefinitivo key={a.id} a={a} />
       <div className="grid gap-6 xl:grid-cols-[1fr_380px]">
         <div className="space-y-6">
           {a.etapa === "registro" ? (

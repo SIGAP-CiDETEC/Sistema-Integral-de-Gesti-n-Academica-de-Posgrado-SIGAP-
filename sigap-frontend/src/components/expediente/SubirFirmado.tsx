@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { FileUp, Paperclip, Printer, Send, Trash2 } from "lucide-react";
 import { useConvocatoria } from "@/lib/convocatoria";
 import { useExpediente } from "./ExpedienteProvider";
+import { estaDocumentoValidado, useDocumentosValidados } from "@/lib/bloqueo-documentos";
 
 const kb = (b: number) => (b > 1024 * 1024 ? `${(b / 1024 / 1024).toFixed(1)} MB` : `${Math.round(b / 1024)} KB`);
 
@@ -14,9 +15,11 @@ export function SubirFirmado({ clave, habilitado, destino }: { clave: string; ha
   const input = useRef<HTMLInputElement>(null);
   const [error, setError] = useState("");
   const archivo = firmados[clave];
+  const bloqueado = useDocumentosValidados()(clave);
 
   function onArchivo(file: File | undefined) {
     if (!file) return;
+    if (estaDocumentoValidado(clave)) return setError("Este formato ya fue validado. No se puede reemplazar ni eliminar.");
     setError("");
     if (file.type !== "application/pdf") return setError("Sube el escaneo en formato PDF.");
     if (file.size > MAX_MB * 1024 * 1024) return setError(`Archivo demasiado pesado (${kb(file.size)}). Máximo ${MAX_MB} MB.`);
@@ -29,7 +32,7 @@ export function SubirFirmado({ clave, habilitado, destino }: { clave: string; ha
       <p className="mb-2 flex items-start gap-1.5 text-xs text-gray-500">
         <Printer size={13} className="mt-px shrink-0" /> Imprime, firma con tinta azul y escanéalo completo en un solo PDF (máx. {MAX_MB} MB).
       </p>
-      <input ref={input} type="file" accept="application/pdf" className="hidden" onChange={(e) => onArchivo(e.target.files?.[0])} />
+      <input ref={input} type="file" disabled={bloqueado} accept="application/pdf" className="hidden" onChange={(e) => onArchivo(e.target.files?.[0])} />
       {archivo ? (
         <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm">
           <p className="flex items-center gap-1.5 text-emerald-800">
@@ -38,20 +41,20 @@ export function SubirFirmado({ clave, habilitado, destino }: { clave: string; ha
           <p className="mt-1 flex items-center gap-1.5 text-xs text-emerald-700">
             <Send size={12} /> Enviado a: {destino}
           </p>
-          <div className="mt-2 flex gap-3 text-xs">
+          {bloqueado ? <p className="mt-2 text-xs font-medium text-gray-600">Validado por el personal. Archivo bloqueado.</p> : <div className="mt-2 flex gap-3 text-xs">
             <button type="button" onClick={() => input.current?.click()} className="text-gray-700 underline">
               Reemplazar
             </button>
             <button type="button" onClick={() => subirFirmado(clave, null)} className="flex items-center gap-1 text-gray-600 hover:text-red-600">
               <Trash2 size={12} /> Quitar
             </button>
-          </div>
+          </div>}
         </div>
       ) : (
         <>
           <button
             type="button"
-            disabled={!habilitado}
+            disabled={!habilitado || bloqueado}
             onClick={() => input.current?.click()}
             className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-white hover:bg-primary-hover disabled:cursor-not-allowed disabled:bg-gray-300"
           >

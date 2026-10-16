@@ -1,0 +1,33 @@
+const fs = require("node:fs");
+const assert = require("node:assert/strict");
+const ts = require("typescript");
+require.extensions[".ts"] = (m, f) => m._compile(ts.transpileModule(fs.readFileSync(f, "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020 } }).outputText, f);
+const { documentoValidado, cambiarArchivoProtegido } = require("../src/lib/bloqueo-documentos.ts");
+const { ID_TEMPORAL_DEMO } = require("../src/lib/cuenta-alumno.ts");
+const { ASPIRANTES_BASE } = require("../src/lib/posgrado/datos.ts");
+const { ENCABEZADOS, filaReporte } = require("../src/lib/reporte-aspirantes.ts");
+const { rellenarPdf } = require("../src/lib/pdf/rellenar.ts");
+const { PDFDocument } = require("pdf-lib");
+async function main() {
+  const original = { certificado: { nombre: "aprobado.pdf", fecha: "2026-10-10" } };
+  const estado = { docs: { [ID_TEMPORAL_DEMO]: { certificado: { estado: "aprobado" } } } };
+  const validado = documentoValidado(estado, "certificado");
+  assert.equal(validado, true);
+  assert.equal(cambiarArchivoProtegido(original, "certificado", { nombre: "nuevo.pdf", fecha: "2099-12-31" }, validado), original, "No se puede reemplazar ni invalidar la aprobación con la fecha del archivo");
+  assert.equal(cambiarArchivoProtegido(original, "certificado", null, validado), original, "No se puede eliminar un aprobado");
+  assert.equal(documentoValidado({ docs: { [ID_TEMPORAL_DEMO]: { certificado: { estado: "observado" } } } }, "certificado"), false);
+  assert.equal(cambiarArchivoProtegido(original, "certificado", null, false).certificado, undefined);
+  assert.equal(documentoValidado({ cambios: { [ID_TEMPORAL_DEMO]: { uteycv: { firmadosFinales: { "sip-01": { nombre: "final.pdf" } } } } } }, "sip-01"), true);
+  assert.equal(documentoValidado({ cambios: { [ID_TEMPORAL_DEMO]: { uteycv: { formalizadoEl: "2026-10-16" } } } }, "foto"), true);
+  assert.equal(documentoValidado(estado, "titulo"), false);
+  for (const a of ASPIRANTES_BASE) assert.equal(filaReporte(a).length, ENCABEZADOS.length, `Columnas del CSV: ${a.id}`);
+  const materias = Array.from({ length: 18 }, (_, i) => [`M${i + 1}`, `Materia adicional ${i + 1}`, "Docente de prueba", "CIDETEC"].join("\t"));
+  const bytes = await rellenarPdf("sip-01", fs.readFileSync("public/formatos/sip-01.pdf"), { valores: { nombre: "María", apellidoPaterno: "González", materias }, hoy: new Date() });
+  const pdf = await PDFDocument.load(bytes);
+  const plantilla = await PDFDocument.load(fs.readFileSync("public/formatos/sip-01.pdf"));
+  assert(pdf.getPageCount() > plantilla.getPageCount(), "Las materias adicionales deben generar anexos");
+  fs.mkdirSync("output/pdf", { recursive: true });
+  fs.writeFileSync("output/pdf/sip-01-materias-adicionales.pdf", bytes);
+  console.log("OK: bloqueo de reemplazo/borrado, aprobación de Posgrado y Control Escolar, reapertura observada, columnas CSV y SIP-01 con 18 materias.");
+}
+main().catch((error) => { console.error(error); process.exitCode = 1; });

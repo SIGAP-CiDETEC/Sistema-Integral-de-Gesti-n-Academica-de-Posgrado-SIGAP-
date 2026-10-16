@@ -34,7 +34,7 @@ export default function Comision() {
 
   const descargarInforme = () => {
     const filas = [
-      ["ID temporal", "Aspirante", "Procedencia", "Promedio", "Entrevista", "Modalidad", "Calificación", "Propuesta"],
+      ["ID aspirante", "Aspirante", "Procedencia", "Promedio", "Dictamen de entrevista", "Modalidad", "Calificación", "Dictamen final"],
       ...enComision.map((a) => [
         a.id,
         a.nombre,

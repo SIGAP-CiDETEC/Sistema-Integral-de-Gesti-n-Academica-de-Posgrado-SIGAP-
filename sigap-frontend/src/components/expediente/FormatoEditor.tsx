@@ -29,6 +29,7 @@ import {
 import { faseDe } from "@/lib/fases";
 import { generarPdfFormato } from "@/lib/pdf/cliente";
 import { useExpediente } from "./ExpedienteProvider";
+import { useDocumentosValidados } from "@/lib/bloqueo-documentos";
 import { FirmasOtros } from "./FirmasOtros";
 import { DocumentoAsesor } from "./DocumentoAsesor";
 import { SubirFirmado } from "./SubirFirmado";
@@ -43,6 +44,7 @@ import { TONOS, estadoFormato } from "./estadoFormato";
 export function FormatoEditor({ clave }: { clave: string }) {
   const f = formatoPorClave(clave)!;
   const exp = useExpediente();
+  const validado = useDocumentosValidados()(clave);
   const { ctx, firmados, documentos, cargado, confirmados, recibidos } = exp;
   const [pdf, setPdf] = useState<{ url: string; datos: string } | null>(null);
   const [generando, setGenerando] = useState(false);
@@ -105,6 +107,7 @@ export function FormatoEditor({ clave }: { clave: string }) {
         {cargado && <span className={`rounded-full px-3 py-1 text-xs font-medium ${TONOS[estado.tono]}`}>{estado.etiqueta}</span>}
       </header>
 
+      {validado && <p className="mb-4 rounded-lg bg-emerald-50 p-4 text-sm text-emerald-800">Formato validado por el personal. Puedes consultarlo y descargarlo; sus datos y archivos ya no se pueden modificar.</p>}
       {bloqueo && !firmado && !recibidos[f.clave] ? (
         <FormatoBloqueado motivo={bloqueo} />
       ) : f.llena === "asesor" ? (
@@ -141,11 +144,11 @@ export function FormatoEditor({ clave }: { clave: string }) {
             {Object.entries(secciones).map(([titulo, lista]) => (
               <section key={titulo} className="rounded-xl border border-gray-200 bg-white p-5">
                 <h2 className="font-semibold text-gray-900">{titulo}</h2>
-                <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                <fieldset disabled={validado} className="mt-4 grid gap-4 disabled:opacity-70 sm:grid-cols-2">
                   {lista.map((c) => (
                     <CampoInput key={c.id} campo={c} valor={resolver(c, ctx)} auto={exp.capturas[c.id] === undefined && !esVacio(resolver(c, ctx))} onChange={(v) => exp.capturar(c.id, v)} />
                   ))}
-                </div>
+                </fieldset>
               </section>
             ))}
 
@@ -218,7 +221,7 @@ export function FormatoEditor({ clave }: { clave: string }) {
         </div>
       )}
 
-      {editable && !bloqueo && <DemoFormato clave={f.clave} />}
+      {editable && !bloqueo && !validado && <DemoFormato clave={f.clave} />}
 
       {pdfUrl && (
         <section className="mt-6 overflow-hidden rounded-xl border border-gray-200 bg-white">
@@ -439,7 +442,7 @@ function CampoInput({
     );
   } else if (c.tipo === "tabla") {
     const cols = c.columnas ?? [];
-    const filas = Array.from({ length: c.filas ?? 1 }, (_, i) => {
+    const filas = Array.from({ length: Math.max(c.filas ?? 1, Array.isArray(valor) ? valor.length : 0) }, (_, i) => {
       const celdas = (Array.isArray(valor) ? valor[i] ?? "" : "").split("\t");
       return cols.map((_, j) => celdas[j] ?? "");
     });
@@ -489,6 +492,10 @@ function CampoInput({
             })}
           </tbody>
         </table>
+        <button type="button" onClick={() => onChange([...filas.map((fila) => fila.join("\t")), cols.map(() => "").join("\t")])} className="mt-3 rounded-lg border border-primary px-3 py-2 text-sm font-medium text-primary hover:bg-indigo-50">
+          + Agregar materia
+        </button>
+        {filas.length > (c.filas ?? 1) && <p className="mt-2 text-xs text-gray-500">Las materias adicionales se incluirán en un anexo del mismo PDF.</p>}
       </div>
     );
   } else if (c.tipo === "ranking") {

@@ -367,10 +367,9 @@ async function sip01(doc: PDFDocument, d: DatosPdf) {
   // Programa semestral: materias que anotó el aspirante (6 filas; clave, curso, profesor, unidad académica)
   const materias = (Array.isArray(d.valores.materias) ? d.valores.materias : [])
     .map((f) => f.split("\t"))
-    .filter((celdas) => celdas.some((x) => x.trim()))
-    .slice(0, 6);
+    .filter((celdas) => celdas.some((x) => x.trim()));
   const FILAS = [579.2, 596.9, 615.2, 632.9, 650.6, 668.2];
-  materias.forEach(([clave = "", curso = "", profesor = "", unidad = ""], i) => {
+  materias.slice(0, 6).forEach(([clave = "", curso = "", profesor = "", unidad = ""], i) => {
     const top = FILAS[i] + 12;
     // La clave va un carácter por casilla (8 casillas)
     const CASILLAS = [46.1, 54.3, 62.2, 70, 77.9, 86.1, 94.2, 103.4];
@@ -379,6 +378,34 @@ async function sip01(doc: PDFDocument, d: DatosPdf) {
     texto(c, profesor, 332, top, 108, 7);
     centrado(unidad, 443, 563, top, 7);
   });
+  if (materias.length > 6) {
+    const font = c.font;
+    let pagina = doc.addPage([612, 792]);
+    let top = 85;
+    const nuevaHoja = () => {
+      texto({ page: pagina, font, alto: 792 }, "SIP-01 | Anexo de materias", 48, 40, 516, 14);
+      texto({ page: pagina, font, alto: 792 }, [v("nombre"), v("apellidoPaterno"), v("apellidoMaterno")].filter(Boolean).join(" "), 48, 58, 516, 10);
+    };
+    nuevaHoja();
+    materias.slice(6).forEach((fila, i) => {
+      if (top + 90 > 735) { pagina = doc.addPage([612, 792]); nuevaHoja(); top = 80; }
+      [ `Materia ${i + 7}`, ...["Clave", "Curso", "Profesor", "Unidad académica"].map((label, j) => `${label}: ${fila[j] || "-"}`) ].forEach((linea) => {
+        const palabras = linea.split(/\s+/);
+        let renglon = "";
+        const escribir = () => {
+          if (top > 735) { pagina = doc.addPage([612, 792]); nuevaHoja(); top = 80; }
+          texto({ page: pagina, font, alto: 792 }, renglon, 48, top, 516, 10);
+          top += 15;
+        };
+        for (const palabra of palabras) {
+          if (renglon && font.widthOfTextAtSize(`${renglon} ${palabra}`, 10) > 516) { escribir(); renglon = ""; }
+          renglon = renglon ? `${renglon} ${palabra}` : palabra;
+        }
+        if (renglon) escribir();
+      });
+      top += 14;
+    });
+  }
   // Fecha
   centrado(String(d.hoy.getDate()), 91, 115, 776);
   centrado(String(d.hoy.getMonth() + 1).padStart(2, "0"), 122, 146, 776);

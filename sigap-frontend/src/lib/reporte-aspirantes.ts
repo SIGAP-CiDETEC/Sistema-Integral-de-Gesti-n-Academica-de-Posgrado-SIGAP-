@@ -63,7 +63,7 @@ export function calificacionesExamen(a: AspiranteP): Partial<Record<AreaEvalId, 
   return out;
 }
 
-const ENCABEZADOS = [
+export const ENCABEZADOS = [
   "ID temporal",
   "Número de registro (SICEP)",
   "Nombre",
@@ -81,9 +81,15 @@ const ENCABEZADOS = [
   "Modalidad de evaluación",
   ...AREAS_EVAL.map((x) => `Propedéutico: ${x.nombre}`),
   "Promedio de los 2 cursos propedéuticos",
-  "Calificación del examen",
-  "Dictamen",
+  ...AREAS_EVAL.map((x) => `Examen: ${x.nombre}`),
+  "Promedio del examen",
+  "Dictamen final",
   "Motivo de conclusión",
+  "Promedio definitivo validado el", "Documentos y estados", "Observaciones documentales", "Prórrogas",
+  "Fecha de entrevista", "Hora de entrevista", "Sala de entrevista", "Sínodo", "Firmas del acta de entrevista",
+  "Fecha de dictamen de entrevista", "Comentarios del dictamen de entrevista", "Grupos propedéuticos", "Segunda oportunidad",
+  "Publicación del propedéutico", "Publicación del examen", "Publicación del resultado de admisión",
+  "Formatos entregados", "Dedicación", "SIP-08 publicado el", "Inscripción formalizada el", "Último movimiento",
 ];
 
 export function filaReporte(a: AspiranteP): CeldaCsv[] {
@@ -108,9 +114,22 @@ export function filaReporte(a: AspiranteP): CeldaCsv[] {
     a.evaluacion.modalidad === "propedeutico" ? "Propedéutico" : a.evaluacion.modalidad === "examen" ? "Examen" : "",
     ...AREAS_EVAL.map((x) => prope[x.id] ?? ""),
     prope.promedio ?? "",
+    ...AREAS_EVAL.map((x) => examen[x.id] ?? ""),
     examen.promedio ?? "",
     dictamenFinal(a) ?? "",
     a.concluido ?? "",
+    a.promedioValidadoEl ?? "",
+    a.documentos.map((d) => `${d.nombre}: ${d.estado}`).join(" | "),
+    a.documentos.filter((d) => d.observacion).map((d) => `${d.nombre}: ${d.observacion}`).join(" | "),
+    a.documentos.filter((d) => d.prorrogaHasta).map((d) => `${d.nombre}: ${d.prorrogaHasta}`).join(" | "),
+    a.entrevista?.fecha ?? "", a.entrevista?.hora ?? "", a.entrevista?.sala ?? "", a.entrevista?.sinodo.join(" | ") ?? "",
+    Object.entries(a.actaEntrevista?.firmas ?? {}).map(([profesor, fecha]) => `${profesor}: ${fecha}`).join(" | "),
+    a.dictamen?.registradoEl ?? "", a.dictamen?.comentarios ?? "",
+    Object.entries(a.evaluacion.grupos).map(([area, grupo]) => `${area}: ${grupo}`).join(" | "),
+    a.evaluacion.segundaOportunidad?.decision ?? "",
+    a.evaluacion.propedeutico?.publicadoEl ?? "", a.evaluacion.examen?.publicadoEl ?? "", a.turnadoUteycv ?? "",
+    Object.entries(a.formatos).filter(([, entregado]) => entregado).map(([clave]) => clave).join(" | "),
+    a.dedicacion ?? "", a.uteycv?.sip08PublicadoEl ?? "", a.uteycv?.formalizadoEl ?? "", a.ultimoMovimiento,
   ];
 }
 

@@ -153,7 +153,8 @@ export default function CalificacionesJefatura() {
                   </th>
                 ))}
                 <th className="px-3 py-2.5 text-center font-medium">Promedio 2 cursos</th>
-                <th className="px-3 py-2.5 text-center font-medium">Examen</th>
+                {AREAS_EVAL.map((x) => <th key={`ex-${x.id}`} className="px-3 py-2.5 text-center font-medium">Examen: {x.id === "matematicas" ? "Matemáticas" : x.nombre}</th>)}
+                <th className="px-3 py-2.5 text-center font-medium">Promedio del examen</th>
                 <th className="px-5 py-2.5 font-medium">Estado</th>
               </tr>
             </thead>
@@ -179,6 +180,7 @@ export default function CalificacionesJefatura() {
                       </td>
                     ))}
                     <td className={`px-3 py-3 text-center font-semibold ${tono(p.promedio)}`}>{prope ? fmt(p.promedio) : "—"}</td>
+                    {AREAS_EVAL.map((x) => <td key={`ex-${x.id}`} className={`px-3 py-3 text-center ${tono(ex[x.id])}`}>{fmt(ex[x.id])}</td>)}
                     <td className={`px-3 py-3 text-center ${tono(ex.promedio)}`}>{fmt(ex.promedio)}</td>
                     <td className="px-5 py-3">
                       <Etiqueta tono={est.tono}>{est.t}</Etiqueta>
@@ -188,7 +190,7 @@ export default function CalificacionesJefatura() {
               })}
               {!lista.length && (
                 <tr>
-                  <td colSpan={8} className="px-5 py-8 text-center text-gray-500">
+                  <td colSpan={10} className="px-5 py-8 text-center text-gray-500">
                     No hay aspirantes con modalidad de evaluación elegida.
                   </td>
                 </tr>

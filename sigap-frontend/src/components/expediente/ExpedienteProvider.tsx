@@ -6,6 +6,8 @@ import type { Capturas, Contexto, Valor } from "@/lib/formatos";
 import { useSesionColegio } from "@/lib/posgrado/revision";
 import type { SegundaOportunidad } from "@/lib/posgrado/datos";
 import type { Respuestas } from "@/lib/registro-form";
+import { estaDocumentoValidado, cambiarArchivoProtegido } from "@/lib/bloqueo-documentos";
+import { FORMATOS_ASPIRANTE } from "@/lib/formatos";
 
 /**
  * Estado del expediente del aspirante en el navegador (solo cascarón).
@@ -129,34 +131,33 @@ export function ExpedienteProvider({ children }: { children: React.ReactNode }) 
       cargado,
       ctx,
       capturar: (id, valor) =>
-        actualizar((e) => ({
+        actualizar((e) => FORMATOS_ASPIRANTE.some((f) => estaDocumentoValidado(f.clave) && f.campos.some((c) => c.id === id)) ? e : ({
           ...e,
           capturas: { ...e.capturas, [id]: valor },
           borradores: {},
           // Si cambian los datos, los PDF firmados ya subidos quedan desactualizados
-          firmados: {},
+          firmados: Object.fromEntries(Object.entries(e.firmados).filter(([clave]) => estaDocumentoValidado(clave))),
         })),
       capturarVarios: (valores) =>
         actualizar((e) => {
           const capturas = { ...e.capturas };
           for (const [id, v] of Object.entries(valores)) {
+            if (FORMATOS_ASPIRANTE.some((f) => estaDocumentoValidado(f.clave) && f.campos.some((c) => c.id === id))) continue;
             if (v === undefined) delete capturas[id];
             else capturas[id] = v;
           }
-          return { ...e, capturas, firmados: {}, borradores: {} };
+          return { ...e, capturas, firmados: Object.fromEntries(Object.entries(e.firmados).filter(([clave]) => estaDocumentoValidado(clave))), borradores: {} };
         }),
       subirFirmado: (clave, archivo) =>
         actualizar((e) => {
-          const firmados = { ...e.firmados };
-          if (archivo) firmados[clave] = archivo;
-          else delete firmados[clave];
+          if (estaDocumentoValidado(clave)) return e;
+          const firmados = cambiarArchivoProtegido(e.firmados, clave, archivo, estaDocumentoValidado(clave));
           return { ...e, firmados };
         }),
       guardarDocumento: (id, archivo) =>
         actualizar((e) => {
-          const docs = { ...e.documentos };
-          if (archivo) docs[id] = archivo;
-          else delete docs[id];
+          if (estaDocumentoValidado(id)) return e;
+          const docs = cambiarArchivoProtegido(e.documentos, id, archivo, estaDocumentoValidado(id));
           return { ...e, documentos: docs, enviadoRevision: false };
         }),
       enviarRevision: () => actualizar((e) => ({ ...e, enviadoRevision: true })),
@@ -179,7 +180,7 @@ export function ExpedienteProvider({ children }: { children: React.ReactNode }) 
           else delete recibidos[clave];
           return { ...e, recibidos };
         }),
-      reiniciar: () => actualizar((e) => ({ ...e, ...INICIAL })),
+      reiniciar: () => actualizar((e) => FORMATOS_ASPIRANTE.some((f) => estaDocumentoValidado(f.clave)) || Object.keys({ ...e.documentos, ...e.firmados, ...e.recibidos }).some(estaDocumentoValidado) ? e : ({ ...e, ...INICIAL })),
     };
   }, [estado, cargado, actualizar, colegio]);
 
