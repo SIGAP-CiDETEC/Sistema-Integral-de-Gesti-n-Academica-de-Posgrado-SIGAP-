@@ -7,11 +7,11 @@ import { documentosDeFase } from "@/lib/documentos";
 import { ASPIRANTES_BASE } from "@/lib/posgrado/datos";
 import { registroSintetico } from "@/lib/registro-aspirante";
 import type { Capturas, Contexto, Valor } from "@/lib/formatos";
+import { FORMATOS_ASPIRANTE } from "@/lib/formatos";
+import { estaDocumentoValidado, cambiarArchivoProtegido } from "@/lib/bloqueo-documentos";
 import { useSesionColegio } from "@/lib/posgrado/revision";
 import type { SegundaOportunidad } from "@/lib/posgrado/datos";
 import type { Respuestas } from "@/lib/registro-form";
-import { estaDocumentoValidado, cambiarArchivoProtegido } from "@/lib/bloqueo-documentos";
-import { FORMATOS_ASPIRANTE } from "@/lib/formatos";
 
 /**
  * Estado del expediente del aspirante en el navegador (solo cascarón).
@@ -188,11 +188,13 @@ export function ExpedienteProvider({ children }: { children: React.ReactNode }) 
         // Perfil de ejemplo: la corrección de un documento observado le llega a Posgrado como "resubido"
         if (activo !== ID_EN_VIVO && archivo) avisarResubida(activo, ID_DOC_POSGRADO[id] ?? id, archivo);
         actualizar((e) => {
-          if (estaDocumentoValidado(id)) return e;
           const docs = { ...e.documentos };
           if (archivo) docs[id] = archivo;
           else delete docs[id];
-          return { ...e, documentos: docs, enviadoRevision: false };
+          // Una vez enviado el expediente sigue enviado: reemplazar un documento observado no lo regresa a borrador
+          return { ...e, documentos: docs };
+        });
+      },
       enviarRevision: () => actualizar((e) => ({ ...e, enviadoRevision: true })),
       guardarEvaluacion: (cambios) => actualizar((e) => ({ ...e, evaluacion: { ...e.evaluacion, ...cambios } })),
       confirmarDatos: (clave, confirmado) =>
@@ -213,7 +215,7 @@ export function ExpedienteProvider({ children }: { children: React.ReactNode }) 
           else delete recibidos[clave];
           return { ...e, recibidos };
         }),
-      reiniciar: () => actualizar((e) => FORMATOS_ASPIRANTE.some((f) => estaDocumentoValidado(f.clave)) || Object.keys({ ...e.documentos, ...e.firmados, ...e.recibidos }).some(estaDocumentoValidado) ? e : ({ ...e, ...INICIAL })),
+      reiniciar: () => actualizar((e) => Object.keys(e.firmados).some(estaDocumentoValidado) ? e : ({ ...e, ...INICIAL })),
     };
   }, [estado, cargado, actualizar, colegio, activo]);
 

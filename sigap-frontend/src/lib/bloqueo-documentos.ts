@@ -1,6 +1,6 @@
 "use client";
 import { useSyncExternalStore } from "react";
-import { ID_TEMPORAL_DEMO } from "./cuenta-alumno";
+import { ID_EN_VIVO, leerAspiranteActivo, useAspiranteActivo } from "./aspirante-activo";
 
 type RevisionLocal = { estado?: string };
 export type EstadoRevisionLocal = {
@@ -9,7 +9,7 @@ export type EstadoRevisionLocal = {
 };
 
 /** La aprobación no se invalida por cambiar la fecha del archivo. Solo el personal puede reabrirlo. */
-export function documentoValidado(estado: EstadoRevisionLocal, id: string, aspirante = ID_TEMPORAL_DEMO): boolean {
+export function documentoValidado(estado: EstadoRevisionLocal, id: string, aspirante = ID_EN_VIVO): boolean {
   const escolar = estado.cambios?.[aspirante]?.uteycv;
   return estado.docs?.[aspirante]?.[id]?.estado === "aprobado" || !!escolar?.formalizadoEl || !!escolar?.firmadosFinales?.[id];
 }
@@ -19,7 +19,7 @@ const leer = () => {
 function interpretar(raw: string | null): EstadoRevisionLocal {
   try { return raw ? JSON.parse(raw) : {}; } catch { return {}; }
 }
-export const estaDocumentoValidado = (id: string) => documentoValidado(interpretar(leer()), id);
+export const estaDocumentoValidado = (id: string) => documentoValidado(interpretar(leer()), id, leerAspiranteActivo());
 export function cambiarArchivoProtegido<T>(archivos: Record<string, T>, id: string, archivo: T | null, validado: boolean): Record<string, T> {
   if (validado) return archivos;
   const nuevos = { ...archivos };
@@ -33,7 +33,8 @@ const suscribir = (cb: () => void) => {
   return () => { window.removeEventListener("storage", cb); window.removeEventListener("sigap-posgrado", cb); };
 };
 export function useDocumentosValidados() {
+  const aspirante = useAspiranteActivo();
   const raw = useSyncExternalStore(suscribir, leer, () => null);
   const estado = interpretar(raw);
-  return (id: string) => documentoValidado(estado, id);
+  return (id: string) => documentoValidado(estado, id, aspirante);
 }

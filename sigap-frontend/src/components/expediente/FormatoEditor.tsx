@@ -527,7 +527,6 @@ function CampoInput({
             <Plus size={14} /> Agregar materia
           </button>
         </div>
-        {filas.length > (c.filas ?? 1) && <p className="mt-2 text-xs text-gray-500">Las materias adicionales se incluirán en un anexo del mismo PDF.</p>}
       </div>
     );
   } else if (c.tipo === "ranking") {

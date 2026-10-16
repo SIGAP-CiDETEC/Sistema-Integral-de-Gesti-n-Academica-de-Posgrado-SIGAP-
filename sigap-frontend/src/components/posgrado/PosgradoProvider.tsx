@@ -242,11 +242,7 @@ export function PosgradoProvider({ children }: { children: React.ReactNode }) {
         return a.enVivo ? vivo.registro : registroSintetico(a);
       },
       capturasDe: (id) => (aspirantes.find((x) => x.id === id)?.enVivo ? (vivo.exp.capturas ?? {}) : {}),
-      actualizar: (id, patch, accion) => {
-        if (patch.promedio !== undefined || patch.promedioValidadoEl) {
-          const a = aspirantes.find((x) => x.id === id);
-          if (!a?.documentos.some((d) => d.id === "certificado" && d.estado === "aprobado") || !Number.isFinite(Number(patch.promedio)) || Number(patch.promedio) < 6 || Number(patch.promedio) > 10) return;
-        }
+      actualizar: (id, patch, accion) =>
         guardar((e) =>
           registrar(
             {
@@ -264,8 +260,7 @@ export function PosgradoProvider({ children }: { children: React.ReactNode }) {
             accion,
             id,
           ),
-        );
-      },
+        ),
       marcarDoc: (id, docId, estadoDoc, observacion, prorrogaHasta) => {
         const doc = aspirantes.find((a) => a.id === id)?.documentos.find((d) => d.id === docId);
         const verbo: Record<EstadoDoc, string> = {

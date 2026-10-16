@@ -247,8 +247,6 @@ export type AspiranteP = {
   promedio: string;
   /** Promedio final de la carrera que captura Posgrado al aprobar el certificado de estudios */
   promedioValidado?: string;
-  /** Fecha en que Posgrado validó el promedio final */
-  promedioValidadoEl?: string;
   registradoEl: string;
   /** Último movimiento en su expediente (lo actualiza cualquier acción de Posgrado o del aspirante) */
   ultimoMovimiento: string;

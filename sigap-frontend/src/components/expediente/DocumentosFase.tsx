@@ -4,7 +4,6 @@ import { useRef, useState } from "react";
 import { AlertTriangle, CheckCircle2, FileUp, Info, Lock, Paperclip, RotateCcw, Send, Trash2, Upload, Wand2 } from "lucide-react";
 import { documentosDeFase, esRequerido, type Documento } from "@/lib/documentos";
 import type { FaseId } from "@/lib/fases";
-import { estaDocumentoValidado, useDocumentosValidados } from "@/lib/bloqueo-documentos";
 import { useRevisionDocs } from "@/lib/posgrado/revision";
 import { useConvocatoria } from "@/lib/convocatoria";
 import { ID_EN_VIVO, useAspiranteActivo } from "@/lib/aspirante-activo";
@@ -142,7 +141,6 @@ function FilaDocumento({ doc, requerido, hayObservaciones }: { doc: Documento; r
   const archivo = documentos[doc.id];
   const maxMB = Math.min(doc.maxMB, useConvocatoria().limiteMB);
   const rev = useRevisionDocs()[doc.id];
-  const validado = useDocumentosValidados()(doc.id);
   // Si volvió a subir el archivo después de la revisión, esa revisión ya no aplica
   const revision = rev && !(archivo && rev.el && archivo.fecha > rev.el && rev.estado !== "prorroga") ? rev : undefined;
   const acepta = doc.formatos === "pdf" ? "application/pdf" : "image/png,image/jpeg";
@@ -150,11 +148,10 @@ function FilaDocumento({ doc, requerido, hayObservaciones }: { doc: Documento; r
   // Todo lo demás queda bloqueado (sobre todo lo ya aprobado por Posgrado).
   const observado = rev?.estado === "observado";
   const puedeCambiar = observado || (rev?.estado === "prorroga" && !archivo) || (!enviadoRevision && !hayObservaciones && revision?.estado !== "aprobado");
-  const bloqueado = validado || !puedeCambiar;
+  const bloqueado = !puedeCambiar;
 
   async function onArchivo(file: File | undefined) {
     if (!file) return;
-    if (estaDocumentoValidado(doc.id)) return setError("El documento ya fue validado y no puede modificarse.");
     setError("");
     const tipoOk = doc.formatos === "pdf" ? file.type === "application/pdf" : /^image\/(png|jpeg)$/.test(file.type);
     if (!tipoOk) return setError(doc.formatos === "pdf" ? "El archivo debe ser PDF." : "La imagen debe ser JPG o PNG.");
@@ -182,7 +179,7 @@ function FilaDocumento({ doc, requerido, hayObservaciones }: { doc: Documento; r
         {archivo && (
           <p className="mt-2 flex items-center gap-1.5 text-xs text-emerald-700">
             <Paperclip size={13} /> {archivo.nombre} · {kb(archivo.bytes)}
-            {validado
+            {revision?.estado === "aprobado"
               ? " · Aprobado por Posgrado"
               : revision?.estado === "observado"
                 ? ""
@@ -214,21 +211,19 @@ function FilaDocumento({ doc, requerido, hayObservaciones }: { doc: Documento; r
           // eslint-disable-next-line @next/next/no-img-element -- vista previa local (data URL)
           <img src={archivo.dataUrl} alt="Vista previa" className="h-14 w-11 rounded border border-gray-200 object-cover" />
         )}
-        <input ref={input} type="file" accept={acepta} disabled={bloqueado} className="hidden" onChange={(e) => onArchivo(e.target.files?.[0])} />
+        <input ref={input} type="file" accept={acepta} className="hidden" onChange={(e) => onArchivo(e.target.files?.[0])} />
         {bloqueado ? (
           <span
             title={
-              validado
-                ? "Documento validado: no se puede reemplazar ni eliminar"
-                : revision?.estado === "aprobado"
-                  ? "Ya lo aprobó Posgrado: no se puede cambiar"
-                  : hayObservaciones
-                    ? "Solo puedes cambiar los documentos con observaciones"
-                    : "Tu expediente está en revisión"
+              revision?.estado === "aprobado"
+                ? "Ya lo aprobó Posgrado: no se puede cambiar"
+                : hayObservaciones
+                  ? "Solo puedes cambiar los documentos con observaciones"
+                  : "Tu expediente está en revisión"
             }
             className="flex items-center gap-1.5 rounded-lg bg-gray-100 px-3 py-2 text-sm text-gray-500"
           >
-            <Lock size={14} /> {validado ? "Validado" : "Bloqueado"}
+            <Lock size={14} /> {revision?.estado === "aprobado" ? "Aprobado" : "Bloqueado"}
           </span>
         ) : (
           <button

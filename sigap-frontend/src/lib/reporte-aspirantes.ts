@@ -110,6 +110,7 @@ const ORDEN_ETAPA = ["registro", "documentos", "entrevista", "evaluacion", "dict
 const paso = (a: AspiranteP, etapa: string) => ORDEN_ETAPA.indexOf(a.etapa) > ORDEN_ETAPA.indexOf(etapa);
 
 const ENCABEZADOS = [
+  // Datos del aspirante
   "ID temporal",
   "Número de registro (SICEP)",
   "Nombre",
@@ -151,34 +152,7 @@ const ENCABEZADOS = [
   // Situación actual
   "Fase actual",
   "Estado",
-  "ID temporal",
-  "Número de registro (SICEP)",
-  "Nombre",
-  "Fase actual",
-  "Estado",
-  "Entrevista colegiada",
-  "Modalidad de evaluación",
-  ...AREAS_EVAL.map((x) => `Propedéutico: ${x.nombre}`),
-  "Promedio de los 2 cursos propedéuticos",
-  ...AREAS_EVAL.map((x) => `Examen: ${x.nombre}`),
-  "Promedio del examen",
-  "Dictamen final",
   "Motivo de conclusión",
-  "Promedio definitivo validado el",
-  "Documentos y estados",
-  "Observaciones documentales",
-  "Prórrogas",
-  "Fecha de entrevista",
-  "Hora de entrevista",
-  "Sala de entrevista",
-  "Sínodo",
-  "Firmas del acta de entrevista",
-  "Motivo de conclusión",
-  "Promedio definitivo validado el", "Documentos y estados", "Observaciones documentales", "Prórrogas",
-  "Fecha de entrevista", "Hora de entrevista", "Sala de entrevista", "Sínodo", "Firmas del acta de entrevista",
-  "Fecha de dictamen de entrevista", "Comentarios del dictamen de entrevista", "Grupos propedéuticos", "Segunda oportunidad",
-  "Publicación del propedéutico", "Publicación del examen", "Publicación del resultado de admisión",
-  "Formatos entregados", "Dedicación", "SIP-08 publicado el", "Inscripción formalizada el", "Último movimiento",
 ];
 
 export function filaReporte(a: AspiranteP): CeldaCsv[] {
@@ -226,18 +200,6 @@ export function filaReporte(a: AspiranteP): CeldaCsv[] {
     nombreFase(faseSubdireccion(a)),
     bandejaDe(a),
     a.concluido ?? "",
-    a.promedioValidadoEl ?? "",
-    a.documentos.map((d) => `${d.nombre}: ${d.estado}`).join(" | "),
-    a.documentos.filter((d) => d.observacion).map((d) => `${d.nombre}: ${d.observacion}`).join(" | "),
-    a.documentos.filter((d) => d.prorrogaHasta).map((d) => `${d.nombre}: ${d.prorrogaHasta}`).join(" | "),
-    a.entrevista?.fecha ?? "", a.entrevista?.hora ?? "", a.entrevista?.sala ?? "", a.entrevista?.sinodo.join(" | ") ?? "",
-    Object.entries(a.actaEntrevista?.firmas ?? {}).map(([profesor, fecha]) => `${profesor}: ${fecha}`).join(" | "),
-    a.dictamen?.registradoEl ?? "", a.dictamen?.comentarios ?? "",
-    Object.entries(a.evaluacion.grupos).map(([area, grupo]) => `${area}: ${grupo}`).join(" | "),
-    a.evaluacion.segundaOportunidad?.decision ?? "",
-    a.evaluacion.propedeutico?.publicadoEl ?? "", a.evaluacion.examen?.publicadoEl ?? "", a.turnadoUteycv ?? "",
-    Object.entries(a.formatos).filter(([, entregado]) => entregado).map(([clave]) => clave).join(" | "),
-    a.dedicacion ?? "", a.uteycv?.sip08PublicadoEl ?? "", a.uteycv?.formalizadoEl ?? "", a.ultimoMovimiento,
   ];
 }
 

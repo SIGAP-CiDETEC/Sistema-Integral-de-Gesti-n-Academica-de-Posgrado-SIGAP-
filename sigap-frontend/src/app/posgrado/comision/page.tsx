@@ -194,12 +194,6 @@ function DictamenFinal() {
         r === "No aceptado" ? { resolucion: r, concluido: "No aceptado por el Colegio de Profesores" } : { resolucion: r, turnadoUteycv: new Date().toISOString() },
         `Publicó el resultado (acta ${acta?.numero}): ${r} · dictamen final ${DICTAMEN_FINAL[r]}${r === "No aceptado" ? "" : "; pasa a inscripción (UTEyCV)"}`,
       );
-    });
-  };
-        a.id,
-        r === "No aceptado" ? { resolucion: r, concluido: "No aceptado por el Colegio de Profesores" } : { resolucion: r, turnadoUteycv: new Date().toISOString() },
-        `Publicó el resultado (acta ${acta?.numero}): ${r} · dictamen final ${DICTAMEN_FINAL[r]}${r === "No aceptado" ? "" : "; pasa a inscripción (UTEyCV)"}`,
-      );
       const nom = a.nombre.split(" ")[0];
       enviarAviso(
         [a.id],

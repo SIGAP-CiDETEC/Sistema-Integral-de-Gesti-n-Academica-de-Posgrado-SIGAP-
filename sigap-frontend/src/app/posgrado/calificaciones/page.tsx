@@ -126,74 +126,12 @@ export default function CalificacionesJefatura() {
             </button>
           </div>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[1040px] text-left text-sm">
-            <thead className="bg-gray-50 text-xs uppercase tracking-wide text-gray-500">
-              <tr>
-                <th className="min-w-[200px] px-5 py-2.5 font-medium">Aspirante</th>
-                <th className="px-3 py-2.5 font-medium">Institución</th>
-                <th className="px-3 py-2.5 font-medium">Unidad académica</th>
-                {AREAS_EVAL.map((x) => (
-                  <th key={x.id} className="px-3 py-2.5 text-center font-medium">
-                    {x.id === "matematicas" ? "Matemáticas" : x.nombre}
-                  </th>
-                ))}
-                <th className="px-3 py-2.5 text-center font-medium">Promedio 2 cursos</th>
-                {AREAS_EVAL.map((x) => <th key={`ex-${x.id}`} className="px-3 py-2.5 text-center font-medium">Examen: {x.id === "matematicas" ? "Matemáticas" : x.nombre}</th>)}
-                <th className="px-3 py-2.5 text-center font-medium">Promedio del examen</th>
-                <th className="px-5 py-2.5 font-medium">Estado</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {lista.map((a) => {
-                const { institucion, unidad } = procedenciaSeparada(a.procedencia);
-                const p = calificacionesPropedeutico(a);
-                const ex = calificacionesExamen(a);
-                const est = estadoEvaluacion(a.evaluacion);
-                const prope = a.evaluacion.modalidad === "propedeutico";
-                return (
-                  <tr key={a.id} data-concentrado={a.id}>
-                    <td className="px-5 py-3">
-                      <p className="font-medium text-gray-900">{a.nombre}</p>
-                      <p className="font-mono text-xs text-gray-500">{a.id}</p>
-                    </td>
-                    <td className="px-3 py-3 text-gray-700">{institucion}</td>
-                    <td className="px-3 py-3 text-gray-700">{unidad || "—"}</td>
-                    {AREAS_EVAL.map((x) => (
-                      <td key={x.id} className={`px-3 py-3 text-center ${tono(p[x.id])}`}>
-                        {prope ? fmt(p[x.id]) : <span className="text-xs text-gray-400">Solo examen</span>}
-                        {prope && <span className="block text-[11px] text-gray-400">Grupo {a.evaluacion.grupos[x.id] ?? "—"}</span>}
-                      </td>
-                    ))}
-                    <td className={`px-3 py-3 text-center font-semibold ${tono(p.promedio)}`}>{prope ? fmt(p.promedio) : "—"}</td>
-                    {AREAS_EVAL.map((x) => <td key={`ex-${x.id}`} className={`px-3 py-3 text-center ${tono(ex[x.id])}`}>{fmt(ex[x.id])}</td>)}
-                    <td className={`px-3 py-3 text-center ${tono(ex.promedio)}`}>{fmt(ex.promedio)}</td>
-                    <td className="px-5 py-3">
-                      <Etiqueta tono={est.tono}>{est.t}</Etiqueta>
-                    </td>
-                  </tr>
-                );
-              })}
-              {!lista.length && (
-                <tr>
-                  <td colSpan={10} className="px-5 py-8 text-center text-gray-500">
-                    No hay aspirantes con modalidad de evaluación elegida.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-
         {/* Encabezado de columnas (solo en pantallas anchas; en celular cada aspirante es una tarjeta) */}
         <div className="hidden grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1fr)_6.5rem] gap-4 bg-gray-50 px-5 py-2.5 text-xs font-medium uppercase tracking-wide text-gray-500 lg:grid">
           <span>Aspirante y procedencia</span>
           <span>Propedéutico</span>
           <span>Examen</span>
           <span className="text-center">Promedio final</span>
-        </div>
-        <ul className="divide-y divide-gray-100">
-          {lista.map((a) => {
         </div>
         <ul className="divide-y divide-gray-100">
           {lista.map((a) => {
