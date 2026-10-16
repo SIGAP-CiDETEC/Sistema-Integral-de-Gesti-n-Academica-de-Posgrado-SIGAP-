@@ -14,7 +14,7 @@ const PRIORIDAD: Record<Prioridad, string> = { Alta: "bg-red-50 text-red-700", M
 
 /** Bandeja de aspirantes (RF-49): buscar, filtrar y abrir cada expediente. */
 export function BandejaAspirantes({ inicial, prioridadInicial }: { inicial?: string; prioridadInicial?: string }) {
-  const { aspirantes, cargado } = usePosgrado();
+  const { aspirantes, cargado, registroDe } = usePosgrado();
   const [q, setQ] = useState("");
   const [bandeja, setBandeja] = useState(inicial ?? "");
   const [etapa, setEtapa] = useState("");
@@ -44,7 +44,7 @@ export function BandejaAspirantes({ inicial, prioridadInicial }: { inicial?: str
         <p className="text-gray-600">
           Reporte para la Subdirección Académica: todos los aspirantes ({aspirantes.length}) con su procedencia, fase, estado, calificaciones y dictamen (CSV, se abre en Excel).
         </p>
-        <button type="button" className={botonSecundario} onClick={() => descargarReporteAspirantes(aspirantes)} disabled={!aspirantes.length}>
+        <button type="button" className={botonSecundario} onClick={() => descargarReporteAspirantes(aspirantes, registroDe)} disabled={!aspirantes.length}>
           <Download size={15} /> Descargar CSV de todos los aspirantes
         </button>
       </div>

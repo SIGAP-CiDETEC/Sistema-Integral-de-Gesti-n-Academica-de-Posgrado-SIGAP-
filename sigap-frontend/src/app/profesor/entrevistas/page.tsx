@@ -17,14 +17,14 @@ import {
   type EstadoEntrevistaProf,
 } from "@/lib/profesor";
 
-const ORDEN: EstadoEntrevistaProf[] = ["Por llenar acta", "Por subir firmada", "Esperando publicación", "Sínodo incompleto", "Dictaminada", "Concluida"];
+const ORDEN: EstadoEntrevistaProf[] = ["Por llenar acta", "Por subir firmada", "Esperando publicación", "Profesores entrevistadores incompletos", "Dictaminada", "Concluida"];
 
 const diaLargo = (iso: string) => {
   const t = new Date(`${iso}T12:00:00`).toLocaleDateString("es-MX", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
   return t.charAt(0).toUpperCase() + t.slice(1);
 };
 
-/** Entrevistas colegiadas: las que el profesor puede elegir (solo día y hora) y en las que ya forma parte del sínodo. */
+/** Entrevistas colegiadas: las que el profesor puede elegir (solo día y hora) y en las que ya forma parte de los profesores entrevistadores. */
 export default function MisEntrevistas() {
   const { aspirantes, cargado } = usePosgrado();
   const { profesor } = useProfesorActual();
@@ -43,7 +43,7 @@ export default function MisEntrevistas() {
 
       <Tarjeta titulo={<span className="flex items-center gap-2"><CalendarPlus size={17} className="text-primary" /> Entrevistas disponibles para elegir</span>} className="mb-6">
         <p className="mb-3 text-sm text-gray-600">
-          Posgrado programa el día y la hora; cada sínodo lo integran 3 profesores (colegiados o de asignatura). Al elegir una entrevista verás los datos del
+          Posgrado programa el día y la hora; en cada entrevista participan 3 profesores entrevistadores (colegiados o de asignatura). Al elegir una entrevista verás los datos del
           aspirante.
         </p>
         {disponibles.length ? (
@@ -80,14 +80,14 @@ export default function MisEntrevistas() {
       </Tarjeta>
 
       <section className="overflow-hidden rounded-xl border border-gray-200 bg-white">
-        <h2 className="border-b border-gray-100 px-5 py-3 font-semibold text-gray-900">Entrevistas en las que formas parte del sínodo</h2>
+        <h2 className="border-b border-gray-100 px-5 py-3 font-semibold text-gray-900">Entrevistas en las que formas parte de los profesores entrevistadores</h2>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[720px] text-left text-sm">
             <thead className="bg-gray-50 text-xs uppercase tracking-wide text-gray-500">
               <tr>
                 <th className="px-5 py-2.5 font-medium">Aspirante</th>
                 <th className="px-3 py-2.5 font-medium">Cita</th>
-                <th className="px-3 py-2.5 font-medium">Sínodo</th>
+                <th className="px-3 py-2.5 font-medium">Profesores entrevistadores</th>
                 <th className="px-3 py-2.5 font-medium">Acta</th>
                 <th className="px-5 py-2.5 text-right font-medium">Acción</th>
               </tr>
@@ -130,7 +130,7 @@ export default function MisEntrevistas() {
               {!lista.length && (
                 <tr>
                   <td colSpan={5} className="px-5 py-8 text-center text-gray-500">
-                    Aún no formas parte de ningún sínodo. Elige una entrevista de la lista de arriba.
+                    Aún no formas parte de ningún grupo de profesores entrevistadores. Elige una entrevista de la lista de arriba.
                   </td>
                 </tr>
               )}

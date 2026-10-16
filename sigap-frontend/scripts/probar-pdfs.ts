@@ -29,7 +29,6 @@ const capturas: Capturas = {
   licIngreso: "15/08/2016",
   licEgreso: "30/06/2021",
   fechaExamen: "10/07/2024",
-  cedula: "13579246",
   inglesHabilidades: ["Comprensión de lectura", "Expresión oral"],
   inglesAval: "Sí",
   becaSecihti: "Sí",

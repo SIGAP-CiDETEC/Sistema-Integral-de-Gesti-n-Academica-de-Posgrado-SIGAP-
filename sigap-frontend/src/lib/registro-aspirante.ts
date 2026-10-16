@@ -32,7 +32,7 @@ export function registroSintetico(a: AspiranteP): Respuestas {
 
 /**
  * Hoja 1 del acta MTC-EC prellenada con lo que el aspirante ya dio en su registro, su expediente
- * y (si lo llenó) su parte del formato MTC-EC. El sínodo solo confirma o completa durante la entrevista.
+ * y (si lo llenó) su parte del formato MTC-EC. Los profesores entrevistadores solo confirman o completan durante la entrevista.
  */
 export function hoja1Prellenada(a: AspiranteP, r: Respuestas, capturas: Record<string, unknown> = {}): ActaEntrevista["hoja1"] {
   const sn = (v: unknown) => (v === "Sí" || v === "No" ? v : undefined);

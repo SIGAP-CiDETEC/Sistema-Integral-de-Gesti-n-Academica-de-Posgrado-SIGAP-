@@ -50,8 +50,8 @@ En el login hay botones de **acceso de prueba** por rol. También redirige segú
 | Fase | El aspirante sube | El sistema llena (el aspirante completa, imprime, firma a mano y sube el escaneo) |
 | --- | --- | --- |
 | 1. Registro | — | SIP-02 Currículum vitae |
-| 2. Documentos | Título, cédula, certificado, constancia de inglés, CURP, acta de nacimiento, identificación, (extranjeros) | SIP-05 Carta protesta, SIP-06 Exposición de motivos |
-| 3. Entrevista | — | MTC-EC Acta de entrevista (1ª hoja; el sínodo llena el resto) |
+| 2. Documentos | Título, certificado, constancia de inglés, CURP, acta de nacimiento, identificación, (extranjeros) | SIP-05 Carta protesta, SIP-06 Exposición de motivos |
+| 3. Entrevista | — | MTC-EC Acta de entrevista (1ª hoja; los profesores entrevistadores llena el resto) |
 | 4. Evaluación | — | — (elige propedéutico o examen) |
 | 5. Dictamen final | — | SIP-04 lo emite Posgrado; el aspirante revisa sus datos, confirma y descarga el dictamen firmado |
 | 6. Matrícula | Fotografía | SIP-01 Solicitud de inscripción, SIP-08 (lo prepara el asesor) |

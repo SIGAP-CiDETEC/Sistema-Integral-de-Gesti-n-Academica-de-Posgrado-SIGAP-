@@ -31,7 +31,7 @@
   - comunicados;
   - calendario (Jefatura);
   - inscripción (UTEyCV);
-  - entrevistas del sínodo;
+  - entrevistas de los profesores entrevistadores;
   - calificaciones.
 - Puedo crear, editar y eliminar roles; los roles base no se eliminan.
 - Los cambios aplican de inmediato a las sesiones abiertas.

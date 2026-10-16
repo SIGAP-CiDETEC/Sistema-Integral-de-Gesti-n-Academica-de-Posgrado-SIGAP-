@@ -44,7 +44,7 @@ export function CitaEntrevista() {
       </div>
       <div>
         <h2 className="flex items-center gap-2 font-semibold text-gray-900">
-          <Users size={16} /> Sínodo colegiado
+          <Users size={16} /> Profesores entrevistadores
         </h2>
         <p className="mt-3 text-sm text-gray-700">Te entrevistarán 3 profesores del programa (RN-07).</p>
         {resultadoEntrevista && resultadoEntrevista !== "Rechazado" && (

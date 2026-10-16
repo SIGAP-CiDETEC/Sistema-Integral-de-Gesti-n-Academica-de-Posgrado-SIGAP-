@@ -20,7 +20,7 @@ const FILTROS = [
 
 /** Lista de aspirantes con sus datos principales (Subdirección Académica, solo consulta). */
 export function ListaAspirantes({ faseInicial }: { faseInicial: string }) {
-  const { aspirantes, cargado } = usePosgrado();
+  const { aspirantes, cargado, registroDe } = usePosgrado();
   const [fase, setFase] = useState(faseInicial);
   const [q, setQ] = useState("");
   if (!cargado) return null;
@@ -55,7 +55,7 @@ export function ListaAspirantes({ faseInicial }: { faseInicial: string }) {
             ))}
           </select>
         </label>
-        <button type="button" onClick={() => descargarReporteAspirantes(lista)} disabled={!lista.length} className={`${botonSecundario} sm:ml-auto`}>
+        <button type="button" onClick={() => descargarReporteAspirantes(lista, registroDe)} disabled={!lista.length} className={`${botonSecundario} sm:ml-auto`}>
           <Download size={15} /> Descargar CSV
         </button>
       </div>

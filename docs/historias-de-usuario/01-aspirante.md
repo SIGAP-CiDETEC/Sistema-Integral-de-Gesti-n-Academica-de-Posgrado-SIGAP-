@@ -11,7 +11,7 @@
 - Se muestran las dos convocatorias del ciclo: **A** (ingreso enero–junio) y **B** (ingreso agosto–diciembre), con su nombre (p. ej. A-27, B-27), periodo de ingreso y fechas de registro.
 - Cada convocatoria indica si está **Abierta** o **Cerrada**; solo la abierta muestra el botón para registrarse.
 - Se muestra la imagen del calendario del proceso que publicó la Jefatura de Posgrado, y se puede abrir en grande.
-- Se listan los requisitos generales (título y cédula, certificado y CURP, constancia de inglés, promedio mínimo).
+- Se listan los requisitos generales (título, certificado y CURP, constancia de inglés, promedio mínimo).
 - La página se ve correctamente en celular.
 
 **Referencias:** RF-08, RF-81 · RNF-03
@@ -79,7 +79,7 @@
 **Como** aspirante, **quiero** subir mis documentos escaneados, **para** que Posgrado integre mi expediente.
 
 **Criterios de aceptación**
-- La lista de documentos se adapta a mi registro: título y cédula (o constancia de trámite de titulación si no estoy titulado), certificado, constancia de inglés, CURP (solo para mexicanos), acta de nacimiento, identificación oficial (INE o pasaporte) y documentos apostillados si soy extranjero.
+- La lista de documentos se adapta a mi registro: título (o constancia de trámite de titulación si no estoy titulado), certificado, constancia de inglés, CURP (solo para mexicanos), acta de nacimiento, identificación oficial (INE o pasaporte) y documentos apostillados si soy extranjero.
 - Solo se aceptan PDF que no excedan el límite de tamaño configurado en la convocatoria.
 - La fotografía debe ser a color, de frente, con fondo blanco y **rostro descubierto** (sin lentes, gorra, sombrero ni accesorios, con orejas y frente visibles), en JPG o PNG de **máximo 2 MB**; el sistema rechaza archivos más pesados.
 - Cada documento muestra su estado: falta, por revisar, aprobado, con observación o en prórroga.
@@ -114,8 +114,8 @@
 
 **Criterios de aceptación**
 - La fase 3 se habilita cuando mi expediente está validado.
-- Veo mi cita **solo cuando Posgrado publica la entrevista** (después de que se completa el sínodo de 3 profesores); antes aparece "Aún no tienes cita".
-- Veo fecha, hora, modalidad (presencial o en línea) y sala o enlace; **no** se muestran los nombres del sínodo.
+- Veo mi cita **solo cuando Posgrado publica la entrevista** (después de que se asignan los profesores entrevistadores de 3 profesores); antes aparece "Aún no tienes cita".
+- Veo fecha, hora, modalidad (presencial o en línea) y sala o enlace; **no** se muestran los nombres de los profesores entrevistadores.
 - Recibo recordatorios automáticos **un día antes** y **una hora antes** de la entrevista.
 - Si Posgrado actualiza el horario, recibo un aviso con los nuevos datos.
 
@@ -128,9 +128,9 @@
 **Como** aspirante, **quiero** saber si puedo continuar después de mi entrevista, **para** preparar mi evaluación.
 
 **Criterios de aceptación**
-- Cuando el sínodo sube el acta firmada por los 3 profesores, recibo un aviso.
+- Cuando los profesores entrevistadores suben el acta firmada por los 3 profesores, recibo un aviso.
 - Si el resultado es **Aprobado** o **Con reservas**, se habilita la fase 4 (Evaluación).
-- Si es **Rechazado**, mi proceso concluye: recibo un mensaje general (sin calificaciones ni comentarios del sínodo) y las demás fases quedan bloqueadas.
+- Si es **Rechazado**, mi proceso concluye: recibo un mensaje general (sin calificaciones ni comentarios de los profesores entrevistadores) y las demás fases quedan bloqueadas.
 
 **Referencias:** CU-ADM-05 · RF-12, RF-14 · RN-05
 **Pantalla:** `/aspirante/entrevista`, `/aspirante/notificaciones`

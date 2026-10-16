@@ -13,7 +13,7 @@ type Pestana = "sin-horario" | "horarios" | "publicadas" | "dictaminadas";
 
 /**
  * Entrevistas colegiadas (RF-10 a RF-12, RF-55, RF-56, RN-07). Posgrado captura y actualiza los horarios,
- * los publica a los profesores, ve cómo se llenan los sínodos y publica las entrevistas a los aspirantes.
+ * los publica a los profesores, ve cómo se llenan los grupos de profesores entrevistadores y publica las entrevistas a los aspirantes.
  */
 export default function Entrevistas() {
   const { aspirantes, cargado } = usePosgrado();
@@ -37,13 +37,13 @@ export default function Entrevistas() {
   return (
     <>
       <Regresar href="/posgrado" t="Inicio" />
-      <PageHeader titulo="Entrevistas colegiadas" subtitulo="Horarios, sínodos que eligen los profesores y publicación al aspirante" />
+      <PageHeader titulo="Entrevistas colegiadas" subtitulo="Horarios, grupos de profesores entrevistadores que eligen los profesores y publicación al aspirante" />
 
       <ol className="mb-5 grid gap-2 text-sm sm:grid-cols-3">
         {[
           ["1", "Captura el horario", "Fecha, hora y sala de cada aspirante con expediente aprobado."],
-          ["2", "Publica los horarios", "Los profesores los ven solo con día y hora y eligen en cuáles participan (3 por sínodo)."],
-          ["3", "Publica las entrevistas", "Con el sínodo completo, el aspirante recibe su cita y los recordatorios."],
+          ["2", "Publica los horarios", "Los profesores los ven solo con día y hora y eligen en cuáles participan (3 profesores entrevistadores por entrevista)."],
+          ["3", "Publica las entrevistas", "Con los 3 profesores entrevistadores asignados, el aspirante recibe su cita y los recordatorios."],
         ].map(([n, t, d]) => (
           <li key={n} className="rounded-xl border border-gray-200 bg-white px-4 py-3">
             <p className="font-medium text-gray-900">
@@ -86,7 +86,7 @@ export default function Entrevistas() {
               <tr>
                 <th className="px-5 py-2.5 font-medium">Aspirante</th>
                 <th className="px-3 py-2.5 font-medium">Horario</th>
-                <th className="px-3 py-2.5 font-medium">Sínodo</th>
+                <th className="px-3 py-2.5 font-medium">Profesores entrevistadores</th>
                 <th className="px-3 py-2.5 font-medium">{tab === "dictaminadas" ? "Dictamen" : "Estado"}</th>
                 <th className="px-5 py-2.5 text-right font-medium">Acción</th>
               </tr>

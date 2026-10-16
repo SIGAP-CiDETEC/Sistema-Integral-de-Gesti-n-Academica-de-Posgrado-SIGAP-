@@ -55,9 +55,9 @@ export const CRITERIOS_ACTA = [
 export type CriterioActa = (typeof CRITERIOS_ACTA)[number]["id"];
 
 /**
- * Acta de entrevista colegiada (MTC-EC) que llena el sínodo en la sesión de Profesor.
- * Hoja 1: lo que responde el aspirante en la entrevista. Hoja 2: conclusiones del sínodo.
- * Funciona como una cola: el primer profesor del sínodo que la llena la bloquea para los demás; todos la descargan,
+ * Acta de entrevista colegiada (MTC-EC) que llenan los profesores entrevistadores en la sesión de Profesor.
+ * Hoja 1: lo que responde el aspirante en la entrevista. Hoja 2: conclusiones de los profesores entrevistadores.
+ * Funciona como una cola: el primer profesor entrevistador que la llena la bloquea para los demás; todos la descargan,
  * la imprimen y la firman en papel; el primero que sube el PDF firmado por los 3 aplica el dictamen y bloquea la subida.
  */
 export type ActaEntrevista = {
@@ -81,12 +81,12 @@ export type ActaEntrevista = {
   motivo: string;
   capturadaPor: string;
   capturadaEl: string;
-  /** Acta impresa y firmada por los 3 sinodales que subió uno de ellos (con esto se aplica el dictamen) */
+  /** Acta impresa y firmada por los 3 profesores entrevistadores que subió uno de ellos (con esto se aplica el dictamen) */
   firmada?: { archivo: string; subidaPor: string; el: string };
   /** Firmas en el sistema de versiones anteriores del cascarón (ya no se usan) */
   firmas?: Record<string, string>;
 };
-/** El sínodo se integra con 3 profesores; los lugares libres los eligen los propios profesores. */
+/** La entrevista requiere 3 profesores entrevistadores; los lugares libres los eligen los propios profesores. */
 export const LUGARES_SINODO = 3;
 export const lugaresLibres = (e?: Entrevista) => (e ? Math.max(0, LUGARES_SINODO - e.sinodo.length) : 0);
 export const sinodoCompleto = (e?: Entrevista) => !!e && e.sinodo.length >= LUGARES_SINODO;
@@ -256,7 +256,7 @@ export type AspiranteP = {
   documentos: DocAspirante[];
   entrevista?: Entrevista;
   dictamen?: DictamenEntrevista;
-  /** Acta MTC-EC que llena y firma el sínodo (módulo de Profesores) */
+  /** Acta MTC-EC que llenan y firman los profesores entrevistadores (módulo de Profesores) */
   actaEntrevista?: ActaEntrevista;
   evaluacion: EvaluacionP;
   resolucion?: ResolucionColegio;
@@ -272,7 +272,7 @@ export type AspiranteP = {
   uteycv?: UteycvP;
 };
 
-// ---------- Profesores para el sínodo (RN-07: 3 profesores, colegiados vigentes o de asignatura) ----------
+// ---------- Profesores entrevistadores (RN-07: 3 profesores, colegiados vigentes o de asignatura) ----------
 
 export type ProfesorP = { id: string; nombre: string; correo: string; colegiado: boolean; vigencia: string; linea: string };
 
@@ -287,7 +287,7 @@ export const PROFESORES_SINODO: ProfesorP[] = [
 ];
 
 const colegiadoVigente = (p: ProfesorP) => p.colegiado && /^\d{4}$/.test(p.vigencia) && Number(p.vigencia) >= 2026;
-/** Pueden integrar el sínodo los profesores colegiados con nombramiento vigente y los profesores de asignatura (RN-07). */
+/** Pueden participar como profesores entrevistadores los profesores colegiados con nombramiento vigente y los profesores de asignatura (RN-07). */
 export const profesorValido = (p: ProfesorP) => colegiadoVigente(p) || p.vigencia === "Asignatura";
 export const nombramientoDe = (p: ProfesorP) =>
   colegiadoVigente(p) ? `Colegiado · vigente a ${p.vigencia}` : p.vigencia === "Asignatura" ? "De asignatura" : "Nombramiento vencido";
@@ -297,7 +297,6 @@ export const nombreProfesor = (id: string) => PROFESORES_SINODO.find((p) => p.id
 
 const DOCS_BASE: { id: string; nombre: string; opcional?: boolean }[] = [
   { id: "titulo", nombre: "Título de licenciatura" },
-  { id: "cedula", nombre: "Cédula profesional", opcional: true },
   { id: "certificado", nombre: "Certificado de estudios" },
   { id: "ingles", nombre: "Constancia de dominio de inglés" },
   { id: "curp", nombre: "CURP", opcional: true },
@@ -368,7 +367,7 @@ export const ASPIRANTES_BASE: AspiranteP[] = [
     ultimoMovimiento: hace(6),
     registradoEl: "2026-02-10",
     etapa: "documentos",
-    documentos: docs({ certificado: "observado", ingles: "prorroga", cedula: "pendiente" }, { certificado: "El reverso no es legible.", ingles: "Aún no tiene constancia CELEX/CENLEX." }, { ingles: enDias(3) }),
+    documentos: docs({ certificado: "observado", ingles: "prorroga" }, { certificado: "El reverso no es legible.", ingles: "Aún no tiene constancia CELEX/CENLEX." }, { ingles: enDias(3) }),
     evaluacion: { grupos: {} },
     formatos: F(["sip-02"]),
   },
@@ -448,7 +447,7 @@ export const ASPIRANTES_BASE: AspiranteP[] = [
     registradoEl: "2026-02-16",
     etapa: "entrevista",
     documentos: docs({}),
-    // Sínodo incompleto: quedan 2 lugares para que los profesores los elijan
+    // Profesores entrevistadores incompletos: quedan 2 lugares para que los profesores los elijan
     entrevista: entrevistaDe("2026-03-19", "11:00", ["lh"]),
     evaluacion: { grupos: {} },
     formatos: F(["sip-02", "sip-05", "sip-06"]),
@@ -681,7 +680,7 @@ export function leTocaAPosgrado(a: AspiranteP): boolean {
   if (b === "En evaluación" && !a.evaluacion.modalidad) return false;
   // Las calificaciones las capturan los profesores; a Posgrado le toca cuando hay que publicarlas
   if ((b === "En evaluación" || b === "Segunda oportunidad") && evaluacionPendiente(a.evaluacion)) return false;
-  // El acta de la entrevista la llena y firma el sínodo (sesión de Profesor)
+  // El acta de la entrevista la llenan y firman los profesores entrevistadores (sesión de Profesor)
   if (b === "Entrevista programada") return false;
   return true;
 }

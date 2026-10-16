@@ -198,7 +198,6 @@ async function sip02(doc: PDFDocument, d: DatosPdf) {
   texto(c, v("formaTitulacion"), 172, 620, 133, 7);
   texto(c, v("fechaExamen"), 172, 639, 80, 7);
   texto(c, v("licFecha"), 335, 639, 75, 7);
-  texto(c, v("cedula"), 492, 639, 75, 7);
   celda(c, v("licTesis"), 410, 607.5, 156, 19, "Título de tesis de licenciatura");
   if (v("licBeca") === "Sí") anexos.push({ titulo: "Beca durante la licenciatura", valor: v("licBecaInstitucion") || "Sí" });
 
@@ -227,12 +226,10 @@ async function sip02(doc: PDFDocument, d: DatosPdf) {
     if (i === 0) celda(ctx, dato("tesis"), 419, tesisTop, 149, 19, `${grado.titulo}: tesis`);
     else {
       texto(ctx, dato("fechaTitulo"), 320, tesisTop + 10, 93, 7);
-      texto(ctx, dato("cedula"), 484, tesisTop + 10, 84, 7);
     }
     const fechaTop = i === 0 ? 716.4 : i === 1 ? 125.6 : 236.9;
     texto(ctx, dato("fechaExamen"), 172, fechaTop + 9, 80, 7);
     texto(ctx, dato("fechaTitulo"), i === 0 ? 335 : 320, fechaTop + 9, i === 0 ? 75 : 93, 7);
-    texto(ctx, dato("cedula"), i === 0 ? 492 : 484, fechaTop + 9, i === 0 ? 75 : 84, 7);
     const becaTop = i === 0 ? 742 : i === 1 ? 153 : 265;
     if (dato("beca")) marca(ctx, dato("beca") === "Sí" ? 194 : 238, becaTop, 7);
     celda(i === 0 ? c2 : ctx, dato("becaInstitucion"), 439, i === 0 ? 48.4 : becaTop - 9, 129, 11, `${grado.titulo}: institución de la beca`);
@@ -511,7 +508,7 @@ async function mtcEc(doc: PDFDocument, d: DatosPdf) {
   arg.enableMultiline();
   arg.setText(v("argumentacion"));
   arg.setFontSize(8);
-  // Hoja 2 (Conclusiones): la llena el sínodo en su sesión de Profesor; si no viene, queda en blanco
+  // Hoja 2 (Conclusiones): la llenan los profesores entrevistadores en su sesión de Profesor; si no viene, queda en blanco
   const SINODO_TXT: Record<string, string> = { proyeccion: "Proyección a futuro", observaciones: "Observaciones generales", motivo: "Motivo", prof1: "ProfesoraRow1", prof2: "ProfesoraRow2", prof3: "ProfesoraRow3" };
   Object.entries(SINODO_TXT).forEach(([k, campo]) => {
     txt(campo, v(k));

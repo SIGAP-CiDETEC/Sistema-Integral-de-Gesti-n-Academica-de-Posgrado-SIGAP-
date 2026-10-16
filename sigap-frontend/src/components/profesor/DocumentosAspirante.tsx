@@ -7,7 +7,7 @@ import { Tarjeta } from "@/components/posgrado/ui";
 import { generarPdfRegistro } from "@/lib/pdf/registro";
 import type { AspiranteP } from "@/lib/posgrado/datos";
 
-/** Documento que recibe el profesor al integrarse al sínodo: el registro del aspirante (PDF del primer formulario). */
+/** Documento que recibe el profesor al integrarse a los profesores entrevistadores: el registro del aspirante (PDF del primer formulario). */
 export function DocumentosAspirante({ a }: { a: AspiranteP }) {
   const { registroDe } = usePosgrado();
   const [cargando, setCargando] = useState(false);

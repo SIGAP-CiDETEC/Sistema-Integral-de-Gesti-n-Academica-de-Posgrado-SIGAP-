@@ -57,8 +57,8 @@ export const FASES: Fase[] = [
     tuHaces: ["Consultar tu cita y presentarte a tu entrevista"],
     areasHacen: [
       { area: "posgrado", texto: "Programa la fecha, hora y sala de tu cita (RF-55)" },
-      { area: "profesores", texto: "Los profesores (colegiados o de asignatura) eligen las entrevistas en las que participan; el sínodo es de 3 (RF-56, RN-07)" },
-      { area: "profesores", texto: "El sínodo llena el acta de entrevista (MTC-EC) y la firman los 3 profesores" },
+      { area: "profesores", texto: "Los profesores (colegiados o de asignatura) eligen las entrevistas en las que participan; participan 3 profesores entrevistadores (RF-56, RN-07)" },
+      { area: "profesores", texto: "Los profesores entrevistadores llenan el acta de entrevista (MTC-EC) y la firman los 3 profesores" },
       { area: "profesores", texto: "Con las 3 firmas queda el dictamen: Aprobado, Con reservas o Rechazado (RF-12)" },
     ],
     requisito: "Se habilita cuando tu expediente está validado.",

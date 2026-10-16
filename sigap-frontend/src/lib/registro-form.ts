@@ -339,7 +339,6 @@ SECCIONES.push({
     fechaSip("licEgreso", "Fecha de egreso de la licenciatura"),
     fechaSip("licFecha", "Fecha de expedición del título", (r) => r.titulado === "Sí"),
     { ...fechaSip("fechaExamen", "Fecha de examen profesional (si aplica)", (r) => r.titulado === "Sí"), requerido: false },
-    { id: "cedula", label: "Número de cédula profesional (si ya la tienes)", tipo: "text", mostrarSi: (r) => r.titulado === "Sí" },
     { id: "inglesHabilidades", label: "Habilidades de inglés acreditadas", tipo: "checkbox", requerido: true, minOpciones: 2, opciones: ["Comprensión de lectura", "Comprensión auditiva", "Expresión escrita", "Expresión oral"], ayuda: "Selecciona al menos dos habilidades acreditadas en tu constancia.", ancho: "completo" },
     { id: "inglesAval", label: "¿Tu constancia tiene aval de la DFLE o es de CELEX/CENLEX?", tipo: "radio", requerido: true, opciones: ["Sí", "No"], ancho: "completo" },
   ],

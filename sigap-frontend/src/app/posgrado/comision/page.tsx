@@ -25,7 +25,7 @@ type Pestana = "entrevista" | "final";
 
 /**
  * Comisión y dictamen (RF-12, RF-57 a RF-60). Son dos dictámenes distintos:
- * - Dictamen de entrevista colegiada: lo emite el sínodo con el acta MTC-EC firmada por los 3 profesores.
+ * - Dictamen de entrevista colegiada: lo emiten los profesores entrevistadores con el acta MTC-EC firmada por los 3 profesores.
  * - Dictamen final: informe de la Comisión de Admisión, resolución del Colegio de Profesores y publicación de resultados.
  */
 export default function Comision() {
@@ -59,7 +59,7 @@ export default function Comision() {
   );
 }
 
-/** Actas MTC-EC que llenaron los sínodos y que subieron firmadas por los 3 profesores. */
+/** Actas MTC-EC que llenaron los grupos de profesores entrevistadores y que subieron firmadas por los 3 profesores. */
 function DictamenEntrevista() {
   const { aspirantes } = usePosgrado();
   const lista = aspirantes
@@ -68,7 +68,7 @@ function DictamenEntrevista() {
   return (
     <Tarjeta titulo={<span className="flex items-center gap-2"><FileText size={17} className="text-primary" /> Actas de entrevista colegiada (MTC-EC)</span>}>
       <p className="mb-3 text-sm text-gray-600">
-        El dictamen de la entrevista lo emite el sínodo: un profesor llena el acta, los tres la firman y el primero que la sube firmada aplica el dictamen. Este
+        El dictamen de la entrevista lo emiten los profesores entrevistadores: un profesor llena el acta, los tres la firman y el primero que la sube firmada aplica el dictamen. Este
         dictamen es distinto del dictamen final del proceso de admisión.
       </p>
       <div className="overflow-x-auto">
@@ -76,7 +76,7 @@ function DictamenEntrevista() {
           <thead className="border-b border-gray-100 text-xs uppercase tracking-wide text-gray-500">
             <tr>
               <th className="px-2 py-2 font-medium">Aspirante</th>
-              <th className="px-2 py-2 font-medium">Sínodo</th>
+              <th className="px-2 py-2 font-medium">Profesores entrevistadores</th>
               <th className="px-2 py-2 font-medium">Acta firmada</th>
               <th className="px-2 py-2 font-medium">Dictamen de entrevista</th>
               <th className="px-2 py-2 text-right font-medium">Acta</th>

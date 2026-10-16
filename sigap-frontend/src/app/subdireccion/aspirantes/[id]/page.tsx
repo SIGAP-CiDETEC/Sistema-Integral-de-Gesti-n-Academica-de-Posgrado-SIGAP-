@@ -127,7 +127,7 @@ export default function ProcesoAspirante({ params }: PageProps<"/subdireccion/as
             {a.entrevista ? (
               <>
                 {fechaCorta(a.entrevista.fecha)}, {a.entrevista.hora} h · {a.entrevista.modalidad} · {a.entrevista.sala}
-                <span className="block text-gray-500">Sínodo: {a.entrevista.sinodo.map(nombreProfesor).join(" · ")}</span>
+                <span className="block text-gray-500">Profesores entrevistadores: {a.entrevista.sinodo.map(nombreProfesor).join(" · ")}</span>
                 {a.actaEntrevista && (
                   <span className="block text-gray-500">
                     Acta MTC-EC: {a.actaEntrevista.firmada ? "firmada por los 3 y subida" : "llenada; falta subirla firmada (con eso se aplica el dictamen)"}

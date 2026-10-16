@@ -66,7 +66,7 @@ export type Rol = "aspirante" | "asesor" | "jefe" | "sinodo" | "comision";
 export type Firma = {
   rol: Rol;
   label: string;
-  /** No se muestra al aspirante (p. ej. firmas del sínodo el día de la entrevista) */
+  /** No se muestra al aspirante (p. ej. firmas de los profesores entrevistadores el día de la entrevista) */
   ocultaAspirante?: boolean;
 };
 
@@ -96,7 +96,7 @@ export type Formato = {
   subeFirmado?: boolean;
   /** Páginas (base 0) que ve y descarga el aspirante; el resto lo llena otra persona */
   paginasAspirante?: number[];
-  /** No se muestra al aspirante (p. ej. MTC-EC: lo llenará el profesor del sínodo cuando exista ese actor) */
+  /** No se muestra al aspirante (p. ej. MTC-EC: lo llenará el profesor entrevistador cuando exista ese actor) */
   oculto?: boolean;
 };
 
@@ -216,7 +216,6 @@ export const FORMATOS: Formato[] = [
       { id: "formaTitulacion", label: "Forma de titulación", tipo: "text", auto: ({ r }) => (r.titulado === "No" ? "En trámite" : str(r.opcionTitulacion)), seccion: "Formación académica" },
       { id: "fechaExamen", label: "Fecha de examen profesional (dd/mm/aaaa)", tipo: "text", opcional: true, seccion: "Formación académica" },
       { ...C.licFecha, label: "Fecha del título (dd/mm/aaaa)", opcional: true },
-      { id: "cedula", label: "Número de cédula profesional", tipo: "text", opcional: true, seccion: "Formación académica" },
       {
         id: "inglesHabilidades",
         label: "Habilidades de inglés acreditadas",
@@ -280,7 +279,7 @@ export const FORMATOS: Formato[] = [
   },
   {
     clave: "mtc-ec",
-    // Oculto por ahora: el acta la llena el profesor del sínodo, no el aspirante (actor pendiente)
+    // Oculto por ahora: el acta la llena el profesor entrevistador, no el aspirante (actor pendiente)
     oculto: true,
     destino: "Departamento de Posgrado",
     paginasAspirante: [0],

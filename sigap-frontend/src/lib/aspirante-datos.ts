@@ -128,7 +128,6 @@ export const CAPTURAS_DEMO: Record<string, string | string[]> = {
   licIngreso: "15/08/2016",
   licEgreso: "30/06/2021",
   fechaExamen: "10/07/2021",
-  cedula: "13579246",
   rfc: "GOLM980412AB3",
   empresa: "Fintech Soluciones S.A. de C.V.",
   empleoInicio: "01/08/2022",

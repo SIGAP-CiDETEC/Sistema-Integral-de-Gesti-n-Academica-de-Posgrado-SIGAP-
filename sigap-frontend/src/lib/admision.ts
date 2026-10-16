@@ -79,7 +79,7 @@ export const SOLICITUDES_DEMO: Record<EtapaId, SolicitudAdmision> = {
     ],
     siguientePaso: {
       titulo: "Prepárate para tu entrevista",
-      texto: "Consulta la fecha, el lugar y los integrantes de tu sínodo.",
+      texto: "Consulta la fecha, el lugar y tus profesores entrevistadores.",
       href: "/aspirante/entrevista",
       accion: "Ver detalle de entrevista",
     },

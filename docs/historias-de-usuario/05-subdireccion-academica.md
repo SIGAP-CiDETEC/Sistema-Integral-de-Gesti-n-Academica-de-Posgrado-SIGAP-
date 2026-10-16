@@ -30,7 +30,7 @@ La Subdirección Académica **solo consulta**: puede ver todo el proceso de admi
   - datos, procedencia en columnas separadas (**institución**, **unidad académica / escuela**, si es egresado del IPN) y promedio declarado y **validado por Posgrado**;
   - **1 · Registro**: completo o pendiente, y si entregó su SIP-02;
   - **2 · Documentos**: una columna por documento con su estado (no subido, subido · pendiente de validación, **resubido** · pendiente de validación, validado por Posgrado, con observación o en prórroga) y el estado del expediente;
-  - **3 · Entrevista**: horario, estado, sínodo, acta MTC-EC y dictamen de entrevista;
+  - **3 · Entrevista**: horario, estado, profesores entrevistadores, acta MTC-EC y dictamen de entrevista;
   - **4 · Evaluación**: modalidad, grupos, las **2 calificaciones del propedéutico** y su promedio, las **2 del examen** y su promedio, y el **promedio final**;
   - **5 · Resultados** de la evaluación publicados;
   - **6 · Dictamen final**: resolución del Colegio, dictamen (Favorable, Con reservas o No favorable) y fecha de publicación;
@@ -50,7 +50,7 @@ La Subdirección Académica **solo consulta**: puede ver todo el proceso de admi
 - Veo los datos principales y una línea de tiempo con cada fase marcada como hecha, actual, pendiente o detenida:
   - registro;
   - documentos (con su estado);
-  - entrevista (cita, sínodo, acta firmada y resultado);
+  - entrevista (cita, profesores entrevistadores, acta firmada y resultado);
   - evaluación (modalidad y resultados por área);
   - resolución del Colegio (resultado publicado);
   - inscripción con UTEyCV (solo consulta de su estado).

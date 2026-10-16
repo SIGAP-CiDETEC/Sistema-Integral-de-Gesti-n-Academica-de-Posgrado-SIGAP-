@@ -65,7 +65,7 @@ export function DeshacerConclusion() {
       </button>
       <p className="mt-1 text-xs text-gray-500">
         {/entrevista/i.test(concluido ?? "")
-          ? "Regresa a la entrevista, sin acta, para que el sínodo vuelva a dictaminar."
+          ? "Regresa a la entrevista, sin acta, para que los profesores entrevistadores vuelvan a dictaminar."
           : /Colegio/i.test(concluido ?? "")
             ? "Regresa a la Comisión para que se registre otra resolución."
             : "Quita el resultado no acreditado para que puedas volver a simularlo."}

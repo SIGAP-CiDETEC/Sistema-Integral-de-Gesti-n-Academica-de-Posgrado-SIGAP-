@@ -113,7 +113,7 @@ export default function CalificacionesJefatura() {
           <div>
             <h2 className="font-semibold text-gray-900">Concentrado de calificaciones</h2>
             <p className="text-xs text-gray-500">
-              Las del propedéutico las captura el docente de cada grupo. Promedio final: por área, el examen sustituye al propedéutico; promedio de las 2 áreas.
+              Las del propedéutico las captura el docente de cada grupo. El promedio del proceso conserva las áreas aprobadas del propedéutico y usa el examen únicamente en las reprobadas. Si solo presentó examen o reprobó ambos propedéuticos, usa las dos notas del examen.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">

@@ -3,7 +3,7 @@ import { SesionRequerida } from "@/components/SesionRequerida";
 import { PosgradoProvider } from "@/components/posgrado/PosgradoProvider";
 import { ProfesorActual } from "@/components/profesor/ProfesorActual";
 
-/** Profesores (colegiados y de asignatura): sínodo de entrevistas (acta MTC-EC) y calificaciones del propedéutico. */
+/** Profesores (colegiados y de asignatura): entrevistas colegiadas (acta MTC-EC) y calificaciones del propedéutico. */
 export default function Layout({ children }: LayoutProps<"/profesor">) {
   return (
     <AppShell rol="profesor">

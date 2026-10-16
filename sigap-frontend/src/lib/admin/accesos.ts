@@ -20,7 +20,7 @@ export type Permiso = { id: string; area: AreaPersonal; nombre: string; ruta: st
 /** Permisos del proceso de admisión: cada uno abre una pestaña de la sesión del área. */
 export const PERMISOS: Permiso[] = [
   { id: "pg.expedientes", area: "posgrado", nombre: "Revisar y validar expedientes", ruta: "/posgrado/aspirantes" },
-  { id: "pg.entrevistas", area: "posgrado", nombre: "Programar entrevistas y dar seguimiento al acta del sínodo", ruta: "/posgrado/entrevistas" },
+  { id: "pg.entrevistas", area: "posgrado", nombre: "Programar entrevistas y dar seguimiento al acta de los profesores entrevistadores", ruta: "/posgrado/entrevistas" },
   { id: "pg.evaluacion", area: "posgrado", nombre: "Gestionar evaluación (fechas, elecciones y publicación de resultados)", ruta: "/posgrado/evaluacion" },
   { id: "pg.comision", area: "posgrado", nombre: "Comisión de Admisión y resolución del Colegio", ruta: "/posgrado/comision" },
   { id: "pg.comunicados", area: "posgrado", nombre: "Enviar comunicados a aspirantes", ruta: "/posgrado/comunicados" },
@@ -32,7 +32,7 @@ export const PERMISOS: Permiso[] = [
   { id: "sd.aspirantes", area: "subdireccion", nombre: "Consultar aspirantes y su proceso (solo lectura)", ruta: "/subdireccion/aspirantes" },
   { id: "sd.bitacora", area: "subdireccion", nombre: "Consultar bitácora (solo lectura)", ruta: "/subdireccion/bitacora" },
   { id: "ut.bitacora", area: "uteycv", nombre: "Consultar bitácora", ruta: "/uteycv/bitacora" },
-  { id: "pr.entrevistas", area: "profesor", nombre: "Entrevistas del sínodo: llenar y firmar el acta MTC-EC", ruta: "/profesor/entrevistas" },
+  { id: "pr.entrevistas", area: "profesor", nombre: "Entrevistas de los profesores entrevistadores: llenar y firmar el acta MTC-EC", ruta: "/profesor/entrevistas" },
   { id: "pr.evaluacion", area: "profesor", nombre: "Capturar calificaciones del propedéutico de los grupos que imparte", ruta: "/profesor/evaluacion" },
 ];
 

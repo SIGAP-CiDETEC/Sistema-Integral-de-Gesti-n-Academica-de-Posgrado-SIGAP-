@@ -2,7 +2,7 @@
 
 [← Índice](README.md)
 
-Pueden participar los **profesores colegiados con nombramiento vigente** y los **profesores de asignatura** (RN-07). Participan en la admisión de dos formas: como **sínodo** de la entrevista colegiada (acta MTC-EC) y como **evaluadores** de su área (Matemáticas Discretas y Continuas o Programación).
+Pueden participar los **profesores colegiados con nombramiento vigente** y los **profesores de asignatura** (RN-07). Participan en la admisión de dos formas: como **profesores entrevistadores** de la entrevista colegiada (acta MTC-EC) y como **evaluadores** de su área (Matemáticas Discretas y Continuas o Programación).
 
 ---
 
@@ -18,13 +18,13 @@ Pueden participar los **profesores colegiados con nombramiento vigente** y los *
 
 ---
 
-### HU-PR-02 · Consultar las entrevistas en las que soy sínodo
-**Como** profesor, **quiero** ver solo las entrevistas en las que formo parte del sínodo, **para** prepararme.
+### HU-PR-02 · Consultar las entrevistas en las que soy profesor entrevistador
+**Como** profesor, **quiero** ver solo las entrevistas en las que formo parte de los profesores entrevistadores, **para** prepararme.
 
 **Criterios de aceptación**
-- La lista muestra aspirante, fecha, hora, modalidad, sala, los integrantes del sínodo y el estado del acta (sínodo incompleto, esperando publicación, por llenar acta, por subir firmada, dictaminada).
-- El acta se puede llenar cuando el sínodo tiene 3 profesores **y** Posgrado ya publicó la entrevista al aspirante.
-- Si entro a una entrevista en la que no soy sínodo, el sistema me lo indica y no me deja llenar el acta.
+- La lista muestra aspirante, fecha, hora, modalidad, sala, los profesores entrevistadores y el estado del acta (profesores entrevistadores incompletos, esperando publicación, por llenar acta, por subir firmada, dictaminada).
+- El acta se puede llenar cuando ya están los 3 profesores entrevistadores **y** Posgrado ya publicó la entrevista al aspirante.
+- Si entro a una entrevista en la que no soy profesor entrevistador, el sistema me lo indica y no me deja llenar el acta.
 - En cada entrevista veo los datos principales del aspirante (procedencia, promedio, correo, documentos aprobados).
 
 **Referencias:** RF-10 · RN-07
@@ -33,7 +33,7 @@ Pueden participar los **profesores colegiados con nombramiento vigente** y los *
 ---
 
 ### HU-PR-03 · Llenar la hoja 1 del acta (entrevista al aspirante)
-**Como** profesor del sínodo, **quiero** registrar las respuestas del aspirante durante la entrevista, **para** que queden en el acta oficial MTC-EC.
+**Como** profesor entrevistador, **quiero** registrar las respuestas del aspirante durante la entrevista, **para** que queden en el acta oficial MTC-EC.
 
 **Criterios de aceptación**
 - El formulario del acta **solo aparece cuando pulso "Llenar acta MTC-EC"**.
@@ -45,15 +45,15 @@ Pueden participar los **profesores colegiados con nombramiento vigente** y los *
   - si tiene dos habilidades de inglés acreditadas;
   - si tiene certificado de estudios;
   - argumentación final del aspirante.
-- La hoja 1 llega **prellenada** con lo que el aspirante dio en su registro y expediente (áreas de interés, certificado, situación de su constancia de inglés, promedio y escuela); el sínodo la confirma o la corrige y completa lo demás durante la entrevista.
+- La hoja 1 llega **prellenada** con lo que el aspirante dio en su registro y expediente (áreas de interés, certificado, situación de su constancia de inglés, promedio y escuela); los profesores entrevistadores la confirma o la corrige y completa lo demás durante la entrevista.
 
 **Referencias:** RF-12
 **Pantalla:** `/profesor/entrevistas/[id]`
 
 ---
 
-### HU-PR-04 · Llenar la hoja 2 del acta (conclusiones del sínodo)
-**Como** profesor del sínodo, **quiero** registrar las conclusiones de la entrevista, **para** dejar el dictamen del sínodo.
+### HU-PR-04 · Llenar la hoja 2 del acta (conclusiones de los profesores entrevistadores)
+**Como** profesor entrevistador, **quiero** registrar las conclusiones de la entrevista, **para** dejar el dictamen de los profesores entrevistadores.
 
 **Criterios de aceptación**
 - Califico cada consideración como Muy buena, Buena, Regular, Mala (y No aplica en las laborales):
@@ -74,10 +74,10 @@ Pueden participar los **profesores colegiados con nombramiento vigente** y los *
 ---
 
 ### HU-PR-05 · Subir el acta firmada por los 3 y aplicar el dictamen (cola)
-**Como** profesor del sínodo, **quiero** que el acta se maneje como cola entre los tres, **para** no duplicar el trabajo y que el dictamen quede oficial con el acta firmada.
+**Como** profesor entrevistador, **quiero** que el acta se maneje como cola entre los tres, **para** no duplicar el trabajo y que el dictamen quede oficial con el acta firmada.
 
 **Criterios de aceptación**
-- El **primer** profesor del sínodo que llena el acta la bloquea: a los otros dos ya no les aparece la opción de llenarla, solo de **descargarla e imprimirla**.
+- El **primer** profesor entrevistador que llena el acta la bloquea: a los otros dos ya no les aparece la opción de llenarla, solo de **descargarla e imprimirla**.
 - Quien la llenó puede corregirla mientras no se haya subido firmada.
 - Los tres firman el acta impresa y cualquiera de ellos sube el **PDF firmado**; el **primero** que lo sube bloquea la subida para los demás (ven quién la subió y cuándo).
 - Al subir el acta firmada, el dictamen se aplica automáticamente:
@@ -121,10 +121,10 @@ Pueden participar los **profesores colegiados con nombramiento vigente** y los *
 **Como** profesor (colegiado o de asignatura), **quiero** elegir en qué entrevistas colegiadas participo, **para** organizar mi tiempo.
 
 **Criterios de aceptación**
-- Veo los horarios que Posgrado publicó y que tienen lugares libres en el sínodo, mostrando **solo el día y la hora** (y cuántos lugares quedan); no veo el nombre ni los datos del aspirante.
-- Al elegir una, me integro al sínodo y ya veo los datos del aspirante en "Mis entrevistas".
+- Veo los horarios que Posgrado publicó y que tienen lugares libres en los profesores entrevistadores, mostrando **solo el día y la hora** (y cuántos lugares quedan); no veo el nombre ni los datos del aspirante.
+- Al elegir una, me integro a los profesores entrevistadores y ya veo los datos del aspirante en "Mis entrevistas".
 - No puedo elegir una entrevista a la misma fecha y hora que otra en la que ya participo.
-- Cuando el sínodo llega a 3 profesores, la entrevista deja de aparecer como disponible y queda lista para que Posgrado la publique al aspirante.
+- Cuando se reúnen los 3 profesores entrevistadores, la entrevista deja de aparecer como disponible y queda lista para que Posgrado la publique al aspirante.
 - Puedo **dejar mi lugar** mientras Posgrado no haya publicado la entrevista al aspirante.
 - Elegir y dejar lugar queda en la bitácora a mi nombre.
 
@@ -134,12 +134,12 @@ Pueden participar los **profesores colegiados con nombramiento vigente** y los *
 ---
 
 ### HU-PR-09 · Recibir el registro del aspirante
-**Como** profesor del sínodo, **quiero** recibir los documentos del aspirante en cuanto me integro a su entrevista, **para** prepararla.
+**Como** profesor entrevistador, **quiero** recibir los documentos del aspirante en cuanto me integro a su entrevista, **para** prepararla.
 
 **Criterios de aceptación**
 - En la entrevista veo "Documentos del aspirante" con el PDF del **Registro de admisión**: lo que el aspirante respondió en el primer formulario (formación, experiencia, motivos, intereses…).
 - La hoja 1 del acta MTC-EC se llena con sus datos hasta que elijo "Llenar acta MTC-EC" (HU-PR-04).
-- Lo veo desde que elijo la entrevista, aunque el sínodo aún no esté completo.
+- Lo veo desde que elijo la entrevista, aunque los profesores entrevistadores aún no estén completos.
 
 **Referencias:** RF-10, RF-12
 **Pantalla:** `/profesor/entrevistas/[id]`

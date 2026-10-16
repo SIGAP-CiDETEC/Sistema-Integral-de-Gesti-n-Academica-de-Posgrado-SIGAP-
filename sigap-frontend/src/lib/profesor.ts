@@ -7,7 +7,7 @@ import { useSesion } from "./sesion";
 
 /**
  * Profesor de la sesión. SOLO CASCARÓN: para probar el flujo completo con una sola cuenta,
- * se puede "actuar como" otro profesor del sínodo (p. ej. para que firmen los 3 el acta).
+ * se puede "actuar como" otro profesor entrevistador (p. ej. para que firmen los 3 el acta).
  * Con backend cada profesor entra con su propia cuenta y esto desaparece.
  */
 const CLAVE = "sigap-profesor-como";
@@ -60,9 +60,9 @@ export function useProfesorActual(): { profesor: ProfesorP | null; propio: Profe
 
 // ---------- Pendientes del profesor ----------
 
-export type EstadoEntrevistaProf = "Sínodo incompleto" | "Esperando publicación" | "Por llenar acta" | "Por subir firmada" | "Dictaminada" | "Concluida";
+export type EstadoEntrevistaProf = "Profesores entrevistadores incompletos" | "Esperando publicación" | "Por llenar acta" | "Por subir firmada" | "Dictaminada" | "Concluida";
 export const TONO_ENTREVISTA_PROF: Record<EstadoEntrevistaProf, string> = {
-  "Sínodo incompleto": "bg-gray-100 text-gray-700",
+  "Profesores entrevistadores incompletos": "bg-gray-100 text-gray-700",
   "Esperando publicación": "bg-gray-100 text-gray-700",
   "Por llenar acta": "bg-indigo-50 text-primary",
   "Por subir firmada": "bg-amber-50 text-amber-800",
@@ -70,12 +70,12 @@ export const TONO_ENTREVISTA_PROF: Record<EstadoEntrevistaProf, string> = {
   Concluida: "bg-gray-100 text-gray-600",
 };
 
-/** Entrevistas donde el profesor forma parte del sínodo. */
+/** Entrevistas donde el profesor forma parte de los profesores entrevistadores. */
 export const entrevistasDe = (lista: AspiranteP[], prof?: string) => lista.filter((a) => !!prof && !!a.entrevista?.sinodo.includes(prof));
 
 /**
- * Entrevistas programadas con lugares libres en el sínodo que el profesor puede elegir.
- * El profesor solo ve el día y la hora; los datos del aspirante los ve al integrarse al sínodo.
+ * Entrevistas programadas con lugares libres en los profesores entrevistadores que el profesor puede elegir.
+ * El profesor solo ve el día y la hora; los datos del aspirante los ve al integrarse a los profesores entrevistadores.
  */
 export function entrevistasDisponibles(lista: AspiranteP[], prof?: string) {
   if (!prof) return [];
@@ -100,7 +100,7 @@ export const puedeDejarLugar = (a: AspiranteP, prof: string) => !!a.entrevista?.
 export function estadoEntrevistaProf(a: AspiranteP): EstadoEntrevistaProf {
   if (a.dictamen) return "Dictaminada";
   if (a.concluido) return "Concluida";
-  if (!a.actaEntrevista && !sinodoCompleto(a.entrevista)) return "Sínodo incompleto";
+  if (!a.actaEntrevista && !sinodoCompleto(a.entrevista)) return "Profesores entrevistadores incompletos";
   if (!a.actaEntrevista && !a.entrevista?.notificadaEl) return "Esperando publicación";
   if (!a.actaEntrevista) return "Por llenar acta";
   return "Por subir firmada";

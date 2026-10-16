@@ -129,7 +129,7 @@ export function useEstadoAdmision(idPedido?: string): EstadoVivo {
       // "matricula" venía de versiones anteriores del cascarón: ahora el proceso termina en el dictamen
       etapa: c.etapa === "matricula" ? "dictamen" : ((c.etapa as EstadoVivo["etapa"]) ?? "documentos"),
       concluido: c.concluido as string | undefined,
-      // El aspirante ve su cita solo cuando Posgrado la publica (después de que se completa el sínodo)
+      // El aspirante ve su cita solo cuando Posgrado la publica (después de que se asignan los profesores entrevistadores)
       entrevista: (c.entrevista as { notificadaEl?: string } | undefined)?.notificadaEl ? (c.entrevista as EstadoVivo["entrevista"]) : undefined,
       resultadoEntrevista: (c.dictamen as { resolucion?: EstadoVivo["resultadoEntrevista"] } | undefined)?.resolucion,
       evaluacion: { propedeutico: ev.propedeutico, examen: ev.examen },
@@ -153,7 +153,7 @@ export function deshacerConclusion(id = ID_EN_VIVO): string | null {
     motivo = String(c.concluido);
     delete c.concluido;
     if (/entrevista/i.test(motivo)) {
-      // Rechazado por el sínodo: vuelve a la entrevista sin acta
+      // Rechazado por los profesores entrevistadores: vuelve a la entrevista sin acta
       delete c.dictamen;
       delete c.actaEntrevista;
       c.etapa = "entrevista";

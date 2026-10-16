@@ -10,7 +10,7 @@
 |---|---|---|
 | Aspirante | Se registra, entrega documentos, se entrevista, se evalúa y consulta su resultado | [01-aspirante.md](01-aspirante.md) |
 | Departamento de Posgrado (Analista y Jefatura) | Valida expedientes, publica horarios y entrevistas, gestiona la evaluación, define las fechas de las convocatorias, califica el examen (Jefatura), publica resultados y registra la resolución del Colegio | [02-departamento-posgrado.md](02-departamento-posgrado.md) |
-| Profesores (colegiados y de asignatura) | Eligen sus entrevistas, reciben el registro del aspirante, integran el sínodo (acta MTC-EC) y califican los grupos del propedéutico que imparten | [03-profesores.md](03-profesores.md) |
+| Profesores (colegiados y de asignatura) | Eligen sus entrevistas, reciben el registro del aspirante, integran los profesores entrevistadores (acta MTC-EC) y califican los grupos del propedéutico que imparten | [03-profesores.md](03-profesores.md) |
 | Control Escolar (UTEyCV) | No interviene en la admisión: recibe a los admitidos para su inscripción | [04-uteycv.md](04-uteycv.md) |
 | Subdirección Académica | Consulta todo el proceso sin intervenir | [05-subdireccion-academica.md](05-subdireccion-academica.md) |
 | Administrador del sistema | Configura parámetros del proceso, roles, usuarios y revisa la bitácora de seguridad | [06-administrador.md](06-administrador.md) |
@@ -42,7 +42,7 @@ Convocatoria (A / B)
 | Regla | Resumen |
 |---|---|
 | RN-05 | Si la entrevista resulta **Rechazado**, el proceso concluye y se bloquea. |
-| RN-07 | El sínodo lo forman **3 profesores**, colegiados con nombramiento vigente o de asignatura, que **eligen** las entrevistas cuyos horarios publica Posgrado (solo ven día y hora). |
+| RN-07 | Los profesores entrevistadores lo forman **3 profesores**, colegiados con nombramiento vigente o de asignatura, que **eligen** las entrevistas cuyos horarios publica Posgrado (solo ven día y hora). |
 | RN-08 | Quien no acredita una o las dos áreas del propedéutico puede presentar el examen de esas áreas; si no acredita el examen, el proceso concluye y se le invita a una nueva convocatoria. |
 | RN-09 | La constancia de inglés la valida **solo** el Departamento de Posgrado. |
 | RN-10 | La dedicación (tiempo completo o parcial) la **elige el aspirante** y aparece en su SIP-04 (que llena en Inscripción). |

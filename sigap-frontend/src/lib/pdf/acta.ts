@@ -7,7 +7,7 @@ import { rellenarPdf } from "./rellenar";
 
 const MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
 
-/** Genera el acta MTC-EC (2 hojas) con lo que capturó el sínodo. Devuelve una URL del PDF. */
+/** Genera el acta MTC-EC (2 hojas) con lo que capturaron los profesores entrevistadores. Devuelve una URL del PDF. */
 export async function generarActaMtcEc(a: AspiranteP, acta: ActaEntrevista): Promise<string> {
   const h = acta.hoja1;
   const [anio, mes, dia] = (a.entrevista?.fecha ?? "").split("-").map(Number);

@@ -95,10 +95,10 @@ Incluye al **Analista de Posgrado** y a la **Jefatura de Posgrado**. Lo que pued
 **Criterios de aceptación**
 - Posgrado **solo** captura y actualiza el horario (fecha, hora, modalidad y sala o enlace); **no** asigna profesores.
 - **Paso 1 · Publicar horarios:** con un botón (por aspirante o todos a la vez) publico los horarios a los profesores; ellos los ven solo con día y hora y eligen en cuáles participan (HU-PR-08).
-- Veo el nombre del aspirante, su horario y **cómo se va llenando el sínodo** (N de 3, con el nombre y nombramiento de cada profesor y los lugares libres).
+- Veo el nombre del aspirante, su horario y **cómo se va llenando los profesores entrevistadores** (N de 3, con el nombre y nombramiento de cada profesor y los lugares libres).
 - Estados: Horario sin publicar → Esperando profesores → Lista para publicar → Publicada al aspirante.
-- **Paso 2 · Publicar entrevistas:** cuando el sínodo tiene 3 profesores, publico la entrevista (por aspirante o todas las listas a la vez); el aspirante recibe su cita por correo y en SIGAP, y se programan sus recordatorios (un día antes y una hora antes).
-- Pueden integrar el sínodo los profesores **colegiados con nombramiento vigente** y los **profesores de asignatura** (RN-07).
+- **Paso 2 · Publicar entrevistas:** cuando ya están los 3 profesores entrevistadores, publico la entrevista (por aspirante o todas las listas a la vez); el aspirante recibe su cita por correo y en SIGAP, y se programan sus recordatorios (un día antes y una hora antes).
+- Pueden participar como profesores entrevistadores los profesores **colegiados con nombramiento vigente** y los **profesores de asignatura** (RN-07).
 
 **Referencias:** CU-ADM-04 · RF-10, RF-11, RF-55, RF-56 · RN-07
 **Pantalla:** `/posgrado/entrevistas`, `/posgrado/entrevistas/[id]`
@@ -109,22 +109,22 @@ Incluye al **Analista de Posgrado** y a la **Jefatura de Posgrado**. Lo que pued
 **Como** analista de Posgrado, **quiero** actualizar el horario de una entrevista o mandar un aviso puntual, **para** comunicar cambios de fecha, sala o enlace.
 
 **Criterios de aceptación**
-- Mientras no exista acta, puedo actualizar el horario; el sistema no deja guardar si algún profesor del sínodo ya tiene otra entrevista a esa fecha y hora.
+- Mientras no exista acta, puedo actualizar el horario; el sistema no deja guardar si algún profesor entrevistador ya tiene otra entrevista a esa fecha y hora.
 - Si la entrevista ya estaba publicada al aspirante, se le avisa del cambio automáticamente.
 - Puedo enviar un aviso usando plantillas (cambio de fecha, cambio de sala, recordatorio) o un texto libre, por correo, en SIGAP o ambos.
-- El aspirante no ve quiénes integran el sínodo.
+- El aspirante no ve quiénes integran los profesores entrevistadores.
 
 **Referencias:** RF-11, RF-50
 **Pantalla:** `/posgrado/entrevistas/[id]`
 
 ---
 
-### HU-PG-09 · Dar seguimiento al acta del sínodo
-**Como** analista de Posgrado, **quiero** ver si el sínodo ya llenó el acta y subió la versión firmada, **para** saber cuándo queda el dictamen de la entrevista.
+### HU-PG-09 · Dar seguimiento al acta de los profesores entrevistadores
+**Como** analista de Posgrado, **quiero** ver si los profesores entrevistadores ya llenaron el acta y subieron la versión firmada, **para** saber cuándo queda el dictamen de la entrevista.
 
 **Criterios de aceptación**
-- Posgrado **no** captura el dictamen; lo aplica el sínodo al subir el acta MTC-EC firmada por los 3.
-- Veo el estado: "Sínodo N de 3" (mientras los profesores eligen la entrevista), "El sínodo aún no llena el acta" o "Acta llenada · por subir firmada", y quién la llenó.
+- Posgrado **no** captura el dictamen; lo aplican los profesores entrevistadores al subir el acta MTC-EC firmada por los 3.
+- Veo el estado: "Profesores entrevistadores N de 3" (mientras los profesores eligen la entrevista), "Los profesores entrevistadores aún no llenann el acta" o "Acta llenada · por subir firmada", y quién la llenó.
 - En **Comisión y dictamen → Dictamen de entrevista colegiada** veo todas las actas: quién la llenó, quién la subió firmada y cuándo, el dictamen (Aprobado, Con reservas o Rechazado) y puedo descargarla en PDF.
 - Este dictamen es distinto del **dictamen final** del proceso de admisión.
 
@@ -310,7 +310,7 @@ Incluye al **Analista de Posgrado** y a la **Jefatura de Posgrado**. Lo que pued
 - Por aspirante veo la procedencia separada (**institución** y **unidad académica**), y por separado:
   - las **2 calificaciones del propedéutico** (Matemáticas Discretas y Continuas y Programación, con su grupo) y su **promedio**;
   - las **2 calificaciones del examen** (las mismas dos áreas) y su **promedio**;
-  - el **promedio final**: por área, la calificación del examen sustituye a la del propedéutico; es el promedio de las 2 áreas;
+  - el **promedio del proceso**: conserva las áreas aprobadas del propedéutico y usa la nota del examen solo para las reprobadas. Si aprobó ambos propedéuticos, usa su promedio; si solo presentó examen o reprobó ambos propedéuticos, usa las dos notas del examen, incluso si el resultado es reprobatorio. No se calcula mientras falte una nota necesaria;
   - el estado de la evaluación.
 - Las calificaciones del propedéutico las capturan los docentes de cada grupo (HU-PR-07).
 - Descargo el concentrado en **CSV**, que además incluye grupo y docente de cada curso.

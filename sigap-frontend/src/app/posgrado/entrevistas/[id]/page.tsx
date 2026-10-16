@@ -25,7 +25,7 @@ import {
 
 /**
  * Entrevista de un aspirante desde Posgrado: captura y actualiza el horario, lo publica a los profesores,
- * ve cómo se llena el sínodo y publica la entrevista al aspirante. El dictamen lo registran los profesores.
+ * ve cómo se asignan los profesores entrevistadores y publica la entrevista al aspirante. El dictamen lo registran los profesores.
  */
 export default function EntrevistaAspirante({ params }: PageProps<"/posgrado/entrevistas/[id]">) {
   const { id } = use(params);
@@ -79,7 +79,7 @@ export default function EntrevistaAspirante({ params }: PageProps<"/posgrado/ent
 
             <div className="mt-4 rounded-lg border border-gray-100 p-3">
               <p className="text-sm font-medium text-gray-900">
-                Sínodo · {e.sinodo.length} de 3 profesores
+                Profesores entrevistadores · {e.sinodo.length} de 3 profesores
               </p>
               <ol className="mt-2 grid gap-2 sm:grid-cols-3">
                 {[0, 1, 2].map((i) => (
@@ -95,7 +95,7 @@ export default function EntrevistaAspirante({ params }: PageProps<"/posgrado/ent
                   </li>
                 ))}
               </ol>
-              <p className="mt-2 text-xs text-gray-500">Los profesores eligen la entrevista desde su sesión; ven solo el día y la hora hasta que se integran al sínodo.</p>
+              <p className="mt-2 text-xs text-gray-500">Los profesores eligen la entrevista desde su sesión; ven solo el día y la hora hasta que se integran a los profesores entrevistadores.</p>
             </div>
 
             {paso === "Horario sin publicar" && (
@@ -108,12 +108,12 @@ export default function EntrevistaAspirante({ params }: PageProps<"/posgrado/ent
             )}
             {paso === "Esperando profesores" && (
               <p className="mt-4 rounded-lg bg-amber-50 px-3 py-2.5 text-sm text-amber-900">
-                Horario publicado: faltan {lugaresLibres(e)} profesor(es) para completar el sínodo. Después podrás publicar la entrevista al aspirante.
+                Horario publicado: faltan {lugaresLibres(e)} profesor(es) para completar los profesores entrevistadores. Después podrás publicar la entrevista al aspirante.
               </p>
             )}
             {paso === "Lista para publicar" && (
               <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-lg bg-sky-50 px-3 py-2.5 text-sm">
-                <span className="text-sky-900">Sínodo completo. El aspirante aún no ve su cita.</span>
+                <span className="text-sky-900">Profesores entrevistadores completos. El aspirante aún no ve su cita.</span>
                 <button type="button" className={botonPrimario} onClick={() => publicarEntrevista(a)}>
                   <Send size={15} /> Publicar entrevista al aspirante
                 </button>
@@ -140,7 +140,7 @@ export default function EntrevistaAspirante({ params }: PageProps<"/posgrado/ent
   );
 }
 
-/** Plantillas de aviso sobre la entrevista (el aspirante no ve quiénes integran el sínodo). */
+/** Plantillas de aviso sobre la entrevista (el aspirante no ve quiénes integran los profesores entrevistadores). */
 function plantillasEntrevista(a: AspiranteP) {
   const e = a.entrevista!;
   const hola = `Estimado(a) ${a.nombre.split(" ")[0]}:\n\n`;
@@ -264,19 +264,19 @@ function Campo({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-/** El dictamen lo aplica el sínodo al subir el acta MTC-EC firmada por los 3. */
+/** El dictamen lo aplican los profesores entrevistadores al subir el acta MTC-EC firmada por los 3. */
 function EsperandoActa({ a }: { a: AspiranteP }) {
   return (
     <>
-      <Tarjeta titulo="Acta del sínodo (MTC-EC)">
+      <Tarjeta titulo="Acta de los profesores entrevistadores (MTC-EC)">
         <p className="text-sm text-gray-600">
-          Un profesor del sínodo llena el acta en su sesión; los tres la imprimen y la firman, y el primero que sube el PDF firmado aplica el dictamen (se avisa
+          Un profesor entrevistador llena el acta en su sesión; los tres la imprimen y la firman, y el primero que sube el PDF firmado aplica el dictamen (se avisa
           al aspirante).
         </p>
         <p className="mt-3 text-sm">
           Estado:{" "}
           <Etiqueta tono={a.actaEntrevista ? "bg-sky-50 text-sky-800" : "bg-gray-100 text-gray-700"}>
-            {a.actaEntrevista ? "Acta llenada · por subir firmada" : sinodoCompleto(a.entrevista) ? "El sínodo aún no llena el acta" : `Sínodo ${a.entrevista?.sinodo.length ?? 0} de 3`}
+            {a.actaEntrevista ? "Acta llenada · por subir firmada" : sinodoCompleto(a.entrevista) ? "Los profesores entrevistadores aún no llenann el acta" : `Profesores entrevistadores ${a.entrevista?.sinodo.length ?? 0} de 3`}
           </Etiqueta>
         </p>
         <div className="mt-3">

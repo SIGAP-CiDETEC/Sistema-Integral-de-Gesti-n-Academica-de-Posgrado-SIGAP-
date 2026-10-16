@@ -21,11 +21,11 @@ La API usa el prefijo `/api`; `GET /api/health` verifica que NestJS responde. Ej
 
 ## Modelo inicial
 
-El esquema parte de las pantallas y reglas ya presentes en `sigap-frontend`: registro por convocatoria, expediente documental con revisión y prórrogas, entrevistas con sínodo y acta MTC-EC, evaluación por modalidad/grupo/área, dictamen del Colegio, documentos SIP y transición posterior a alumno con registro SICEP. También contempla cuentas y roles por área, avisos, comunicados y bitácora.
+El esquema parte de las pantallas y reglas ya presentes en `sigap-frontend`: registro por convocatoria, expediente documental con revisión y prórrogas, entrevistas con profesores entrevistadores y acta MTC-EC, evaluación por modalidad/grupo/área, dictamen del Colegio, documentos SIP y transición posterior a alumno con registro SICEP. También contempla cuentas y roles por área, avisos, comunicados y bitácora.
 
 `Postulacion.respuestasRegistro` conserva en JSON las respuestas variables del wizard para permitir cambios al formulario sin migrar una columna por pregunta. Identidad, convocatoria, etapas, archivos, revisiones, evaluaciones y dictámenes se modelan en tablas relacionadas. El esquema almacena metadatos y URL de los archivos; los binarios deben guardarse en un servicio de archivos, no en PostgreSQL.
 
-La estructura del modelo puede verse en `prisma/schema.prisma`. Los catálogos oficiales de programas/unidades, campos requeridos por SICEP, políticas de retención y matriz final de permisos deben confirmarse antes de cargar información real. La validación del sínodo de tres personas y reglas de negocio entre etapas debe implementarse en servicios NestJS; Prisma por sí solo no las impone.
+La estructura del modelo puede verse en `prisma/schema.prisma`. Los catálogos oficiales de programas/unidades, campos requeridos por SICEP, políticas de retención y matriz final de permisos deben confirmarse antes de cargar información real. La validación de los profesores entrevistadores de tres personas y reglas de negocio entre etapas debe implementarse en servicios NestJS; Prisma por sí solo no las impone.
 
 ## Estructura
 
@@ -68,4 +68,4 @@ El esquema también contempla los cambios recientes del frontend:
 - `RegistroResolucionColegio` separa la resolución del Colegio de la inscripción posterior. `Inscripcion` y `DocumentoInscripcion` conservan la dedicación elegida, los estados de los formatos SIP, los archivos firmados y el número SICEP.
 - Los documentos usan estados propios (`PENDIENTE`, `APROBADO`, `OBSERVADO`, `PRORROGA`) y permiten guardar observaciones y fecha límite de prórroga.
 
-El esquema define la persistencia y las relaciones; las validaciones cruzadas (pertenencia de un grupo a su materia, choques de horario, promedio de áreas, nota mínima por convocatoria, habilitación de segunda oportunidad, sínodo completo, publicación y transición a inscripción) deben validarse en servicios NestJS y transacciones. La configuración del frontend sigue siendo un cascarón local hasta que se conecte a estos endpoints.
+El esquema define la persistencia y las relaciones; las validaciones cruzadas (pertenencia de un grupo a su materia, choques de horario, promedio de áreas, nota mínima por convocatoria, habilitación de segunda oportunidad, profesores entrevistadores completos, publicación y transición a inscripción) deben validarse en servicios NestJS y transacciones. La configuración del frontend sigue siendo un cascarón local hasta que se conecte a estos endpoints.

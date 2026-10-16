@@ -82,7 +82,7 @@ export default function ProfesorInicio() {
       </div>
 
       <p className="mt-6 text-xs text-gray-500">
-        Posgrado programa el día y la hora de las entrevistas y publica los resultados; tú eliges en qué entrevistas participas, llenas y firmas el acta del sínodo y capturas las calificaciones de los grupos del propedéutico que impartes (el examen lo califica la Jefatura de Posgrado).
+        Posgrado programa el día y la hora de las entrevistas y publica los resultados; tú eliges en qué entrevistas participas, llenas y firmas el acta de los profesores entrevistadores y capturas las calificaciones de los grupos del propedéutico que impartes (el examen lo califica la Jefatura de Posgrado).
       </p>
     </>
   );

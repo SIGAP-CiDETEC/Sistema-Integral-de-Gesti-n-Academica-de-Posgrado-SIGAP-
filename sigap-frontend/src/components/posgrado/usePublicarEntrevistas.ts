@@ -9,7 +9,7 @@ const FIRMA = "\n\nAtentamente,\nDepartamento de Posgrado · CIDETEC";
 /**
  * Publicación de entrevistas en dos pasos:
  * 1) Posgrado publica el HORARIO a los profesores (lo ven solo con día y hora y lo eligen);
- * 2) cuando el sínodo tiene 3 profesores, Posgrado publica la ENTREVISTA al aspirante (aviso y recordatorios).
+ * 2) cuando ya están los 3 profesores entrevistadores, Posgrado publica la ENTREVISTA al aspirante (aviso y recordatorios).
  */
 export function usePublicarEntrevistas() {
   const { actualizar, enviarAviso } = usePosgrado();
@@ -30,7 +30,7 @@ export function usePublicarEntrevistas() {
     actualizar(
       a.id,
       { entrevista: { ...e, notificadaEl: new Date().toISOString() } },
-      `Publicó la entrevista al aspirante: ${citaTexto(e)}; sínodo: ${e.sinodo.map(nombreProfesor).join(", ")}`,
+      `Publicó la entrevista al aspirante: ${citaTexto(e)}; profesores entrevistadores: ${e.sinodo.map(nombreProfesor).join(", ")}`,
     );
     enviarAviso(
       [a.id],

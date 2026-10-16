@@ -24,7 +24,7 @@ import {
 import { TONO_ENTREVISTA_PROF, estadoEntrevistaProf, useProfesorActual } from "@/lib/profesor";
 
 /**
- * Entrevista colegiada desde la sesión del profesor. El acta MTC-EC funciona como cola: el primer sinodal que la llena
+ * Entrevista colegiada desde la sesión del profesor. El acta MTC-EC funciona como cola: el primer profesor entrevistador que la llena
  * la bloquea para los demás; todos la descargan, la imprimen y la firman; el primero que sube el PDF firmado aplica el
  * dictamen y bloquea la subida a los demás.
  */
@@ -50,8 +50,8 @@ export default function EntrevistaProfesor({ params }: PageProps<"/profesor/entr
     return (
       <>
         {migas}
-        <Aviso tono="alerta" titulo="No formas parte del sínodo de esta entrevista">
-          {lugaresLibres(a.entrevista) > 0 ? "Si quieres participar, elígela en Mis entrevistas: todavía tiene lugares libres." : "El sínodo ya está completo."} En la vista de
+        <Aviso tono="alerta" titulo="No eres uno de los profesores entrevistadores de esta entrevista">
+          {lugaresLibres(a.entrevista) > 0 ? "Si quieres participar, elígela en Mis entrevistas: todavía tiene lugares libres." : "Ya están asignados los 3 profesores entrevistadores."} En la vista de
           prueba puedes actuar como alguno de sus integrantes.
         </Aviso>
       </>
@@ -66,7 +66,7 @@ export default function EntrevistaProfesor({ params }: PageProps<"/profesor/entr
     if (!archivo) return;
     if (archivo.type !== "application/pdf" && !archivo.name.toLowerCase().endsWith(".pdf")) return setError("Sube el acta firmada en PDF.");
     if (archivo.size > 10 * 1024 * 1024) return setError("El PDF no debe pasar de 10 MB.");
-    if (!subirActaFirmada(a, archivo.name, yo)) setError("Otro profesor del sínodo ya subió el acta firmada.");
+    if (!subirActaFirmada(a, archivo.name, yo)) setError("Otro profesor entrevistador ya subió el acta firmada.");
   };
 
   return (
@@ -92,7 +92,7 @@ export default function EntrevistaProfesor({ params }: PageProps<"/profesor/entr
             ))}
           </dl>
         </Tarjeta>
-        <Tarjeta titulo="Sínodo">
+        <Tarjeta titulo="Profesores entrevistadores">
           <Etiqueta tono={TONO_ENTREVISTA_PROF[estado]}>{estado}</Etiqueta>
           <div className="mt-3">
             <SinodoActa a={a} />
@@ -105,12 +105,12 @@ export default function EntrevistaProfesor({ params }: PageProps<"/profesor/entr
       </div>
 
       <div className="mt-6 space-y-6">
-        {estado === "Sínodo incompleto" ? (
-          <Aviso tono="info" titulo={`El sínodo aún no está completo (${a.entrevista.sinodo.length} de 3)`}>
+        {estado === "Profesores entrevistadores incompletos" ? (
+          <Aviso tono="info" titulo={`Falta asignar profesores entrevistadores (${a.entrevista.sinodo.length} de 3)`}>
             Podrás llenar el acta MTC-EC cuando otros {lugaresLibres(a.entrevista)} profesor(es) elijan esta entrevista.
           </Aviso>
         ) : estado === "Esperando publicación" ? (
-          <Aviso tono="info" titulo="Sínodo completo: falta que Posgrado publique la entrevista al aspirante">
+          <Aviso tono="info" titulo="Profesores entrevistadores completos: falta que Posgrado publique la entrevista al aspirante">
             Podrás llenar el acta MTC-EC cuando el Departamento de Posgrado publique la cita al aspirante. Mientras tanto revisa su registro de admisión.
           </Aviso>
         ) : a.concluido && !a.dictamen ? (
@@ -122,7 +122,7 @@ export default function EntrevistaProfesor({ params }: PageProps<"/profesor/entr
             a={a}
             inicial={acta}
             onGuardar={(nueva) => {
-              if (!guardarActa(a, nueva, yo)) setError("Otro profesor del sínodo ya llenó el acta.");
+              if (!guardarActa(a, nueva, yo)) setError("Otro profesor entrevistador ya llenó el acta.");
               setLlenando(false);
             }}
             onCancelar={() => setLlenando(false)}
@@ -131,7 +131,7 @@ export default function EntrevistaProfesor({ params }: PageProps<"/profesor/entr
         ) : !acta ? (
           <Tarjeta titulo="Acta de entrevista colegiada (MTC-EC)">
             <p className="text-sm text-gray-600">
-              La llena <b>un solo profesor</b> del sínodo, durante o al terminar la entrevista. En cuanto alguien la llena, a los demás les aparece para
+              La llena <b>un solo profesor</b> de los profesores entrevistadores, durante o al terminar la entrevista. En cuanto alguien la llena, a los demás les aparece para
               descargarla, imprimirla y firmarla.
             </p>
             <button type="button" className={`${botonPrimario} mt-4`} onClick={() => setLlenando(true)}>
@@ -149,12 +149,12 @@ export default function EntrevistaProfesor({ params }: PageProps<"/profesor/entr
               </Aviso>
             )}
             {!a.dictamen && (
-              <Tarjeta titulo="Acta firmada por los 3 sinodales">
+              <Tarjeta titulo="Acta firmada por los 3 profesores entrevistadores">
                 <ol className="list-decimal space-y-1 pl-5 text-sm text-gray-700">
                   <li>
                     {yoLaLlene ? "Tú llenaste el acta." : `La llenó ${nombreProfesor(acta.capturadaPor)}; ya no se puede llenar de nuevo.`} Descárgala e imprímela.
                   </li>
-                  <li>Fírmenla los 3 profesores del sínodo.</li>
+                  <li>Fírmenla los 3 profesores entrevistadores.</li>
                   <li>Súbela escaneada en PDF: el primero que la suba aplica el dictamen y se bloquea la subida para los demás.</li>
                 </ol>
                 <div className="mt-4 flex flex-wrap items-center gap-2">
@@ -304,7 +304,7 @@ function FormularioActa({ a, inicial, onGuardar, onCancelar, yo }: { a: Aspirant
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-sm text-gray-600">
           {inicial ? "" : "La hoja 1 viene prellenada con el registro y el expediente del aspirante; confírmala o corrígela. "}Llena el acta durante o al terminar la
-          entrevista. Al guardarla, los otros dos sinodales ya no podrán llenarla y les aparecerá para descargarla, imprimirla y firmarla.
+          entrevista. Al guardarla, los otros dos profesores entrevistadores ya no podrán llenarla y les aparecerá para descargarla, imprimirla y firmarla.
         </p>
         <button type="button" onClick={ejemplo} className="inline-flex items-center gap-1.5 rounded-full border border-gray-300 bg-white px-3 py-1 text-xs text-gray-700 hover:bg-gray-50">
           <Wand2 size={12} /> Solo cascarón: llenar con datos de ejemplo
@@ -357,7 +357,7 @@ function FormularioActa({ a, inicial, onGuardar, onCancelar, yo }: { a: Aspirant
         </div>
       </Tarjeta>
 
-      <Tarjeta titulo="Hoja 2 · Conclusiones del sínodo">
+      <Tarjeta titulo="Hoja 2 · Conclusiones de los profesores entrevistadores">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[620px] text-left text-sm">
             <thead className="text-xs text-gray-500">
@@ -432,7 +432,7 @@ function FormularioActa({ a, inicial, onGuardar, onCancelar, yo }: { a: Aspirant
             <div className="mt-3">
               <Aviso tono="error" titulo="Efecto de un “No”">
                 <span className="flex items-start gap-1.5">
-                  <TriangleAlert size={14} className="mt-0.5 shrink-0" /> Cuando firmen los 3 sinodales, el proceso del aspirante concluye (RN-05).
+                  <TriangleAlert size={14} className="mt-0.5 shrink-0" /> Cuando firmen los 3 profesores entrevistadores, el proceso del aspirante concluye (RN-05).
                 </span>
               </Aviso>
             </div>

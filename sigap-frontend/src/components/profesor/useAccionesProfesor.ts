@@ -32,7 +32,7 @@ export function useAccionesProfesor() {
         ...(res === "Rechazado" ? { concluido: "Rechazado en la entrevista colegiada (RN-05)" } : { etapa: "evaluacion" as const }),
         formatos: { ...a.formatos, "mtc-ec": true },
       },
-      `${nombreProfesor(acta.firmada?.subidaPor ?? "")} subió el acta MTC-EC firmada por los 3 sinodales (${acta.firmada?.archivo}). Dictamen de entrevista: ${res}${
+      `${nombreProfesor(acta.firmada?.subidaPor ?? "")} subió el acta MTC-EC firmada por los 3 profesores entrevistadores (${acta.firmada?.archivo}). Dictamen de entrevista: ${res}${
         res === "Rechazado" ? ". El proceso queda concluido" : "; pasa a evaluación"
       }`,
     );
@@ -44,7 +44,7 @@ export function useAccionesProfesor() {
   };
 
   /**
-   * Guarda el acta. Es una cola: solo la llena el primer sinodal; si otro ya la llenó, no se sobrescribe
+   * Guarda el acta. Es una cola: solo la llena el primer profesor entrevistador; si otro ya la llenó, no se sobrescribe
    * (solo quien la llenó puede corregirla mientras no se suba firmada).
    */
   const guardarActa = (a: AspiranteP, acta: ActaEntrevista, profesor: string) => {
@@ -58,7 +58,7 @@ export function useAccionesProfesor() {
     return true;
   };
 
-  /** El primer sinodal que sube el acta firmada por los 3 aplica el dictamen; a los demás se les bloquea la subida. */
+  /** El primer profesor entrevistador que sube el acta firmada por los 3 aplica el dictamen; a los demás se les bloquea la subida. */
   const subirActaFirmada = (a: AspiranteP, archivo: string, profesor: string) => {
     const acta = a.actaEntrevista;
     if (!acta || acta.firmada || a.dictamen) return false;
@@ -91,7 +91,7 @@ export function useAccionesProfesor() {
     return true;
   };
 
-  /** El profesor elige una entrevista con lugar libre y se integra al sínodo. */
+  /** El profesor elige una entrevista con lugar libre y se integra a los profesores entrevistadores. */
   const elegirEntrevista = (a: AspiranteP, profesor: string) => {
     const e = a.entrevista;
     if (!e || e.sinodo.includes(profesor) || lugaresLibres(e) === 0) return;
@@ -100,7 +100,7 @@ export function useAccionesProfesor() {
     actualizar(
       a.id,
       { entrevista: nueva },
-      `${nombreProfesor(profesor)} eligió la entrevista del ${fechaCorta(e.fecha)} a las ${e.hora} h · sínodo ${nueva.sinodo.length} de 3${libres ? "" : " (completo)"}`,
+      `${nombreProfesor(profesor)} eligió la entrevista del ${fechaCorta(e.fecha)} a las ${e.hora} h · profesores entrevistadores ${nueva.sinodo.length} de 3${libres ? "" : " (completo)"}`,
     );
   };
 
@@ -109,7 +109,7 @@ export function useAccionesProfesor() {
     const e = a.entrevista;
     if (!e || !e.sinodo.includes(profesor) || a.actaEntrevista) return;
     const nueva = { ...e, sinodo: e.sinodo.filter((p) => p !== profesor) };
-    actualizar(a.id, { entrevista: nueva }, `${nombreProfesor(profesor)} dejó su lugar en la entrevista del ${fechaCorta(e.fecha)} a las ${e.hora} h · sínodo ${nueva.sinodo.length} de 3`);
+    actualizar(a.id, { entrevista: nueva }, `${nombreProfesor(profesor)} dejó su lugar en la entrevista del ${fechaCorta(e.fecha)} a las ${e.hora} h · profesores entrevistadores ${nueva.sinodo.length} de 3`);
   };
 
   return { guardarActa, subirActaFirmada, capturar, elegirEntrevista, dejarLugar };

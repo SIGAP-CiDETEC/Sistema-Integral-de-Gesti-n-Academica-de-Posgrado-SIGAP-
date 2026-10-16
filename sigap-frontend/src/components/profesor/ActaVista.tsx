@@ -42,7 +42,7 @@ export function DescargarActa({ a }: { a: AspiranteP }) {
   );
 }
 
-/** Sínodo y estado del acta: quién la llenó y quién subió la versión firmada por los 3. */
+/** Profesores entrevistadores y estado del acta: quién la llenó y quién subió la versión firmada por los 3. */
 export function SinodoActa({ a }: { a: AspiranteP }) {
   const acta = a.actaEntrevista;
   return (
@@ -101,7 +101,7 @@ export function ActaVista({ a, titulo = "Acta de entrevista colegiada (MTC-EC)",
           </dl>
         </div>
         <div>
-          <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-500">Hoja 2 · Conclusiones del sínodo</h3>
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-500">Hoja 2 · Conclusiones de los profesores entrevistadores</h3>
           <ul className="mt-2 space-y-1 text-sm">
             {CRITERIOS_ACTA.map((c) => (
               <li key={c.id} className="flex justify-between gap-3">
