@@ -16,6 +16,26 @@ enum EstadoPostulacion {
   RECHAZADA
 }
 
+enum TipoRecordatorio {
+  ENTREVISTA_UN_DIA
+  ENTREVISTA_UNA_HORA
+  EXAMEN_UNA_SEMANA
+  EXAMEN_UN_DIA
+  EXAMEN_MISMO_DIA
+}
+
+enum CanalRecordatorio {
+  CORREO
+  NOTIFICACION_SIGAP
+}
+
+enum EstadoRecordatorio {
+  PENDIENTE
+  ENVIADO
+  FALLIDO
+  CANCELADO
+}
+
 model Aspirante {
   id                String         @id @default(cuid())
   nombres           String
@@ -51,21 +71,22 @@ model Programa {
 }
 
 model Postulacion {
-  id                String             @id @default(cuid())
-  folio             String             @unique
+  id                String                  @id @default(cuid())
+  folio             String                  @unique
   aspiranteId       String
   convocatoriaId    String
   programaId        String
-  estado            EstadoPostulacion  @default(BORRADOR)
-  respuestasRegistro Json              @default("{}")
+  estado            EstadoPostulacion       @default(BORRADOR)
+  respuestasRegistro Json                   @default("{}")
   enviadaEn         DateTime?
-  aspirante         Aspirante          @relation(fields: [aspiranteId], references: [id])
-  convocatoria      Convocatoria       @relation(fields: [convocatoriaId], references: [id])
-  programa          Programa           @relation(fields: [programaId], references: [id])
+  aspirante         Aspirante               @relation(fields: [aspiranteId], references: [id])
+  convocatoria      Convocatoria            @relation(fields: [convocatoriaId], references: [id])
+  programa          Programa                 @relation(fields: [programaId], references: [id])
   documentos        DocumentoPostulacion[]
   revisiones        RevisionDocumento[]
-  creadoEn          DateTime           @default(now())
-  actualizadoEn     DateTime           @updatedAt
+  recordatorios     RecordatorioProgramado[]
+  creadoEn          DateTime                @default(now())
+  actualizadoEn     DateTime                @updatedAt
 
   @@index([aspiranteId])
   @@index([convocatoriaId, estado])
@@ -111,6 +132,29 @@ model RevisionDocumento {
   postulacion           Postulacion            @relation(fields: [postulacionId], references: [id], onDelete: Cascade)
 
   @@index([postulacionId, fechaRevision])
+}
+
+model RecordatorioProgramado {
+  id                  String             @id @default(cuid())
+  claveIdempotencia   String             @unique
+  postulacionId       String
+  tipo                TipoRecordatorio
+  canal               CanalRecordatorio
+  estado              EstadoRecordatorio @default(PENDIENTE)
+  eventoFecha         DateTime
+  programadoPara      DateTime
+  asunto              String
+  mensaje             String
+  intentos            Int                @default(0)
+  enviadoEn           DateTime?
+  ultimoError         String?
+  postulacion         Postulacion        @relation(fields: [postulacionId], references: [id], onDelete: Cascade)
+  creadoEn            DateTime           @default(now())
+  actualizadoEn       DateTime           @updatedAt
+
+  @@unique([postulacionId, tipo, canal, programadoPara])
+  @@index([estado, programadoPara])
+  @@index([postulacionId, programadoPara])
 }
 
 model EventoBitacora {
