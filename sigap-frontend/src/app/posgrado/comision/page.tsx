@@ -145,6 +145,7 @@ function DictamenFinal() {
   const [hora, setHora] = useState(acta?.hora ?? "12:00");
   const [archivo, setArchivo] = useState<string | undefined>(acta?.archivo);
   const [res, setRes] = useState<Record<string, ResolucionColegio>>({});
+  const [motivos, setMotivos] = useState<Record<string, string>>({});
   const [fechaPub, setFechaPub] = useState<string | null>(null);
 
   const enComision = aspirantes.filter((a) => a.etapa === "dictamen" && !a.concluido && !a.resolucion);
@@ -154,7 +155,8 @@ function DictamenFinal() {
   const publicados = aspirantes.filter((a) => !!a.resolucion).sort((x, y) => (y.turnadoUteycv ?? "").localeCompare(x.turnadoUteycv ?? ""));
   const informeListo = !!acta?.informeGeneradoEl;
   const resolucionDe = (a: AspiranteP): ResolucionColegio => registradas[a.id] ?? res[a.id] ?? "Aceptado";
-  const puedeRegistrar = informeListo && numero.trim() && fecha && hora && archivo && sinRegistrar.length > 0;
+  const motivoDe = (a: AspiranteP) => (motivos[a.id] ?? a.motivoReservas ?? "").trim();
+  const puedeRegistrar = informeListo && numero.trim() && fecha && hora && archivo && sinRegistrar.length > 0 && sinRegistrar.every((a) => resolucionDe(a) !== "Con reservas" || motivoDe(a));
 
   const idConv = "A" as const;
   const fechaConv = fechaResultados(config, idConv);
@@ -165,11 +167,13 @@ function DictamenFinal() {
   const descargarInforme = () =>
     descargarCsv(
       `Informe_Comision_Admision_${convocatoriaActual.nombre.split(" ").pop()}.csv`,
-      ["ID del aspirante", "Dictamen final"],
-      enComision.map((a) => [a.id, DICTAMEN_FINAL[resolucionDe(a)]]),
+      ["ID del aspirante", "Dictamen final", "Con reservas", "Motivo de las reservas"],
+      enComision.map((a) => [a.id, DICTAMEN_FINAL[resolucionDe(a)], resolucionDe(a) === "Con reservas" ? "Sí" : "No", resolucionDe(a) === "Con reservas" ? motivoDe(a) : ""]),
     );
 
   const registrar = () => {
+    if (!puedeRegistrar) return;
+    sinRegistrar.forEach((a) => actualizar(a.id, { motivoReservas: resolucionDe(a) === "Con reservas" ? motivoDe(a) : undefined }, "Registró el motivo de la resolución del Colegio"));
     const nuevas = Object.fromEntries(sinRegistrar.map((a) => [a.id, resolucionDe(a)]));
     guardarActa(
       {
@@ -250,6 +254,7 @@ function DictamenFinal() {
                 <th className="py-2 font-medium">Evaluación</th>
                 <th className="py-2 font-medium">Resolución del Colegio</th>
                 <th className="py-2 font-medium">Dictamen final</th>
+                <th className="py-2 font-medium">Motivo de las reservas</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -288,12 +293,15 @@ function DictamenFinal() {
                     <td className="py-2.5">
                       <Etiqueta tono={TONO_DICTAMEN[DICTAMEN_FINAL[resolucionDe(a)]]}>{DICTAMEN_FINAL[resolucionDe(a)]}</Etiqueta>
                     </td>
+                    <td className="py-2.5">
+                      {resolucionDe(a) === "Con reservas" && (reg ? <span>{a.motivoReservas || "Sin motivo registrado"}</span> : <textarea aria-label={`Motivo de las reservas de ${a.nombre}`} required value={motivos[a.id] ?? a.motivoReservas ?? ""} onChange={(e) => setMotivos({ ...motivos, [a.id]: e.target.value })} placeholder="Indica el motivo (obligatorio)" className={inputBase} />)}
+                    </td>
                   </tr>
                 );
               })}
               {!enComision.length && (
                 <tr>
-                  <td colSpan={5} className="py-6 text-center text-gray-500">
+                  <td colSpan={6} className="py-6 text-center text-gray-500">
                     No hay aspirantes con evaluación acreditada pendientes de resultado.
                   </td>
                 </tr>

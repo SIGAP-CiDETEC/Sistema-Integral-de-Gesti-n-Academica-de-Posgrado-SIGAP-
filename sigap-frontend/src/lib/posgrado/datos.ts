@@ -260,6 +260,7 @@ export type AspiranteP = {
   actaEntrevista?: ActaEntrevista;
   evaluacion: EvaluacionP;
   resolucion?: ResolucionColegio;
+  motivoReservas?: string;
   /** Fecha en que pasó a inscripción (UTEyCV) al registrarse la resolución del Colegio */
   turnadoUteycv?: string;
   /** Formatos firmados recibidos (SIP-02, SIP-05…) */

@@ -156,7 +156,6 @@ const ENCABEZADOS = [
   "Promedio de licenciatura (declarado)",
   "Promedio de licenciatura (validado por Posgrado)",
   "Fecha de registro",
-  "Hora de registro",
   // 1 · Registro
   "1. Registro",
   "1. Currículum SIP-02",
@@ -172,6 +171,10 @@ const ENCABEZADOS = [
   "3. Profesores entrevistadores",
   "3. Acta MTC-EC",
   "3. Dictamen de entrevista",
+  "3. Con reservas",
+  "3. Motivo de las reservas",
+  "¿Solicitará beca SECIHTI?",
+  "¿Continuaría sin beca?",
   // 4 · Evaluación
   "4. Modalidad de evaluación",
   ...AREAS_EVAL.map((x) => `4. Grupo de ${x.nombre}`),
@@ -182,13 +185,11 @@ const ENCABEZADOS = [
   "4. Promedio final de la evaluación",
   // 5 · Resultados de la evaluación
   "5. Resultados de la evaluación",
-  "5. Día de publicación del propedéutico",
-  "5. Hora de publicación del propedéutico",
-  "5. Día de publicación del examen",
-  "5. Hora de publicación del examen",
   // 6 · Dictamen final
   "6. Resolución del Colegio",
   "6. Dictamen final",
+  "6. Con reservas",
+  "6. Motivo de las reservas",
   "6. Día de publicación del resultado",
   "6. Hora de publicación del resultado",
   // Situación actual
@@ -207,8 +208,6 @@ export function filaReporte(a: AspiranteP, registro: Respuestas = {}): CeldaCsv[
   const texto = (id: string, defecto = "") => typeof registro[id] === "string" ? String(registro[id]) : defecto;
   const areas = Array.isArray(registro.areasInteres) ? registro.areasInteres : [];
   const registroFecha = fechaHoraReporte(a.registradoEl);
-  const propePublicado = fechaHoraReporte(ev.propedeutico?.publicadoEl);
-  const examenPublicado = fechaHoraReporte(ev.examen?.publicadoEl);
   const resultadoPublicado = fechaHoraReporte(a.turnadoUteycv);
   const publicada = (r?: { publicadoEl?: string }) => r?.publicadoEl ? "publicado" : "sin publicar";
   const resultados = [ev.propedeutico && `Propedéutico ${publicada(ev.propedeutico)}`, ev.examen && `Examen ${publicada(ev.examen)}`].filter(Boolean).join(" · ");
@@ -229,7 +228,6 @@ export function filaReporte(a: AspiranteP, registro: Respuestas = {}): CeldaCsv[
     num(a.promedio),
     num(a.promedioValidado) ?? "",
     registroFecha.fecha,
-    registroFecha.hora,
     a.etapa === "registro" ? "Pendiente" : "Completo",
     a.formatos["sip-02"] ? "Entregado firmado" : "Pendiente",
     ...DOCS_REPORTE.map((col) => estadoDocumentoReporte(a.documentos.find((d) => col.ids.includes(d.id)))),
@@ -239,6 +237,10 @@ export function filaReporte(a: AspiranteP, registro: Respuestas = {}): CeldaCsv[
     e ? e.sinodo.map(nombreProfesor).join("; ") : "",
     acta?.firmada ? `Firmada y subida por ${nombreProfesor(acta.firmada.subidaPor)}` : acta ? `Llenada por ${nombreProfesor(acta.capturadaPor)} · falta subirla firmada` : a.dictamen ? "Registrada" : "",
     a.dictamen?.resolucion ?? "",
+    a.dictamen ? (a.dictamen.resolucion === "Con reservas" ? "Sí" : "No") : "",
+    a.dictamen?.resolucion === "Con reservas" ? acta?.motivo || a.dictamen.comentarios : "",
+    texto("becaSecihti", acta?.hoja1.becaSecihti ?? ""),
+    texto("sinBeca", acta?.hoja1.sinBeca ?? ""),
     ev.modalidad === "propedeutico" ? "Propedéutico" : ev.modalidad === "examen" ? "Examen" : "",
     ...AREAS_EVAL.map((x) => (ev.modalidad === "propedeutico" ? (ev.grupos[x.id] ?? "") : "")),
     ...AREAS_EVAL.map((x) => prope[x.id] ?? ""),
@@ -247,9 +249,10 @@ export function filaReporte(a: AspiranteP, registro: Respuestas = {}): CeldaCsv[
     examen.promedio ?? "",
     promedioFinal(a) ?? "",
     resultados,
-    propePublicado.fecha, propePublicado.hora, examenPublicado.fecha, examenPublicado.hora,
     a.resolucion ?? "",
     dictamenFinal(a) ?? "",
+    a.resolucion ? (a.resolucion === "Con reservas" ? "Sí" : "No") : "",
+    a.resolucion === "Con reservas" ? a.motivoReservas ?? "" : "",
     resultadoPublicado.fecha, resultadoPublicado.hora,
     nombreFase(faseSubdireccion(a)),
     bandejaDe(a),

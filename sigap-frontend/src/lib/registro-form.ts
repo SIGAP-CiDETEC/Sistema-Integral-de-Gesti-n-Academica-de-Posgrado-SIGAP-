@@ -261,6 +261,8 @@ export const SECCIONES: Seccion[] = [
     id: "objetivos",
     titulo: "Proyectos y objetivos",
     preguntas: [
+      { id: "becaSecihti", label: "¿Solicitarás beca SECIHTI?", tipo: "radio", requerido: true, opciones: ["Sí", "No"] },
+      { id: "sinBeca", label: "¿Continuarías tus estudios sin beca?", tipo: "radio", requerido: true, opciones: ["Sí", "No"] },
       { id: "objetivos5", label: "¿Cuáles son tus objetivos profesionales y académicos en los próximos 5 años?", tipo: "textarea", requerido: true, ancho: "completo" },
       { id: "comoAyudara", label: "¿Cómo crees que este programa te ayudará a alcanzar tus objetivos?", tipo: "textarea", requerido: true, ancho: "completo" },
     ],

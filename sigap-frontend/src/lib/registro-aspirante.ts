@@ -43,8 +43,8 @@ export function hoja1Prellenada(a: AspiranteP, r: Respuestas, capturas: Record<s
   const horario = capturas.horario;
   return {
     areas: (areasCap ?? areasReg).filter((x) => AREAS_INVESTIGACION.includes(x)).slice(0, 3),
-    becaSecihti: sn(capturas.becaSecihti),
-    sinBeca: sn(capturas.sinBeca),
+    becaSecihti: sn(capturas.becaSecihti) ?? sn(r.becaSecihti),
+    sinBeca: sn(capturas.sinBeca) ?? sn(r.sinBeca),
     profesorInteres: sn(capturas.profesorInteres),
     profesorNombre: txt(capturas.profesorNombre),
     horario: horario === "Matutino" || horario === "Vespertino" || horario === "Indistinto" ? horario : undefined,
