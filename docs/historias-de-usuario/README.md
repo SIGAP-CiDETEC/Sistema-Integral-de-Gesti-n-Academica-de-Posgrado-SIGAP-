@@ -10,7 +10,8 @@
 |---|---|---|
 | Aspirante | Se registra, entrega documentos, se entrevista, se evalúa y consulta su resultado | [01-aspirante.md](01-aspirante.md) |
 | Departamento de Posgrado (Analista y Jefatura) | Valida expedientes, publica horarios y entrevistas, gestiona la evaluación, define las fechas de las convocatorias, califica el examen (Jefatura), publica resultados y registra la resolución del Colegio | [02-departamento-posgrado.md](02-departamento-posgrado.md) |
-| Profesores (colegiados y de asignatura) | Eligen sus entrevistas, reciben el registro del aspirante, integran los profesores entrevistadores (acta MTC-EC) y califican los grupos del propedéutico que imparten | [03-profesores.md](03-profesores.md) |
+| Profesores (colegiados y de asignatura) | Eligen sus entrevistas, reciben el registro del aspirante, integran los profesores entrevistadores (acta MTC-EC) y califican los grupos del propedéutico que imparten (y firman su acta SIP-12) | [03-profesores.md](03-profesores.md) |
+| Coordinador del programa | Únicamente firma las actas de los cursos propedéuticos (SIP-12) que ya firmaron los docentes | [07-coordinador.md](07-coordinador.md) |
 | Control Escolar (UTEyCV) | No interviene en la admisión: recibe a los admitidos para su inscripción | [04-uteycv.md](04-uteycv.md) |
 | Subdirección Académica | Consulta todo el proceso sin intervenir | [05-subdireccion-academica.md](05-subdireccion-academica.md) |
 | Administrador del sistema | Configura parámetros del proceso, roles, usuarios y revisa la bitácora de seguridad | [06-administrador.md](06-administrador.md) |

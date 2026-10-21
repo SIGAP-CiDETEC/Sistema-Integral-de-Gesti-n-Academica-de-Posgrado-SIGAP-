@@ -7,12 +7,13 @@ import { useMemo, useSyncExternalStore } from "react";
  * SOLO CASCARÓN: se guardan en el navegador. Con backend: tablas roles, permisos y usuarios (NestJS + guards).
  */
 
-export type AreaPersonal = "posgrado" | "uteycv" | "subdireccion" | "profesor";
+export type AreaPersonal = "posgrado" | "uteycv" | "subdireccion" | "profesor" | "coordinador";
 export const NOMBRE_AREA: Record<AreaPersonal, string> = {
   posgrado: "Departamento de Posgrado",
   uteycv: "Control Escolar (UTEyCV)",
   subdireccion: "Subdirección Académica",
   profesor: "Profesores (Colegio)",
+  coordinador: "Coordinación del programa",
 };
 
 export type Permiso = { id: string; area: AreaPersonal; nombre: string; ruta: string };
@@ -33,6 +34,7 @@ export const PERMISOS: Permiso[] = [
   { id: "sd.bitacora", area: "subdireccion", nombre: "Consultar bitácora (solo lectura)", ruta: "/subdireccion/bitacora" },
   { id: "ut.bitacora", area: "uteycv", nombre: "Consultar bitácora", ruta: "/uteycv/bitacora" },
   { id: "pr.entrevistas", area: "profesor", nombre: "Entrevistas de los profesores entrevistadores: llenar y firmar el acta MTC-EC", ruta: "/profesor/entrevistas" },
+  { id: "co.actas", area: "coordinador", nombre: "Firmar las actas de los cursos propedéuticos (SIP-12)", ruta: "/coordinador/actas" },
   { id: "pr.evaluacion", area: "profesor", nombre: "Capturar calificaciones del propedéutico de los grupos que imparte", ruta: "/profesor/evaluacion" },
 ];
 
@@ -49,6 +51,7 @@ export const ROLES_BASE: RolPersonal[] = [
   { id: "ut-analista", nombre: "Analista de UTEyCV", area: "uteycv", permisos: ["ut.inscripcion"] },
   { id: "sd-subdireccion", nombre: "Subdirección Académica", area: "subdireccion", permisos: todos("subdireccion"), base: true },
   { id: "pr-profesor", nombre: "Profesor colegiado", area: "profesor", permisos: todos("profesor"), base: true },
+  { id: "co-coordinador", nombre: "Coordinador del programa", area: "coordinador", permisos: todos("coordinador"), base: true },
 ];
 
 /** Rol de las cuentas precargadas del cascarón (ver sesion.ts). */
@@ -58,6 +61,7 @@ export const ROL_INICIAL: Record<string, string> = {
   "control.escolar@ipn.mx": "ut-control",
   "subdireccion.academica@ipn.mx": "sd-subdireccion",
   "rmorales@ipn.mx": "pr-profesor",
+  "coordinador.mtc@ipn.mx": "co-coordinador",
 };
 
 export type UsuarioAux = { correo: string; nombre: string; contrasena: string; rolId: string; activo: boolean; creadoEl: string };
@@ -91,7 +95,7 @@ const leerRaw = () => {
  * Permisos que se agregaron después de que el navegador guardó los roles: se suman a los roles
  * precargados que los tienen por defecto (lo que el administrador quitó a propósito no se toca).
  */
-const PERMISOS_NUEVOS = ["pg.inicio", "pg.calendario", "pg.calificaciones", "sd.aspirantes", "sd.bitacora", "ut.inscripcion", "pr.entrevistas", "pr.evaluacion"];
+const PERMISOS_NUEVOS = ["pg.inicio", "pg.calendario", "pg.calificaciones", "sd.aspirantes", "sd.bitacora", "ut.inscripcion", "pr.entrevistas", "pr.evaluacion", "co.actas"];
 function normalizar(e: Estado): Estado {
   const conocidos = e.permisosConocidos ?? [];
   const faltan = PERMISOS_NUEVOS.filter((p) => !conocidos.includes(p));

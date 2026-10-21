@@ -5,14 +5,17 @@ import { PageHeader } from "@/components/PageHeader";
 import { usePosgrado } from "@/components/posgrado/PosgradoProvider";
 import { Etiqueta, Kpi, Tarjeta } from "@/components/posgrado/ui";
 import { SoloConsulta } from "@/components/subdireccion/SoloConsulta";
-import { useConvocatorias } from "@/lib/convocatoria";
+import { CalendarDays } from "lucide-react";
+import { fechaResultados, useConvocatorias } from "@/lib/convocatoria";
+import { useContenido } from "@/lib/contenido";
 import { faseSubdireccion, FASES_SUBDIRECCION, resumenProceso } from "@/lib/subdireccion";
 import { fechaHora } from "@/lib/posgrado/datos";
 
 /** Inicio de la Subdirección Académica: panorama del proceso de admisión (solo consulta). */
 export default function SubdireccionInicio() {
   const { aspirantes, bitacora, cargado, porId } = usePosgrado();
-  const { lista: convocatorias } = useConvocatorias();
+  const { lista: convocatorias, config } = useConvocatorias();
+  const { calendarioDe } = useContenido();
   if (!cargado) return null;
 
   const r = resumenProceso(aspirantes);
@@ -86,6 +89,33 @@ export default function SubdireccionInicio() {
           </Tarjeta>
         </div>
       </div>
+
+      <Tarjeta titulo={<span className="flex items-center gap-2"><CalendarDays size={17} className="text-primary" /> Calendario de las convocatorias</span>} className="mt-6">
+        <p className="mb-4 text-sm text-gray-600">Calendario del proceso de admisión que publica la Jefatura de Posgrado para cada convocatoria.</p>
+        <div className="grid gap-5 md:grid-cols-2" data-calendarios>
+          {convocatorias.map((c) => {
+            const cal = calendarioDe(c.id);
+            const resultados = fechaResultados(config, c.id);
+            return (
+              <div key={c.id} className="min-w-0">
+                <p className="font-medium text-gray-900">{c.nombre}</p>
+                <p className="text-xs text-gray-500">
+                  Registro {c.inicio} — {c.cierre}
+                  {resultados ? ` · resultados ${new Date(`${resultados}T12:00:00`).toLocaleDateString("es-MX", { day: "numeric", month: "long", year: "numeric" })}` : ""}
+                </p>
+                {cal ? (
+                  <a href={cal.imagen} target="_blank" rel="noreferrer" title="Ver el calendario completo" className="mt-2 block overflow-hidden rounded-lg border border-gray-200 bg-white">
+                    {/* eslint-disable-next-line @next/next/no-img-element -- imagen que publica la Jefatura de Posgrado */}
+                    <img src={cal.imagen} alt={`Calendario del proceso de admisión ${c.nombre}`} className="w-full" />
+                  </a>
+                ) : (
+                  <p className="mt-2 rounded-lg border border-dashed border-gray-300 px-3 py-6 text-center text-sm text-gray-500">La Jefatura aún no publica el calendario.</p>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </Tarjeta>
 
       <Tarjeta titulo="Actividad reciente del proceso" className="mt-6" accion={<Link href="/subdireccion/bitacora" className="text-sm text-primary hover:underline">Ver bitácora</Link>}>
         {bitacora.length ? (

@@ -1,8 +1,11 @@
 "use client";
 
+import { FileSignature } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
+import { ActasSip12 } from "@/components/actas/ActasSip12";
 import { usePosgrado } from "@/components/posgrado/PosgradoProvider";
-import { Aviso, Regresar } from "@/components/posgrado/ui";
+import { Aviso, Regresar, Tarjeta } from "@/components/posgrado/ui";
+import { gruposSip12 } from "@/lib/actas-sip12";
 import { CapturaCalificacion } from "@/components/profesor/CapturaCalificacion";
 import { describirGrupo, lugarDe } from "@/lib/evaluacion";
 import { useConfigEvaluacion } from "@/lib/evaluacion-config";
@@ -84,6 +87,18 @@ export default function CalificacionesProfesor() {
               </table>
             </div>
           </section>
+
+          <Tarjeta titulo={<span className="flex items-center gap-2"><FileSignature size={17} className="text-primary" /> Actas de los cursos propedéuticos (SIP-12)</span>}>
+            <p className="mb-1 text-sm text-gray-600">
+              Al capturar la calificación de todo el grupo, descarga el acta SIP-12 (ya viene llena con las calificaciones en número y letra), fírmala y súbela
+              escaneada. Te llegará un correo de confirmación y el acta pasa al Coordinador del programa para su firma.
+            </p>
+            <ActasSip12
+              modo="docente"
+              grupos={gruposSip12(aspirantes, materias).filter((g) => g.docente === yo)}
+              docente={profesor ? { nombre: profesor.nombre, correo: profesor.correo } : undefined}
+            />
+          </Tarjeta>
         </div>
       )}
     </>

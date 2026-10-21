@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { usePosgrado } from "@/components/posgrado/PosgradoProvider";
 import { Aviso, Etiqueta, Regresar, Tarjeta, botonPrimario, botonSecundario, inputBase } from "@/components/posgrado/ui";
 import { DescargarActa } from "@/components/profesor/ActaVista";
+import { generarResultadosFinales } from "@/lib/pdf/resultados-finales";
 import { descargarCsv } from "@/lib/csv";
 import { convocatoriaActual } from "@/lib/config";
 import { fechaResultados, guardarConvocatorias, hoyISO, useConvocatorias } from "@/lib/convocatoria";
@@ -142,7 +143,6 @@ function DictamenFinal() {
   const { config } = useConvocatorias();
   const [numero, setNumero] = useState(acta?.numero ?? "");
   const [fecha, setFecha] = useState(acta?.fecha ?? "");
-  const [hora, setHora] = useState(acta?.hora ?? "12:00");
   const [archivo, setArchivo] = useState<string | undefined>(acta?.archivo);
   const [res, setRes] = useState<Record<string, ResolucionColegio>>({});
   const [motivos, setMotivos] = useState<Record<string, string>>({});
@@ -156,7 +156,7 @@ function DictamenFinal() {
   const informeListo = !!acta?.informeGeneradoEl;
   const resolucionDe = (a: AspiranteP): ResolucionColegio => registradas[a.id] ?? res[a.id] ?? "Aceptado";
   const motivoDe = (a: AspiranteP) => (motivos[a.id] ?? a.motivoReservas ?? "").trim();
-  const puedeRegistrar = informeListo && numero.trim() && fecha && hora && archivo && sinRegistrar.length > 0 && sinRegistrar.every((a) => resolucionDe(a) !== "Con reservas" || motivoDe(a));
+  const puedeRegistrar = informeListo && numero.trim() && fecha && archivo && sinRegistrar.length > 0 && sinRegistrar.every((a) => resolucionDe(a) !== "Con reservas" || motivoDe(a));
 
   const idConv = "A" as const;
   const fechaConv = fechaResultados(config, idConv);
@@ -180,13 +180,23 @@ function DictamenFinal() {
         ...(acta ?? { resoluciones: {} }),
         numero: numero.trim(),
         fecha,
-        hora,
         archivo,
         resoluciones: { ...registradas, ...nuevas },
         resolucionRegistradaEl: new Date().toISOString(),
       },
       `Registró el acta de Colegio ${numero.trim()} con ${sinRegistrar.length} resolución(es); se publicarán a partir del ${fechaLarga(fechaConv)}`,
     );
+  };
+
+  const descargarResultados = async () => {
+    const filas = Object.entries(registradas)
+      .sort(([x], [y]) => x.localeCompare(y))
+      .map(([id, resolucion]) => ({ id, resolucion }));
+    const url = await generarResultadosFinales(convocatoriaActual.nombre.split(" ").pop()?.replace("-", "") ?? "", filas);
+    const el = document.createElement("a");
+    el.href = url;
+    el.download = `Resultados_finales_admision_${convocatoriaActual.nombre.split(" ").pop()}.pdf`;
+    el.click();
   };
 
   const publicar = () => {
@@ -254,6 +264,7 @@ function DictamenFinal() {
                 <th className="py-2 font-medium">Evaluación</th>
                 <th className="py-2 font-medium">Resolución del Colegio</th>
                 <th className="py-2 font-medium">Dictamen final</th>
+                <th className="py-2 font-medium">Con reservas</th>
                 <th className="py-2 font-medium">Motivo de las reservas</th>
               </tr>
             </thead>
@@ -293,6 +304,7 @@ function DictamenFinal() {
                     <td className="py-2.5">
                       <Etiqueta tono={TONO_DICTAMEN[DICTAMEN_FINAL[resolucionDe(a)]]}>{DICTAMEN_FINAL[resolucionDe(a)]}</Etiqueta>
                     </td>
+                    <td className="py-2.5 text-gray-700" data-con-reservas>{resolucionDe(a) === "Con reservas" ? "Sí" : "No"}</td>
                     <td className="py-2.5">
                       {resolucionDe(a) === "Con reservas" && (reg ? <span>{a.motivoReservas || "Sin motivo registrado"}</span> : <textarea aria-label={`Motivo de las reservas de ${a.nombre}`} required value={motivos[a.id] ?? a.motivoReservas ?? ""} onChange={(e) => setMotivos({ ...motivos, [a.id]: e.target.value })} placeholder="Indica el motivo (obligatorio)" className={inputBase} />)}
                     </td>
@@ -301,7 +313,7 @@ function DictamenFinal() {
               })}
               {!enComision.length && (
                 <tr>
-                  <td colSpan={6} className="py-6 text-center text-gray-500">
+                  <td colSpan={7} className="py-6 text-center text-gray-500">
                     No hay aspirantes con evaluación acreditada pendientes de resultado.
                   </td>
                 </tr>
@@ -311,8 +323,8 @@ function DictamenFinal() {
         </div>
       </Tarjeta>
 
-      <Tarjeta titulo={<span className="flex items-center gap-2"><Gavel size={16} className="text-primary" /> 2. Resolución del Colegio de Profesores (RF-59, RF-60)</span>}>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <Tarjeta titulo={<span className="flex items-center gap-2"><Gavel size={16} className="text-primary" /> 2. Resolución de la Comisión de Admisión (RF-59, RF-60)</span>}>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <label className="text-sm">
             <span className="font-medium text-gray-900">Número de acta</span>
             <input value={numero} onChange={(e) => setNumero(e.target.value)} placeholder="Ej. 04/2026" className={`${inputBase} mt-1`} />
@@ -320,10 +332,6 @@ function DictamenFinal() {
           <label className="text-sm">
             <span className="font-medium text-gray-900">Fecha de sesión</span>
             <input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} className={`${inputBase} mt-1`} />
-          </label>
-          <label className="text-sm">
-            <span className="font-medium text-gray-900">Hora de la sesión</span>
-            <input type="time" value={hora} onChange={(e) => setHora(e.target.value)} className={`${inputBase} mt-1`} />
           </label>
           <label className="text-sm">
             <span className="font-medium text-gray-900">Acta firmada (PDF)</span>
@@ -354,8 +362,7 @@ function DictamenFinal() {
         </div>
         {acta?.resolucionRegistradaEl && (
           <p className="mt-3 text-xs text-emerald-700">
-            Acta {acta.numero} del {fechaCorta(acta.fecha)}
-            {acta.hora ? `, ${acta.hora} h` : ""} registrada · {acta.archivo}
+            Acta {acta.numero} del {fechaCorta(acta.fecha)} registrada · {acta.archivo}
           </p>
         )}
       </Tarjeta>
@@ -401,6 +408,14 @@ function DictamenFinal() {
             <p className="text-gray-500">No hay resultados registrados pendientes de publicar.</p>
           )}
         </div>
+        {Object.keys(registradas).length > 0 && (
+          <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
+            <button type="button" className={botonSecundario} onClick={descargarResultados}>
+              <Download size={15} /> Resultados finales (PDF)
+            </button>
+            <span className="text-xs text-gray-500">Documento oficial con el ID de cada aspirante y su dictamen, para publicarlo.</span>
+          </div>
+        )}
         <p className="mt-3 text-sm text-gray-600">
           Al publicar, cada aspirante ve su resultado en SIGAP (6 · Dictamen final) y recibe un aviso por correo. Los admitidos pasan automáticamente a su
           inscripción con Control Escolar (UTEyCV).

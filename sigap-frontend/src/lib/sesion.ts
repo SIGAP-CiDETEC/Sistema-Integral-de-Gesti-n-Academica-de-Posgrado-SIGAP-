@@ -47,6 +47,13 @@ export const USUARIOS_DEMO: Usuario[] = [
     puesto: "Profesor colegiado · CIDETEC",
     rol: "profesor",
   },
+  {
+    correo: "coordinador.mtc@ipn.mx",
+    contrasena: "Coordinador#2026",
+    nombre: "Dr. Mario Aldape Pérez",
+    puesto: "Coordinador del programa · solo firma actas",
+    rol: "coordinador",
+  },
   { correo: "admin.sigap@ipn.mx", contrasena: "Admin#2026", nombre: "Admin CIDETEC", puesto: "Administrador del sistema", rol: "admin" },
 ];
 

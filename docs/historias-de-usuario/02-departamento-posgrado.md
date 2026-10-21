@@ -206,8 +206,8 @@ Incluye al **Analista de Posgrado** y a la **Jefatura de Posgrado**. Lo que pued
 **Como** analista de Posgrado, **quiero** registrar el acta del Colegio y la resolución de cada aspirante, **para** tener listos los resultados que se publicarán.
 
 **Criterios de aceptación**
-- Capturo número de acta, fecha y **hora** de la sesión y el PDF del acta firmada; se requiere haber generado el informe.
-- Para cada aspirante elijo **Aceptado**, **Con reservas** o **No aceptado** (dictamen final: Favorable, Con reservas o No favorable).
+- La sección se llama **2. Resolución de la Comisión de Admisión**. Capturo número de acta, fecha de la sesión (ya **no** se pide la hora) y el PDF del acta firmada; se requiere haber generado el informe.
+- Para cada aspirante elijo **Aceptado**, **Con reservas** o **No aceptado**; en la tabla, después del dictamen, aparece la columna **Con reservas** (Sí/No) y a su lado el **motivo**, que es obligatorio cuando es con reservas.
 - Registrar la resolución **no la publica**: queda "registrada · por publicar" hasta que Posgrado publique los resultados (HU-PG-25).
 
 **Referencias:** RF-59, RF-60
@@ -341,9 +341,10 @@ Incluye al **Analista de Posgrado** y a la **Jefatura de Posgrado**. Lo que pued
 - El botón **Publicar resultados** se habilita a partir de esa fecha.
 - Al publicar:
   - cada aspirante ve su resultado en su fase 6 (Dictamen final) y recibe su aviso;
-  - los aceptados (con o sin reservas) quedan **admitidos** y pasan automáticamente a Inscripción con UTEyCV, donde llenan su SIP-04 con la fecha y hora de la sesión del Colegio;
+  - los aceptados (con o sin reservas) quedan **admitidos** y pasan automáticamente a Inscripción con UTEyCV, donde llenan su SIP-04 con la fecha de la sesión del Colegio;
   - los no aceptados concluyen su proceso.
 - La página muestra los resultados publicados y con qué fecha.
+- Puedo descargar los **Resultados finales del proceso de admisión** en PDF, con el formato de CIDETEC: ID de cada aspirante y su dictamen (*Aceptado.*, *Condicionado al cumplimiento documental para proceder a su aceptación.* o *No aceptado. Invitado a participar en los siguientes procesos de Admisión.*) y las notas de contacto.
 
 **Referencias:** RF-59, RF-60
 **Pantalla:** `/posgrado/comision`

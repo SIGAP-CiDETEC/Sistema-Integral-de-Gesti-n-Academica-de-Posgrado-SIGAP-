@@ -13,6 +13,7 @@ La Subdirección Académica **solo consulta**: puede ver todo el proceso de admi
 - Veo indicadores: aspirantes registrados, en proceso, admitidos por el Colegio y concluidos sin admisión.
 - Veo una gráfica de barras por fase (registro, documentos, entrevista, evaluación, comisión, admitido, concluido sin admisión); cada aspirante cuenta en una sola fase.
 - Veo las convocatorias (abierta o cerrada, periodo y fechas de registro) e indicadores como promedio de licenciatura, procedencia IPN, entrevistas aprobadas, evaluaciones acreditadas y admitidos.
+- Veo el **calendario de cada convocatoria** (la imagen que publica la Jefatura de Posgrado), con sus fechas de registro y de publicación de resultados; al hacer clic se abre en grande.
 - Se muestra un aviso permanente de "Solo consulta".
 
 **Referencias:** RF-49 (consulta)

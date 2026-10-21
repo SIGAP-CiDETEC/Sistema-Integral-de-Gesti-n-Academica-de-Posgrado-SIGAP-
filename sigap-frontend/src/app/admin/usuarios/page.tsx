@@ -117,6 +117,7 @@ export default function Usuarios() {
                 <option value="uteycv">{NOMBRE_AREA.uteycv}</option>
                     <option value="subdireccion">{NOMBRE_AREA.subdireccion}</option>
                     <option value="profesor">{NOMBRE_AREA.profesor}</option>
+                    <option value="coordinador">{NOMBRE_AREA.coordinador}</option>
               </select>
             </label>
             <label className="block text-sm">

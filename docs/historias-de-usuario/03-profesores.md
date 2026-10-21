@@ -143,3 +143,30 @@ Pueden participar los **profesores colegiados con nombramiento vigente** y los *
 
 **Referencias:** RF-10, RF-12
 **Pantalla:** `/profesor/entrevistas/[id]`
+
+---
+
+### HU-PR-10 · Firmar y subir el acta de mi grupo del propedéutico (SIP-12)
+**Como** docente de un grupo del curso propedéutico, **quiero** descargar el acta grupal ya llena con las calificaciones, firmarla y subirla, **para** entregar oficialmente la evaluación del grupo.
+
+**Criterios de aceptación**
+- En "Calificaciones del propedéutico" veo una sección "Actas de los cursos propedéuticos (SIP-12)" con cada uno de mis grupos y su estado: *Calificaciones pendientes*, *Por firmar (docente)*, *Por firmar (Coordinador)* o *Firmada*.
+- El acta se puede descargar cuando capturé la calificación de todo el grupo; viene en el formato oficial SIP-12 con el curso, la clave (CPRO-017-23 o CPRO-048-24), el grupo, mi nombre, el semestre y cada aspirante con su calificación en número y en letra.
+- Subo el acta firmada en PDF (con el límite de tamaño de la convocatoria); ya no se puede volver a subir.
+- **Al subirla, el sistema me envía un correo de confirmación** y queda registrado en la bitácora; el acta pasa al Coordinador del programa para su firma.
+
+**Referencias:** RF-55, RF-56 · formato SIP-12
+**Pantalla:** `/profesor/evaluacion`
+
+---
+
+### HU-PR-11 · Consultar el horario de los cursos propedéuticos
+**Como** profesor, **quiero** ver en mi inicio el horario de los cursos propedéuticos que publicó el Departamento de Posgrado, **para** saber cuándo y dónde se imparte cada grupo.
+
+**Criterios de aceptación**
+- En el inicio veo cada curso y grupo con sus días, horas y lugar, y las fechas del propedéutico.
+- Mis grupos aparecen marcados como "Tu grupo".
+- Si Posgrado cambia un horario, se refleja de inmediato.
+
+**Referencias:** RF-14
+**Pantalla:** `/profesor`

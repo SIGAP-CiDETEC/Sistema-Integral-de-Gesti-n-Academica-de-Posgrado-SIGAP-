@@ -119,6 +119,7 @@ export default function Roles() {
                     <option value="uteycv">{NOMBRE_AREA.uteycv}</option>
                     <option value="subdireccion">{NOMBRE_AREA.subdireccion}</option>
                     <option value="profesor">{NOMBRE_AREA.profesor}</option>
+                    <option value="coordinador">{NOMBRE_AREA.coordinador}</option>
                   </select>
                 </label>
               </div>

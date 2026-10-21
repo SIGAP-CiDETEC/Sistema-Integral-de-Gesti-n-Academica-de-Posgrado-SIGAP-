@@ -3,7 +3,7 @@
  * y crear su carpeta con page.tsx dentro de src/app/<rol>/.
  */
 
-export type Rol = "aspirante" | "alumno" | "posgrado" | "uteycv" | "subdireccion" | "profesor" | "admin";
+export type Rol = "aspirante" | "alumno" | "posgrado" | "uteycv" | "subdireccion" | "profesor" | "coordinador" | "admin";
 
 export type IconName =
   | "home"
@@ -38,6 +38,7 @@ export const ROL_LABEL: Record<Rol, string> = {
   uteycv: "UTEyCV · Control Escolar",
   subdireccion: "Subdirección Académica",
   profesor: "Profesor · Colegio",
+  coordinador: "Coordinador del programa",
   admin: "Administrador",
 };
 
@@ -91,6 +92,11 @@ export const NAV: Record<Rol, NavItem[]> = {
     { label: "Mis entrevistas", href: "/profesor/entrevistas", icon: "entrevistas" },
     { label: "Calificaciones del propedéutico", href: "/profesor/evaluacion", icon: "evaluacion" },
   ],
+  // Coordinador del programa: únicamente firma las actas de los cursos propedéuticos (SIP-12)
+  coordinador: [
+    { label: "Inicio", href: "/coordinador", icon: "home" },
+    { label: "Actas SIP-12", href: "/coordinador/actas", icon: "dictamen" },
+  ],
   admin: [
     { label: "Inicio", href: "/admin", icon: "home" },
     { label: "Convocatoria", href: "/admin/convocatoria", icon: "convocatoria" },
@@ -108,5 +114,6 @@ export const USUARIO_DEMO: Record<Rol, string> = {
   uteycv: "Control Escolar",
   subdireccion: "Subdirección Académica",
   profesor: "Dr. Ricardo Morales Vega",
+  coordinador: "Dr. Mario Aldape Pérez",
   admin: "Admin CIDETEC",
 };

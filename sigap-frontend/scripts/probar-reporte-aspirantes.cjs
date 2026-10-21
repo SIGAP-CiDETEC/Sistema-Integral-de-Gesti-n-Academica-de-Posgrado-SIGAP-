@@ -55,9 +55,9 @@ assert.equal(valor('¿Solicitará beca SECIHTI?'), 'Sí');
 assert.equal(valor('¿Continuaría sin beca?'), 'No');
 assert.equal(reporte.encabezados[51], '6. Resolución del Colegio', 'AZ debe contener la clasificación');
 for (const [resolucion, clasificacion, dictamen] of [
-  ['Aceptado', 'Aceptado', 'Aceptado'],
-  ['Con reservas', 'Condicionado', 'Condicionado al cumplimiento documental para proceder a su inscripción'],
-  ['No aceptado', 'No aceptado', 'No aceptado, invitado a participar en los siguientes procesos de inscripción'],
+  ['Aceptado', 'Aceptado', 'Aceptado.'],
+  ['Con reservas', 'Condicionado', 'Condicionado al cumplimiento documental para proceder a su aceptación.'],
+  ['No aceptado', 'No aceptado', 'No aceptado. Invitado a participar en los siguientes procesos de Admisión.'],
 ]) {
   descargarReporteAspirantes([{ ...base, resolucion }], () => registro);
   assert.equal(reporte.filas[0][51], clasificacion);

@@ -6,6 +6,8 @@ import { PageHeader } from "@/components/PageHeader";
 import { usePosgrado } from "@/components/posgrado/PosgradoProvider";
 import { Etiqueta, Regresar, Tarjeta, botonSecundario, inputBase } from "@/components/posgrado/ui";
 import { CapturaCalificacion } from "@/components/profesor/CapturaCalificacion";
+import { ActasSip12 } from "@/components/actas/ActasSip12";
+import { gruposSip12 } from "@/lib/actas-sip12";
 import { descargarCsv, fechaArchivo } from "@/lib/csv";
 import { docenteDe } from "@/lib/evaluacion";
 import { fechaLargaIso, useConfigEvaluacion } from "@/lib/evaluacion-config";
@@ -106,6 +108,11 @@ export default function CalificacionesJefatura() {
           ))}
           {!examen.length && <li className="py-6 text-center text-gray-500">No hay exámenes por calificar.</li>}
         </ul>
+      </Tarjeta>
+
+      <Tarjeta className="mt-6" titulo="Actas de los cursos propedéuticos (SIP-12)">
+        <p className="mb-1 text-sm text-gray-600">El docente de cada grupo sube su acta firmada y después la firma el Coordinador del programa.</p>
+        <ActasSip12 modo="consulta" grupos={gruposSip12(aspirantes, materias)} />
       </Tarjeta>
 
       <section className="mt-6 overflow-hidden rounded-xl border border-gray-200 bg-white">

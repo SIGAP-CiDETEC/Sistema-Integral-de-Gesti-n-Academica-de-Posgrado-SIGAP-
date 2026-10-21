@@ -1,19 +1,20 @@
 "use client";
 
 import Link from "next/link";
-import { CalendarClock, ClipboardPenLine, PenLine } from "lucide-react";
+import { CalendarClock, CalendarDays, ClipboardPenLine, PenLine } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { usePosgrado } from "@/components/posgrado/PosgradoProvider";
 import { Etiqueta, Kpi, Tarjeta } from "@/components/posgrado/ui";
 import { fechaCorta, nombreArea } from "@/lib/posgrado/datos";
 import { useConfigEvaluacion } from "@/lib/evaluacion-config";
+import { describirGrupo, docenteDe, lugarDe } from "@/lib/evaluacion";
 import { TONO_ENTREVISTA_PROF, capturasPendientes, entrevistasDe, entrevistasDisponibles, estadoEntrevistaProf, useProfesorActual } from "@/lib/profesor";
 
 /** Inicio del profesor: lo que le toca del proceso de admisión. */
 export default function ProfesorInicio() {
   const { aspirantes, cargado } = usePosgrado();
   const { profesor } = useProfesorActual();
-  const { materias } = useConfigEvaluacion();
+  const { materias, modalidades, config } = useConfigEvaluacion();
   if (!cargado) return null;
   const yo = profesor?.id ?? "";
   const mias = entrevistasDe(aspirantes, yo);
@@ -80,6 +81,29 @@ export default function ProfesorInicio() {
           )}
         </Tarjeta>
       </div>
+
+      <Tarjeta className="mt-6" titulo={<span className="flex items-center gap-2"><CalendarDays size={17} className="text-primary" /> Horario de los cursos propedéuticos</span>}>
+        <p className="mb-3 text-sm text-gray-600">
+          Publicado por el Departamento de Posgrado · {modalidades.propedeutico.fechas} · {config.propedeutico.modalidad.toLowerCase()}.
+        </p>
+        <ul className="divide-y divide-gray-100 text-sm" data-horario-propedeutico>
+          {materias.flatMap((m) =>
+            m.grupos.map((g) => {
+              const mio = !!yo && docenteDe(m.id, g.id, materias) === yo;
+              return (
+                <li key={m.id + g.id} className={`grid gap-1 py-2.5 sm:grid-cols-[minmax(0,1.3fr)_minmax(0,1.2fr)_minmax(0,1fr)] sm:items-center sm:gap-4 ${mio ? "font-medium" : ""}`}>
+                  <span className="flex flex-wrap items-center gap-2 text-gray-900">
+                    {m.nombre} · grupo {g.id}
+                    {mio && <Etiqueta tono="bg-indigo-50 text-primary">Tu grupo</Etiqueta>}
+                  </span>
+                  <span className="text-gray-700">{describirGrupo(g)}</span>
+                  <span className="text-xs text-gray-500">{lugarDe(g)}</span>
+                </li>
+              );
+            }),
+          )}
+        </ul>
+      </Tarjeta>
 
       <p className="mt-6 text-xs text-gray-500">
         Posgrado programa el día y la hora de las entrevistas y publica los resultados; tú eliges en qué entrevistas participas, llenas y firmas el acta de los profesores entrevistadores y capturas las calificaciones de los grupos del propedéutico que impartes (el examen lo califica la Jefatura de Posgrado).

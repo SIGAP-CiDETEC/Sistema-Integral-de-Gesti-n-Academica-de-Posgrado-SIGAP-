@@ -10,10 +10,11 @@ export const DICTAMEN_FINAL: Record<ResolucionColegio, DictamenFinal> = {
   "Con reservas": "Condicionado",
   "No aceptado": "No aceptado",
 };
+/** Texto del dictamen tal como aparece en los "Resultados finales del proceso de admisión" de CIDETEC. */
 export const TEXTO_DICTAMEN_FINAL: Record<ResolucionColegio, string> = {
-  Aceptado: "Aceptado",
-  "Con reservas": "Condicionado al cumplimiento documental para proceder a su inscripción",
-  "No aceptado": "No aceptado, invitado a participar en los siguientes procesos de inscripción",
+  Aceptado: "Aceptado.",
+  "Con reservas": "Condicionado al cumplimiento documental para proceder a su aceptación.",
+  "No aceptado": "No aceptado. Invitado a participar en los siguientes procesos de Admisión.",
 };
 export const TONO_DICTAMEN: Record<DictamenFinal, string> = {
   Aceptado: "bg-emerald-50 text-emerald-700",

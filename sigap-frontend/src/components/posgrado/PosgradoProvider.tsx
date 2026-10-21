@@ -17,6 +17,7 @@ import { guardarCuenta, ID_TEMPORAL_DEMO, type CuentaAlumno } from "@/lib/cuenta
 import { siglasUnidad, type Respuestas } from "@/lib/registro-form";
 import { useSesion } from "@/lib/sesion";
 import { useProfesorActual } from "@/lib/profesor";
+import type { ActaSip12 } from "@/lib/actas-sip12";
 import { registroSintetico } from "@/lib/registro-aspirante";
 
 /**
@@ -66,6 +67,8 @@ type Estado = {
   comunicados: Comunicado[];
   avisos: AvisoP[];
   acta?: ActaColegio;
+  /** Actas SIP-12 de los cursos propedéuticos, por grupo (clave "materia-grupo") */
+  actasSip12?: Record<string, ActaSip12>;
 };
 
 const CLAVE = "sigap-posgrado";
@@ -87,6 +90,11 @@ type Api = {
   actualizarUteycv: (id: string, patch: Partial<UteycvP>, accion: string) => void;
   /** Deja constancia en bitácora de un cambio general (p. ej. fechas de evaluación) */
   registrarEnBitacora: (accion: string) => void;
+  actasSip12: Record<string, ActaSip12>;
+  /** El docente sube el SIP-12 firmado; se le envía un correo de confirmación. Devuelve false si ya estaba subida. */
+  subirSip12Docente: (clave: string, curso: string, archivo: string, docente: { nombre: string; correo: string }) => boolean;
+  /** El Coordinador del programa sube el SIP-12 con su firma. Devuelve false si no la ha subido el docente o ya estaba firmada. */
+  subirSip12Coordinador: (clave: string, curso: string, archivo: string) => boolean;
   /** Respuestas del registro (primer formulario) del aspirante */
   registroDe: (id: string) => Respuestas;
   /** Lo que el aspirante capturó en sus formatos (solo el de este navegador) */
@@ -374,6 +382,31 @@ export function PosgradoProvider({ children }: { children: React.ReactNode }) {
         );
       },
       registrarEnBitacora: (accion) => guardar((e) => registrar(e, accion)),
+      actasSip12: estado.actasSip12 ?? {},
+      subirSip12Docente: (clave, curso, archivo, docente) => {
+        if (estado.actasSip12?.[clave]?.docente) return false;
+        const el = new Date().toISOString();
+        guardar((e) => {
+          const sig: Estado = { ...e, actasSip12: { ...e.actasSip12, [clave]: { ...e.actasSip12?.[clave], docente: { archivo, el, por: docente.nombre, correo: docente.correo } } } };
+          // Correo de confirmación al docente (con backend lo envía el servicio de correo)
+          const subida = registrar(sig, `Subió el acta SIP-12 firmada de ${curso} (${archivo}); queda pendiente de la firma del Coordinador del programa`);
+          const correo = { fecha: el, usuario: "SIGAP · correo automático", accion: `Envió correo de confirmación a ${docente.nombre} (${docente.correo}): se recibió su acta SIP-12 de ${curso}` };
+          return { ...subida, bitacora: [correo, ...subida.bitacora].slice(0, 300) };
+        });
+        return true;
+      },
+      subirSip12Coordinador: (clave, curso, archivo) => {
+        const a = estado.actasSip12?.[clave];
+        if (!a?.docente || a.coordinador) return false;
+        const el = new Date().toISOString();
+        guardar((e) =>
+          registrar(
+            { ...e, actasSip12: { ...e.actasSip12, [clave]: { ...e.actasSip12?.[clave], coordinador: { archivo, el, por: usuario } } } },
+            `Firmó como Coordinador del programa el acta SIP-12 de ${curso} (${archivo})`,
+          ),
+        );
+        return true;
+      },
       avisos: estado.avisos,
       guardarActa: (acta, accion) => guardar((e) => registrar({ ...e, acta: { ...acta, registradaEl: new Date().toISOString() } }, accion)),
       bitacora: estado.bitacora,
