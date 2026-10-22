@@ -79,7 +79,11 @@ class ComunicadoDto {
   @IsOptional() @IsBoolean() publico?: boolean;
   @IsOptional() @IsEnum(AreaPersonal) areaDestinataria?: AreaPersonal;
 }
-class ContenidoDto {\n  @IsDefined() valor!: unknown;\n}\nclass RolDto {\n  @IsString() @MinLength(2) @MaxLength(80) nombre!: string;
+class ContenidoDto {
+  @IsDefined() valor!: unknown;
+}
+class RolDto {
+  @IsString() @MinLength(2) @MaxLength(80) nombre!: string;
   @IsOptional() @IsString() @MaxLength(500) descripcion?: string;
   @IsOptional() @IsArray() permisos?: string[];
 }
