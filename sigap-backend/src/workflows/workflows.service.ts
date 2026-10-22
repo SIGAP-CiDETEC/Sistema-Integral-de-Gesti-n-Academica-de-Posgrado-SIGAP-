@@ -176,7 +176,7 @@ export class WorkflowsService {
     if (!p) throw new NotFoundException('Postulación no encontrada');
     if (p.resolucionColegio?.resolucion === 'NO_ACEPTADO' || (!p.resolucionColegio && p.estado !== 'ADMITIDA')) throw new BadRequestException('Solo puede formalizarse una postulación aceptada por el Colegio');
     const firmas = d.firmas ?? {};
-    const data: Prisma.InscripcionUpdateInput = {
+    const data = {
       ...(d.dedicacion !== undefined ? { dedicacion: d.dedicacion } : {}),
       ...(d.fotoRecibida !== undefined ? { fotoRecibida: d.fotoRecibida } : {}),
       ...(d.sicep !== undefined ? { sicep: d.sicep } : {}),
