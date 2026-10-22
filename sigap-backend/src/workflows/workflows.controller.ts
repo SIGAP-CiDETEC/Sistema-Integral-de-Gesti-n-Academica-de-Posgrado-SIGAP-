@@ -4,7 +4,7 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
-  IsArray, IsBoolean, IsDateString, IsEmail, IsEnum, IsNumber, IsObject,
+  IsArray, IsBoolean, IsDateString, IsDefined, IsEmail, IsEnum, IsNumber, IsObject,
   IsOptional, IsString, Max, MaxLength, Min, MinLength,
 } from 'class-validator';
 import { AreaPersonal, EstadoDocumento, ModalidadCurso, TipoResultadoEvaluacion, ResolucionColegio, DedicacionInscripcion } from '../generated/prisma/client';
@@ -79,8 +79,7 @@ class ComunicadoDto {
   @IsOptional() @IsBoolean() publico?: boolean;
   @IsOptional() @IsEnum(AreaPersonal) areaDestinataria?: AreaPersonal;
 }
-class RolDto {
-  @IsString() @MinLength(2) @MaxLength(80) nombre!: string;
+class ContenidoDto {\n  @IsDefined() valor!: unknown;\n}\nclass RolDto {\n  @IsString() @MinLength(2) @MaxLength(80) nombre!: string;
   @IsOptional() @IsString() @MaxLength(500) descripcion?: string;
   @IsOptional() @IsArray() permisos?: string[];
 }
@@ -209,5 +208,5 @@ export class WorkflowsController {
   @UseGuards(AuthGuard)
   @Areas('ADMINISTRADOR')
   @Put('contenido/:clave')
-  guardarContenido(@Param('clave') clave: string, @Body() d: { valor: unknown }) { return this.s.guardarContenido(clave, d.valor); }
+  guardarContenido(@Param('clave') clave: string, @Body() d: ContenidoDto) { return this.s.guardarContenido(clave, d.valor); }
 }
