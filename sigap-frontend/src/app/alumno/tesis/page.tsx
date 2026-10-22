@@ -65,7 +65,7 @@ export default function AlumnoTesis() {
         </section>
       </div>
 
-      <p className="mt-6 text-xs text-gray-400">Tema, directores y comité de ejemplo · Referencia: RF-73 a RF-75</p>
+      <p className="mt-6 text-xs text-gray-400">Tema, directores y comité de ejemplo</p>
     </>
   );
 }

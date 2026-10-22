@@ -1,0 +1,16 @@
+# systemd: front de SIGAP. Copiar a /etc/systemd/system/sigap-front.service
+[Unit]
+Description=SIGAP front (Next.js)
+After=network.target sigap-api.service
+
+[Service]
+Type=simple
+User=deployer
+WorkingDirectory=/opt/sigap/app/sigap-frontend
+ExecStart=/usr/bin/npx next start -p 3000 -H 127.0.0.1
+Restart=on-failure
+RestartSec=5
+Environment=NODE_ENV=production
+
+[Install]
+WantedBy=multi-user.target

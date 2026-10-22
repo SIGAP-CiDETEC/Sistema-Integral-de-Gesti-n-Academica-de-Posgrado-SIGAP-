@@ -20,7 +20,7 @@ export const REINSCRIPCION = {
   estado: "proxima" as "proxima" | "abierta" | "cerrada",
   requisitos: [
     "Haber aprobado las unidades de aprendizaje del periodo actual (sin adeudos).",
-    "Solicitud de reinscripción SIP-10 con las materias del siguiente periodo, firmada por ti y por tu asesor (RF-70).",
+    "Solicitud de reinscripción SIP-10 con las materias del siguiente periodo, firmada por ti y por tu asesor.",
     "Reporte de actividades del semestre avalado por tu asesor o director de tesis.",
     "Si tienes beca SECIHTI: mantener promedio mínimo de 8.0 y dedicación de tiempo completo.",
   ],

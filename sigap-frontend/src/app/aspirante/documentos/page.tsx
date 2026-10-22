@@ -1,6 +1,6 @@
 import { DocumentosFase } from "@/components/expediente/DocumentosFase";
 import { FormatosFase } from "@/components/expediente/FormatosFase";
-import { FaseEncabezado, FuenteFase } from "@/components/expediente/FaseEncabezado";
+import { FaseEncabezado } from "@/components/expediente/FaseEncabezado";
 
 export default function FaseDocumentos() {
   return (
@@ -10,7 +10,6 @@ export default function FaseDocumentos() {
         <FormatosFase fase="documentos" />
         <DocumentosFase fase="documentos" conEnvio />
       </div>
-      <FuenteFase id="documentos" />
     </>
   );
 }

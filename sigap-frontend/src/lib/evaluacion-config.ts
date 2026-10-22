@@ -47,7 +47,7 @@ export function modalidadesDe(c: ConfigEvaluacion): typeof MODALIDADES {
       titulo: MODALIDADES.propedeutico.titulo,
       fechas: rango(c.propedeutico.inicio, c.propedeutico.fin),
       detalle: `${c.propedeutico.modalidad} · duración ${c.propedeutico.duracion}`,
-      segundaOportunidad: `Si no acreditas una o las dos áreas del curso, puedes presentar el examen de esas áreas el ${examen} (RN-08).`,
+      segundaOportunidad: `Si no acreditas una o las dos áreas del curso, puedes presentar el examen de esas áreas el ${examen}.`,
     },
     examen: {
       titulo: MODALIDADES.examen.titulo,

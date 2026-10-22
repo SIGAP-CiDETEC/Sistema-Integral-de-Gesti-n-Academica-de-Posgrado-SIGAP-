@@ -75,6 +75,3 @@ export function FaseEncabezado({ id }: { id: FaseId }) {
   );
 }
 
-export function FuenteFase({ id }: { id: FaseId }) {
-  return <p className="mt-8 text-xs text-gray-400">Referencia: {faseDe(id).fuente}</p>;
-}

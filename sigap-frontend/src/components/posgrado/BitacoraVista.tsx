@@ -10,6 +10,7 @@ import { inputBase } from "@/components/posgrado/ui";
 import { guardarConfigEvaluacion } from "@/lib/evaluacion-config";
 import { fechaHora } from "@/lib/posgrado/datos";
 import { useSesion } from "@/lib/sesion";
+import { MODO_API } from "@/lib/api";
 
 /** Bitácora de acciones del personal (RNF-11). Con backend incluye IP y es inalterable. */
 export function BitacoraVista({ subtitulo }: { subtitulo: string }) {
@@ -75,9 +76,9 @@ export function BitacoraVista({ subtitulo }: { subtitulo: string }) {
           </table>
         </div>
       </section>
-      <p className="mt-3 text-xs text-gray-400">Con backend cada registro guarda además la IP y no se puede modificar ni borrar.</p>
+      {!MODO_API && <p className="mt-3 text-xs text-gray-400">Con backend cada registro guarda además la IP y no se puede modificar ni borrar.</p>}
 
-      {rol !== "subdireccion" && (
+      {rol !== "subdireccion" && !MODO_API && (
       <div className="mt-10 border-t border-dashed border-gray-300 pt-4">
         <p className="text-xs text-gray-500">Vista de prueba (solo cascarón):</p>
         <button

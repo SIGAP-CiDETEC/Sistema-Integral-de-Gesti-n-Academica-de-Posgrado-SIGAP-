@@ -106,6 +106,27 @@ export const NAV: Record<Rol, NavItem[]> = {
   ],
 };
 
+/**
+ * Menú con el servidor real (prueba de la entrevista colegiada): solo las pantallas ya conectadas a la API.
+ * El resto del sistema sigue disponible con los datos de ejemplo cuando no hay servidor.
+ */
+export const NAV_SERVIDOR: Partial<Record<Rol, NavItem[]>> = {
+  posgrado: [
+    { label: "Inicio", href: "/posgrado", icon: "home" },
+    { label: "Entrevistas", href: "/posgrado/entrevistas", icon: "entrevistas" },
+    { label: "Bitácora", href: "/posgrado/bitacora", icon: "bitacora" },
+  ],
+  profesor: [
+    { label: "Inicio", href: "/profesor", icon: "home" },
+    { label: "Mis entrevistas", href: "/profesor/entrevistas", icon: "entrevistas" },
+  ],
+  subdireccion: [
+    { label: "Inicio", href: "/subdireccion", icon: "panorama" },
+    { label: "Aspirantes", href: "/subdireccion/aspirantes", icon: "expedientes" },
+    { label: "Bitácora", href: "/subdireccion/bitacora", icon: "bitacora" },
+  ],
+};
+
 /** Usuario de ejemplo mientras no hay autenticación real. */
 export const USUARIO_DEMO: Record<Rol, string> = {
   aspirante: "María González",

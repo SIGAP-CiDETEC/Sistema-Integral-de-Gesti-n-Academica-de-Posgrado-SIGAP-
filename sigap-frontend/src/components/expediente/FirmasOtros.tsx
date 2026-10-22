@@ -7,8 +7,8 @@ export function FirmasOtros({ firmas, recibe, recabaAspirante }: { firmas: Firma
   const otros = firmas.filter((x) => x.rol !== "aspirante" && !x.ocultaAspirante);
   if (!otros.length) return null;
   const como: Record<string, string> = {
-    asesor: `firma el documento impreso; ${area} sube la versión final (RF-28)`,
-    jefe: `firma el documento impreso; ${area} sube la versión final (RF-28)`,
+    asesor: `firma el documento impreso; ${area} sube la versión final`,
+    jefe: `firma el documento impreso; ${area} sube la versión final`,
     sinodo: "firma el acta impresa el día de la entrevista",
     comision: `firma en papel; ${area} sube el dictamen firmado`,
   };

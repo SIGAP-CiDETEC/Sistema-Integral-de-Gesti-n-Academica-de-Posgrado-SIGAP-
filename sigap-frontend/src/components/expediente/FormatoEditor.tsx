@@ -250,7 +250,7 @@ export function FormatoEditor({ clave }: { clave: string }) {
 function FormatoBloqueado({ motivo }: { motivo: string }) {
   const faltan = useDocumentosFaltantes();
   const { guardarDocumento } = useExpediente();
-  const porDocumentos = motivo.includes("RN-11");
+  const porDocumentos = motivo.includes("documentos obligatorios");
   return (
     <section className="rounded-xl border border-gray-200 bg-white p-5 text-sm">
       <p className="flex items-center gap-2 font-medium text-gray-900">

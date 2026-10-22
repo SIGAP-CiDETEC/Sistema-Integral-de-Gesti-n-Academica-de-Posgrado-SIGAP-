@@ -1,6 +1,8 @@
 "use client";
 
 import { usePosgrado } from "@/components/posgrado/PosgradoProvider";
+import { MODO_API, api } from "@/lib/api";
+import { mensajeDe, notificar } from "@/lib/avisos-ui";
 import {
   fechaCorta,
   integrarResultado,
@@ -16,9 +18,26 @@ import {
 
 const FIRMA = "\n\nAtentamente,\nDepartamento de Posgrado · CIDETEC";
 
+/** Archivo que sube el profesor (en el navegador basta el nombre; con el servidor se envía el PDF). */
+type ArchivoActa = File | { name: string };
+
 /** Acciones del profesor sobre el proceso de admisión (acta MTC-EC y calificaciones). */
 export function useAccionesProfesor() {
-  const { actualizar, enviarAviso } = usePosgrado();
+  const { actualizar, enviarAviso, recargar } = usePosgrado();
+
+  /** Con el servidor real: llama a la API, avisa el resultado y recarga. Devuelve si salió bien. */
+  const enServidor = async (ruta: string, opciones: Parameters<typeof api>[1], exito?: string) => {
+    try {
+      await api(ruta, opciones);
+      if (exito) notificar(exito, "exito");
+      return true;
+    } catch (e) {
+      notificar(mensajeDe(e));
+      return false;
+    } finally {
+      await recargar();
+    }
+  };
 
   /** Con el acta firmada por los 3 el dictamen surte efecto (RF-12, RN-05). */
   const aplicarDictamen = (a: AspiranteP, acta: ActaEntrevista) => {
@@ -29,7 +48,7 @@ export function useAccionesProfesor() {
       {
         actaEntrevista: acta,
         dictamen: { resolucion: res, comentarios, registradoEl: new Date().toISOString() },
-        ...(res === "Rechazado" ? { concluido: "Rechazado en la entrevista colegiada (RN-05)" } : { etapa: "evaluacion" as const }),
+        ...(res === "Rechazado" ? { concluido: "Rechazado en la entrevista colegiada" } : { etapa: "evaluacion" as const }),
         formatos: { ...a.formatos, "mtc-ec": true },
       },
       `${nombreProfesor(acta.firmada?.subidaPor ?? "")} subió el acta MTC-EC firmada por los 3 profesores entrevistadores (${acta.firmada?.archivo}). Dictamen de entrevista: ${res}${
@@ -47,7 +66,11 @@ export function useAccionesProfesor() {
    * Guarda el acta. Es una cola: solo la llena el primer profesor entrevistador; si otro ya la llenó, no se sobrescribe
    * (solo quien la llenó puede corregirla mientras no se suba firmada).
    */
-  const guardarActa = (a: AspiranteP, acta: ActaEntrevista, profesor: string) => {
+  const guardarActa = async (a: AspiranteP, acta: ActaEntrevista, profesor: string): Promise<boolean> => {
+    if (MODO_API) {
+      const { hoja1, criterios, proyeccion, observaciones, resolucion, motivo } = acta;
+      return enServidor(`/aspirantes/${a.id}/acta`, { metodo: "PUT", cuerpo: { hoja1, criterios, proyeccion, observaciones, resolucion, motivo } }, "Acta guardada");
+    }
     const previa = a.actaEntrevista;
     if (previa?.firmada || (previa && previa.capturadaPor !== profesor)) return false;
     actualizar(
@@ -59,10 +82,16 @@ export function useAccionesProfesor() {
   };
 
   /** El primer profesor entrevistador que sube el acta firmada por los 3 aplica el dictamen; a los demás se les bloquea la subida. */
-  const subirActaFirmada = (a: AspiranteP, archivo: string, profesor: string) => {
+  const subirActaFirmada = async (a: AspiranteP, archivo: ArchivoActa, profesor: string): Promise<boolean> => {
+    if (MODO_API) {
+      if (!(archivo instanceof File)) return false;
+      const formulario = new FormData();
+      formulario.append("archivo", archivo, archivo.name);
+      return enServidor(`/aspirantes/${a.id}/acta/firmada`, { formulario }, "Acta firmada recibida: el dictamen quedó aplicado");
+    }
     const acta = a.actaEntrevista;
     if (!acta || acta.firmada || a.dictamen) return false;
-    aplicarDictamen(a, { ...acta, firmada: { archivo, subidaPor: profesor, el: new Date().toISOString() } });
+    aplicarDictamen(a, { ...acta, firmada: { archivo: archivo.name, subidaPor: profesor, el: new Date().toISOString() } });
     return true;
   };
 
@@ -93,6 +122,7 @@ export function useAccionesProfesor() {
 
   /** El profesor elige una entrevista con lugar libre y se integra a los profesores entrevistadores. */
   const elegirEntrevista = (a: AspiranteP, profesor: string) => {
+    if (MODO_API) return void enServidor(`/aspirantes/${a.id}/entrevista/elegir`, { metodo: "POST" }, "Te integraste a la entrevista");
     const e = a.entrevista;
     if (!e || e.sinodo.includes(profesor) || lugaresLibres(e) === 0) return;
     const nueva = { ...e, sinodo: [...e.sinodo, profesor] };
@@ -106,6 +136,7 @@ export function useAccionesProfesor() {
 
   /** El profesor deja su lugar (solo antes de que se llene el acta). */
   const dejarLugar = (a: AspiranteP, profesor: string) => {
+    if (MODO_API) return void enServidor(`/aspirantes/${a.id}/entrevista/dejar`, { metodo: "POST" }, "Dejaste tu lugar en la entrevista");
     const e = a.entrevista;
     if (!e || !e.sinodo.includes(profesor) || a.actaEntrevista) return;
     const nueva = { ...e, sinodo: e.sinodo.filter((p) => p !== profesor) };

@@ -362,7 +362,7 @@ export const FORMATOS: Formato[] = [
         valido: (v) => !v.trim() || /^\d{1,2}:\d{2}$/.test(v.trim()),
         seccion: "Sesión del Colegio",
       },
-      { ...C.estatus, id: "estatus", label: "Dedicación", ayuda: "Tú la eliges (RN-10). Completo: al menos 40 h/semana; parcial: al menos 20 h/semana (REP Art. 13)." },
+      { ...C.estatus, id: "estatus", label: "Dedicación", ayuda: "Tú la eliges. Completo: al menos 40 h/semana; parcial: al menos 20 h/semana (REP Art. 13)." },
     ],
     firmas: [
       { rol: "comision", label: "Miembros de la Comisión de Admisión" },

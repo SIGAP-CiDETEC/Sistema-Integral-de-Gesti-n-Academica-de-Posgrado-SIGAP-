@@ -46,7 +46,7 @@ export function CitaEntrevista() {
         <h2 className="flex items-center gap-2 font-semibold text-gray-900">
           <Users size={16} /> Profesores entrevistadores
         </h2>
-        <p className="mt-3 text-sm text-gray-700">Te entrevistarán 3 profesores del programa (RN-07).</p>
+        <p className="mt-3 text-sm text-gray-700">Te entrevistarán 3 profesores del programa.</p>
         {resultadoEntrevista && resultadoEntrevista !== "Rechazado" && (
           <p className="mt-3 inline-block rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs text-emerald-700">Entrevista aprobada · continúa con tu evaluación</p>
         )}

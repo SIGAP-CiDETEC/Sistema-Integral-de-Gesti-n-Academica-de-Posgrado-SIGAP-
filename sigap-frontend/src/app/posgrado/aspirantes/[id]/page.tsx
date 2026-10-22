@@ -150,7 +150,7 @@ export default function RevisionExpediente({ params }: PageProps<"/posgrado/aspi
 
                     {doc.id === "ingles" && (
                       <div className="mt-3">
-                        <Aviso tono="info" titulo="Control obligatorio (RN-09)">
+                        <Aviso tono="info" titulo="Control obligatorio">
                           La constancia de inglés la valida el Departamento de Posgrado: revisa que acredite el nivel requerido. Si es distinta a la del CENLEX, debe validarse ante la DFLE (puede tardar más de 40 días). Si aún no la tiene,
                           dale prórroga para que continúe su proceso de admisión.
                         </Aviso>

@@ -1,5 +1,7 @@
 "use client";
 
+import { ArchivoServidor } from "@/components/ArchivoServidor";
+import { MODO_API } from "@/lib/api";
 import { useState } from "react";
 import { CheckCircle2, Clock, Download, Loader2 } from "lucide-react";
 import { Tarjeta, botonSecundario } from "@/components/posgrado/ui";
@@ -67,6 +69,7 @@ export function SinodoActa({ a }: { a: AspiranteP }) {
             ? "Acta llenada: falta imprimirla, firmarla los 3 y subirla"
             : "El acta aún no se llena"}
       </p>
+      {MODO_API && acta?.firmada && <ArchivoServidor ruta={`/aspirantes/${a.id}/acta/firmada`} texto="Ver acta firmada (PDF)" />}
     </div>
   );
 }

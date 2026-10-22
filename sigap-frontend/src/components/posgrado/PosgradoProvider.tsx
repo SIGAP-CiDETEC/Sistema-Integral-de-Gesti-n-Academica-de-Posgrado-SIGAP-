@@ -6,7 +6,9 @@ import { DOCUMENTOS } from "@/lib/documentos";
 import type { ModalidadId } from "@/lib/evaluacion";
 import {
   ASPIRANTES_BASE,
+  fijarProfesores,
   type AspiranteP,
+  type ProfesorP,
   type DocAspirante,
   type EstadoDoc,
   type ResolucionColegio,
@@ -18,6 +20,7 @@ import { siglasUnidad, type Respuestas } from "@/lib/registro-form";
 import { useSesion } from "@/lib/sesion";
 import { useProfesorActual } from "@/lib/profesor";
 import type { ActaSip12 } from "@/lib/actas-sip12";
+import { MODO_API, api } from "@/lib/api";
 import { registroSintetico } from "@/lib/registro-aspirante";
 
 /**
@@ -104,6 +107,10 @@ type Api = {
   comunicados: Comunicado[];
   acta?: ActaColegio;
   reiniciar: () => void;
+  /** Con el servidor real: vuelve a leer los datos, reemplaza un aspirante con lo que respondió la API y el error de carga */
+  recargar: () => Promise<void>;
+  reemplazarAspirante: (a: AspiranteP) => void;
+  errorCarga?: string;
 };
 
 const Ctx = createContext<Api | null>(null);
@@ -135,7 +142,26 @@ export function PosgradoProvider({ children }: { children: React.ReactNode }) {
   // En la sesión de Profesor, la bitácora queda a nombre del profesor con el que se actúa
   const usuario = (sesion?.rol === "profesor" && profesor ? profesor.nombre : sesion?.nombre) ?? "Departamento de Posgrado";
 
+  // Servidor real: aspirantes, profesores y bitácora vienen de la API
+  const [remoto, setRemoto] = useState<{ aspirantes: AspiranteP[]; bitacora: EntradaBitacora[]; error?: string }>({ aspirantes: [], bitacora: [] });
+  const recargar = useCallback(async () => {
+    try {
+      const [aspirantes, profesores] = await Promise.all([api<AspiranteP[]>("/aspirantes"), api<ProfesorP[]>("/profesores")]);
+      fijarProfesores(profesores);
+      const bitacora = sesion?.rol === "profesor" ? [] : await api<EntradaBitacora[]>("/bitacora").catch(() => []);
+      setRemoto({ aspirantes, bitacora });
+    } catch (e) {
+      setRemoto((r) => ({ ...r, error: e instanceof Error ? e.message : "No se pudo conectar con el servidor" }));
+    }
+    setCargado(true);
+  }, [sesion?.rol]);
+
   useEffect(() => {
+    if (MODO_API) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- carga inicial desde el servidor
+      void recargar();
+      return;
+    }
     // Carga única desde el navegador (no existe en el servidor)
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setEstado({ ...VACIO, ...(leerLocal<Estado>(CLAVE) ?? {}) });
@@ -145,7 +171,7 @@ export function PosgradoProvider({ children }: { children: React.ReactNode }) {
       cuenta: leerLocal<CuentaAlumno>("sigap-cuenta-alumno"),
     });
     setCargado(true);
-  }, []);
+  }, [recargar]);
 
   const guardar = useCallback((fn: (e: Estado) => Estado) => {
     setEstado((prev) => {
@@ -159,8 +185,8 @@ export function PosgradoProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
-  const api = useMemo<Api>(() => {
-    const aspirantes = ASPIRANTES_BASE.map((base) => {
+  const valor = useMemo<Api>(() => {
+    const locales = () => ASPIRANTES_BASE.map((base) => {
       let a: AspiranteP = { ...base };
       if (base.enVivo) {
         const r = vivo.registro;
@@ -196,7 +222,7 @@ export function PosgradoProvider({ children }: { children: React.ReactNode }) {
       // La decisión de la segunda oportunidad la toma el aspirante en su sesión
       if (base.enVivo && vivo.exp.evaluacion?.segundaOportunidad) a.evaluacion = { ...a.evaluacion, segundaOportunidad: vivo.exp.evaluacion.segundaOportunidad };
       if (!a.concluido && a.etapa === "evaluacion" && a.evaluacion.segundaOportunidad?.decision === "no" && !a.evaluacion.examen)
-        a.concluido = "Decidió no presentar el examen de las áreas no acreditadas (RN-08)";
+        a.concluido = "Decidió no presentar el examen de las áreas no acreditadas";
       if (base.enVivo) {
         // Lo que hizo el aspirante en su sesión (formatos de inscripción) y lo publicado para él
         const x = vivo.exp;
@@ -233,6 +259,7 @@ export function PosgradoProvider({ children }: { children: React.ReactNode }) {
         });
       return a;
     });
+    const aspirantes = MODO_API ? remoto.aspirantes : locales();
 
     const registrar = (e: Estado, accion: string, aspirante?: string): Estado => ({
       ...e,
@@ -246,11 +273,14 @@ export function PosgradoProvider({ children }: { children: React.ReactNode }) {
       porId: (id) => aspirantes.find((a) => a.id === id),
       registroDe: (id) => {
         const a = aspirantes.find((x) => x.id === id);
-        if (!a) return {};
+        // Con el servidor real no se inventan respuestas de registro (el acta se llena en la entrevista)
+        if (!a || MODO_API) return {};
         return a.enVivo ? vivo.registro : registroSintetico(a);
       },
       capturasDe: (id) => (aspirantes.find((x) => x.id === id)?.enVivo ? (vivo.exp.capturas ?? {}) : {}),
       actualizar: (id, patch, accion) =>
+        // Con el servidor real, los cambios se hacen con las acciones de la API (no en el navegador)
+        MODO_API ? console.warn("Acción no disponible con el servidor real:", accion) :
         guardar((e) =>
           registrar(
             {
@@ -409,14 +439,17 @@ export function PosgradoProvider({ children }: { children: React.ReactNode }) {
       },
       avisos: estado.avisos,
       guardarActa: (acta, accion) => guardar((e) => registrar({ ...e, acta: { ...acta, registradaEl: new Date().toISOString() } }, accion)),
-      bitacora: estado.bitacora,
+      bitacora: MODO_API ? remoto.bitacora : estado.bitacora,
+      recargar,
+      reemplazarAspirante: (a) => setRemoto((r) => ({ ...r, aspirantes: r.aspirantes.map((x) => (x.id === a.id ? a : x)) })),
+      errorCarga: remoto.error,
       comunicados: estado.comunicados,
       acta: estado.acta,
       reiniciar: () => guardar(() => VACIO),
     };
-  }, [estado, vivo, cargado, usuario, guardar]);
+  }, [estado, vivo, cargado, usuario, guardar, remoto, recargar]);
 
-  return <Ctx.Provider value={api}>{children}</Ctx.Provider>;
+  return <Ctx.Provider value={valor}>{children}</Ctx.Provider>;
 }
 
 export function usePosgrado() {

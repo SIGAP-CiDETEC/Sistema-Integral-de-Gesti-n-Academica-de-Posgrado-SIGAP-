@@ -1,3 +1,5 @@
+import { AvisosFlotantes } from "./AvisosFlotantes";
+import { ModoServidor } from "./ModoServidor";
 import { Sidebar } from "./Sidebar";
 import type { Rol } from "@/lib/nav";
 
@@ -6,7 +8,10 @@ export function AppShell({ rol, children }: { rol: Rol; children: React.ReactNod
   return (
     <div className="min-h-screen lg:flex">
       <Sidebar rol={rol} />
-      <main className="flex-1 px-4 py-6 sm:px-8 lg:py-8">{children}</main>
+      <main className="flex-1 px-4 py-6 sm:px-8 lg:py-8">
+        <ModoServidor rol={rol}>{children}</ModoServidor>
+      </main>
+      <AvisosFlotantes />
     </div>
   );
 }

@@ -75,7 +75,7 @@ export default function AlumnoInicio() {
         </aside>
       </div>
 
-      <p className="mt-6 text-xs text-gray-400">Fechas y requisitos de ejemplo · Referencia: RF-68, RF-70, Módulo 19 (UTEyCV)</p>
+      <p className="mt-6 text-xs text-gray-400">Fechas y requisitos de ejemplo</p>
       <ReiniciarSimulacion />
     </>
   );

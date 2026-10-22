@@ -1,5 +1,8 @@
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client"
+  output          = "../src/generated/prisma"
+  engineType      = "client"
+  moduleFormat    = "cjs"
 }
 
 datasource db {
@@ -450,6 +453,11 @@ model ActaEntrevista {
   motivo                String?
   capturadaPor          String?
   capturadaEn           DateTime?
+  /** PDF del acta impresa y firmada por los 3 profesores entrevistadores (ruta dentro del almacenamiento) */
+  firmadaArchivoNombre  String?
+  firmadaArchivoRuta    String?
+  firmadaSubidaPorId    String?
+  firmadaSubidaEn       DateTime?
   entrevista            Entrevista             @relation(fields: [entrevistaId], references: [id], onDelete: Cascade)
   firmas                FirmaActaEntrevista[]
   creadoEn              DateTime               @default(now())
@@ -555,6 +563,9 @@ model Usuario {
   correo                String                     @unique
   identificadorAcceso   String?                    @unique
   hashContrasena        String
+  /** Cuenta creada con contraseña temporal: debe cambiarla al primer acceso */
+  debeCambiarContrasena Boolean                    @default(false)
+  ultimoAccesoEn        DateTime?
   area                  AreaPersonal
   activo                Boolean                    @default(true)
   aspiranteId           String?                    @unique

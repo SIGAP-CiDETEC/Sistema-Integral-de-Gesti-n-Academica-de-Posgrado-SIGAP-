@@ -143,7 +143,7 @@ export default function BitacoraAdmin() {
             </tbody>
           </table>
         </div>
-        <p className="mt-2 text-xs text-gray-500">Registros inmutables · Con backend se guardan en la base de datos con la IP de origen y no se pueden editar ni borrar (RNF-11).</p>
+        <p className="mt-2 text-xs text-gray-500">Registros inmutables · Con backend se guardan en la base de datos con la IP de origen y no se pueden editar ni borrar.</p>
       </Tarjeta>
     </>
   );

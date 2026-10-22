@@ -292,6 +292,10 @@ const colegiadoVigente = (p: ProfesorP) => p.colegiado && /^\d{4}$/.test(p.vigen
 export const profesorValido = (p: ProfesorP) => colegiadoVigente(p) || p.vigencia === "Asignatura";
 export const nombramientoDe = (p: ProfesorP) =>
   colegiadoVigente(p) ? `Colegiado · vigente a ${p.vigencia}` : p.vigencia === "Asignatura" ? "De asignatura" : "Nombramiento vencido";
+/** Con el servidor real, la lista de profesores viene de la API (reemplaza a la de ejemplo). */
+export function fijarProfesores(lista: ProfesorP[]) {
+  PROFESORES_SINODO.splice(0, PROFESORES_SINODO.length, ...lista);
+}
 export const nombreProfesor = (id: string) => PROFESORES_SINODO.find((p) => p.id === id)?.nombre ?? id;
 
 // ---------- Documentos ----------
@@ -584,7 +588,7 @@ export const ASPIRANTES_BASE: AspiranteP[] = [
     dedicacion: "Tiempo completo",
     registradoEl: "2026-02-20",
     etapa: "entrevista",
-    concluido: "Rechazado en la entrevista colegiada (RN-05)",
+    concluido: "Rechazado en la entrevista colegiada",
     documentos: docs({}),
     entrevista: entrevistaDe("2026-03-17", "17:30", ["lh", "mt", "er"]),
     dictamen: dictamenDe("Rechazado", "No cumple el perfil de ingreso."),
@@ -784,7 +788,7 @@ export function pendientesInscripcion(a: AspiranteP) {
   return [
     { t: "Fotografía", ok: !!u.foto },
     ...FORMATOS_INSCRIPCION.map((f) => ({ t: `${f.t.split(" · ")[0]} firmado`, ok: !!u[f.campo] || !!u.firmadosFinales?.[f.clave] })),
-    { t: "Dedicación elegida (RN-10)", ok: !!a.dedicacion },
+    { t: "Dedicación elegida", ok: !!a.dedicacion },
   ];
 }
 

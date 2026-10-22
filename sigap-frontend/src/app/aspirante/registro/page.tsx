@@ -1,4 +1,4 @@
-import { FaseEncabezado, FuenteFase } from "@/components/expediente/FaseEncabezado";
+import { FaseEncabezado } from "@/components/expediente/FaseEncabezado";
 import { FormatosFase } from "@/components/expediente/FormatosFase";
 import { ResumenRegistro } from "@/components/expediente/ResumenRegistro";
 
@@ -10,7 +10,6 @@ export default function FaseRegistro() {
         <ResumenRegistro />
         <FormatosFase fase="registro" />
       </div>
-      <FuenteFase id="registro" />
     </>
   );
 }

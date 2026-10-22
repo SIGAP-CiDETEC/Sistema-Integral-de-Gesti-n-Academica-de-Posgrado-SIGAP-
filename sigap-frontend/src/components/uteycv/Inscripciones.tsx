@@ -102,7 +102,7 @@ function Detalle({ a }: { a: AspiranteP }) {
           </div>
         </dl>
         <p className="mt-3 text-sm text-gray-600">
-          Su ID temporal <span className="font-mono">{a.id}</span> ya no sirve para entrar; inicia sesión con su número de registro y cambia su contraseña (RF-30, RN-12).
+          Su ID temporal <span className="font-mono">{a.id}</span> ya no sirve para entrar; inicia sesión con su número de registro y cambia su contraseña.
         </p>
       </Tarjeta>
     );
@@ -133,7 +133,7 @@ function Detalle({ a }: { a: AspiranteP }) {
         )}
       </Tarjeta>
 
-      <Tarjeta titulo="Expediente de inscripción (RF-27, RF-28)">
+      <Tarjeta titulo="Expediente de inscripción">
         <ExpedienteInscripcion a={a} />
         {prorrogas.length > 0 && (
           <div className="mt-4">
@@ -161,7 +161,7 @@ function Detalle({ a }: { a: AspiranteP }) {
       <Tarjeta titulo="Registro SICEP">
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="text-sm">
-            <span className="text-gray-700">Dedicación (RN-10)</span>
+            <span className="text-gray-700">Dedicación</span>
             <p className="mt-1 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-gray-900">{dedicacion ?? "Aún no la elige"}</p>
             <span className="text-xs text-gray-500">La eligió el aspirante al revisar su dictamen; se registra así en SICEP.</span>
           </div>
@@ -171,7 +171,7 @@ function Detalle({ a }: { a: AspiranteP }) {
             {sicep && !SICEP.test(sicep) && <span className="text-xs text-red-600">Formato: una letra y 6 dígitos.</span>}
           </label>
         </div>
-        <Aviso tono="info" titulo="Sustitución de identificador (RN-12)">
+        <Aviso tono="info" titulo="Sustitución de identificador">
           Al formalizar, el número de registro sustituye al ID temporal {a.id} para iniciar sesión y se le avisa por correo que debe cambiar su contraseña.
         </Aviso>
         <div className="mt-4 flex flex-wrap items-center justify-between gap-2">

@@ -203,7 +203,6 @@ function FilaDocumento({ doc, requerido, hayObservaciones }: { doc: Documento; r
             {error}
           </p>
         )}
-        <p className="mt-1 text-[11px] text-gray-400">{doc.fuente}</p>
       </div>
 
       <div className="flex shrink-0 items-center gap-2">

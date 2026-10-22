@@ -1,4 +1,4 @@
-import { FaseEncabezado, FuenteFase } from "@/components/expediente/FaseEncabezado";
+import { FaseEncabezado } from "@/components/expediente/FaseEncabezado";
 import { ResultadosAspirante } from "@/components/expediente/ResultadosAspirante";
 
 export default function FaseResultados() {
@@ -6,7 +6,6 @@ export default function FaseResultados() {
     <>
       <FaseEncabezado id="resultados" />
       <ResultadosAspirante />
-      <FuenteFase id="resultados" />
     </>
   );
 }

@@ -20,18 +20,18 @@ const GRUPOS: { id: string; t: string; filtro: (a: AspiranteP) => boolean }[] = 
 type Mods = ReturnType<typeof useConfigEvaluacion>["modalidades"];
 const plantillasDe = (MODALIDADES: Mods): Record<string, { t: string; asunto: string; cuerpo: string }> => ({
   instrucciones: {
-    t: "Instrucciones para continuar (RF-50)",
+    t: "Instrucciones para continuar",
     asunto: "Instrucciones para continuar tu proceso de admisión",
     cuerpo:
       "Estimado(a) aspirante:\n\nTe compartimos las instrucciones para continuar con tu proceso de admisión a la Maestría en Tecnología de Cómputo. Ingresa a SIGAP con tu ID temporal y revisa la fase en la que te encuentras.\n\nAtentamente,\nDepartamento de Posgrado · CIDETEC",
   },
   fechas: {
-    t: "Fechas importantes (RF-51)",
+    t: "Fechas importantes",
     asunto: `Fechas importantes · ${convocatoriaActual.nombre}`,
     cuerpo: `Estimado(a) aspirante:\n\nTe recordamos las fechas del proceso:\n• Cursos propedéuticos: ${MODALIDADES.propedeutico.fechas}\n• Examen de admisión: ${MODALIDADES.examen.fechas}\n\nConsulta el instructivo adjunto.\n\nAtentamente,\nDepartamento de Posgrado · CIDETEC`,
   },
   idiomas: {
-    t: "Requisitos de idiomas (RF-51)",
+    t: "Requisitos de idiomas",
     asunto: "Requisito de inglés: constancia de inglés",
     cuerpo:
       "Estimado(a) aspirante:\n\nTu constancia de inglés debe acreditar el nivel B1 en dos habilidades con calificación mínima de 8 (por ejemplo, de CELEX o CENLEX). El Departamento de Posgrado la revisará y validará. Si aún no la tienes, solicita prórroga al Departamento de Posgrado para continuar con tu proceso.\n\nAtentamente,\nDepartamento de Posgrado · CIDETEC",

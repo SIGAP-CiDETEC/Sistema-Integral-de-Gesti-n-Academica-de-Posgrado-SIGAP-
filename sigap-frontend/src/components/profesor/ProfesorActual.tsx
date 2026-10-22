@@ -4,6 +4,7 @@ import { UserRound, Wand2 } from "lucide-react";
 import { PROFESORES_SINODO, profesorValido } from "@/lib/posgrado/datos";
 import { actuarComo, gruposDeProfesor, useProfesorActual } from "@/lib/profesor";
 import { useConfigEvaluacion } from "@/lib/evaluacion-config";
+import { MODO_API } from "@/lib/api";
 
 /** Quién está actuando y, solo en el cascarón, el selector para actuar como otro profesor del Colegio. */
 export function ProfesorActual() {
@@ -23,10 +24,10 @@ export function ProfesorActual() {
             {imparte.length > 0 && <span className="text-gray-500"> · imparte {imparte.join(" y ")}</span>}
           </span>
         ) : (
-          "Tu cuenta no está ligada a un profesor del Colegio; elige uno en la vista de prueba."
+          MODO_API ? "Tu cuenta no está ligada a un profesor del Colegio; pide a Posgrado que la revise." : "Tu cuenta no está ligada a un profesor del Colegio; elige uno en la vista de prueba."
         )}
       </span>
-      <label className="flex items-center gap-2 text-xs text-gray-600">
+      {!MODO_API && <label className="flex items-center gap-2 text-xs text-gray-600">
         <Wand2 size={13} /> Vista de prueba (solo cascarón): actuar como
         <select
           aria-label="Actuar como otro profesor"
@@ -42,7 +43,7 @@ export function ProfesorActual() {
             </option>
           ))}
         </select>
-      </label>
+      </label>}
     </div>
   );
 }

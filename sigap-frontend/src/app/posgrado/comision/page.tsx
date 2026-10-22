@@ -230,7 +230,7 @@ function DictamenFinal() {
   return (
     <div className="space-y-6">
       <Tarjeta
-        titulo={<span className="flex items-center gap-2"><FileText size={17} className="text-primary" /> 1. Informe de la Comisión de Admisión (RF-57)</span>}
+        titulo={<span className="flex items-center gap-2"><FileText size={17} className="text-primary" /> 1. Informe de la Comisión de Admisión</span>}
         accion={
           <div className="flex gap-2">
             <button
@@ -323,7 +323,7 @@ function DictamenFinal() {
         </div>
       </Tarjeta>
 
-      <Tarjeta titulo={<span className="flex items-center gap-2"><Gavel size={16} className="text-primary" /> 2. Resolución de la Comisión de Admisión (RF-59, RF-60)</span>}>
+      <Tarjeta titulo={<span className="flex items-center gap-2"><Gavel size={16} className="text-primary" /> 2. Resolución de la Comisión de Admisión</span>}>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <label className="text-sm">
             <span className="font-medium text-gray-900">Número de acta</span>

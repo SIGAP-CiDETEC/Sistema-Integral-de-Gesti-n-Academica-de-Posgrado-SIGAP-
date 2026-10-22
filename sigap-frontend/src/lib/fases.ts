@@ -14,7 +14,6 @@ export type Fase = {
   /** Lo que hace cada área de CIDETEC en esta fase */
   areasHacen: { area: Area; texto: string }[];
   requisito?: string;
-  fuente: string;
   /** Proceso aparte del de admisión (no aparece en la barra de fases de admisión) */
   aparte?: boolean;
 };
@@ -28,11 +27,10 @@ export const FASES: Fase[] = [
     resumen: "Tu registro inicial genera tu ID temporal y alimenta todos tus formatos.",
     tuHaces: ["Llenar el formulario de registro", "Completar tu currículum (SIP-02), imprimirlo, firmarlo y subirlo (lo encuentras hasta el final de esta página)"],
     areasHacen: [
-      { area: "posgrado", texto: "Revisa tu registro inicial (RF-49)" },
-      { area: "posgrado", texto: "Te envía instrucciones, fechas e instructivos (RF-50, RF-51)" },
+      { area: "posgrado", texto: "Revisa tu registro inicial" },
+      { area: "posgrado", texto: "Te envía instrucciones, fechas e instructivos" },
       { area: "posgrado", texto: "Recibe tu currículum firmado (SIP-02)" },
     ],
-    fuente: "CU-ADM-01 · RF-01, RF-02, RF-25",
   },
   {
     id: "documentos",
@@ -42,11 +40,10 @@ export const FASES: Fase[] = [
     resumen: "Subes tus documentos oficiales escaneados para que el Departamento de Posgrado los revise.",
     tuHaces: ["Subir tus documentos en PDF (con el límite de tamaño de la convocatoria)", "Atender observaciones, si las hay"],
     areasHacen: [
-      { area: "posgrado", texto: "Valida cada documento o registra observaciones (RF-05, RF-06, RF-52)" },
-      { area: "posgrado", texto: "Valida tu constancia de inglés (RF-53, RN-09)" },
+      { area: "posgrado", texto: "Valida cada documento o registra observaciones" },
+      { area: "posgrado", texto: "Valida tu constancia de inglés" },
       { area: "posgrado", texto: "Puede darte prórroga para entregar tu constancia de inglés o tu título y que sigas con tu proceso" },
     ],
-    fuente: "CU-ADM-02, CU-ADM-03 · RF-03 a RF-07, RF-52",
   },
   {
     id: "entrevista",
@@ -56,13 +53,12 @@ export const FASES: Fase[] = [
     resumen: "Entrevista colegiada con 3 profesores.",
     tuHaces: ["Consultar tu cita y presentarte a tu entrevista"],
     areasHacen: [
-      { area: "posgrado", texto: "Programa la fecha, hora y sala de tu cita (RF-55)" },
-      { area: "profesores", texto: "Los profesores (colegiados o de asignatura) eligen las entrevistas en las que participan; participan 3 profesores entrevistadores (RF-56, RN-07)" },
+      { area: "posgrado", texto: "Programa la fecha, hora y sala de tu cita" },
+      { area: "profesores", texto: "Los profesores (colegiados o de asignatura) eligen las entrevistas en las que participan; participan 3 profesores entrevistadores" },
       { area: "profesores", texto: "Los profesores entrevistadores llenan el acta de entrevista (MTC-EC) y la firman los 3 profesores" },
-      { area: "profesores", texto: "Con las 3 firmas queda el dictamen: Aprobado, Con reservas o Rechazado (RF-12)" },
+      { area: "profesores", texto: "Con las 3 firmas queda el dictamen: Aprobado, Con reservas o Rechazado" },
     ],
     requisito: "Se habilita cuando tu expediente está validado.",
-    fuente: "CU-ADM-04, CU-ADM-05 · RF-10 a RF-12, RN-07",
   },
   {
     id: "evaluacion",
@@ -74,11 +70,10 @@ export const FASES: Fase[] = [
     areasHacen: [
       { area: "posgrado", texto: "Te envía fechas y horarios por correo y en tus notificaciones" },
       { area: "posgrado", texto: "Si eliges examen, te envía recordatorios 3 recordatorios: una semana antes, un día antes y el mismo día" },
-      { area: "profesores", texto: "El docente de cada curso propedéutico registra tus calificaciones (RF-16)" },
-      { area: "posgrado", texto: "La Jefatura de Posgrado registra la calificación del examen de admisión (RF-16)" },
+      { area: "profesores", texto: "El docente de cada curso propedéutico registra tus calificaciones" },
+      { area: "posgrado", texto: "La Jefatura de Posgrado registra la calificación del examen de admisión" },
     ],
     requisito: "Se habilita si tu entrevista fue aprobada.",
-    fuente: "CU-ADM-06 · RF-15 a RF-18, RN-08",
   },
   {
     id: "resultados",
@@ -96,7 +91,6 @@ export const FASES: Fase[] = [
       { area: "posgrado", texto: "Si presentas examen, te envía recordatorios 3 recordatorios: una semana antes, un día antes y el mismo día" },
     ],
     requisito: "Se habilita cuando Posgrado publica tus resultados.",
-    fuente: "RF-16, RF-17, RN-08",
   },
   {
     id: "dictamen",
@@ -106,11 +100,10 @@ export const FASES: Fase[] = [
     resumen: "Aquí se publica tu resultado del proceso de admisión (resolución del Colegio de Profesores). Con él concluye tu proceso de admisión.",
     tuHaces: ["Consultar dónde y cuándo se publican los resultados", "Ver tu resultado cuando se publique"],
     areasHacen: [
-      { area: "posgrado", texto: "Genera el informe de la comisión (RF-57)" },
-      { area: "posgrado", texto: "Registra la resolución del Colegio de Profesores y publica los resultados en SIGAP (RF-59)" },
+      { area: "posgrado", texto: "Genera el informe de la comisión" },
+      { area: "posgrado", texto: "Registra la resolución del Colegio de Profesores y publica los resultados en SIGAP" },
     ],
     requisito: "Se habilita al acreditar tu evaluación.",
-    fuente: "CU-ADM-07 · RF-22, RF-57 a RF-59",
   },
   {
     id: "inscripcion",
@@ -127,11 +120,10 @@ export const FASES: Fase[] = [
     ],
     areasHacen: [
       { area: "uteycv", texto: "Elabora y publica tu programa individual (SIP-08)" },
-      { area: "uteycv", texto: "Revisa tu expediente de inscripción y carga las versiones con todas las firmas (RF-27, RF-28)" },
-      { area: "uteycv", texto: "Registra tu número SICEP; con él inicias sesión como alumno (RF-29 a RF-31)" },
+      { area: "uteycv", texto: "Revisa tu expediente de inscripción y carga las versiones con todas las firmas" },
+      { area: "uteycv", texto: "Registra tu número SICEP; con él inicias sesión como alumno" },
     ],
-    requisito: "Se habilita cuando se publica tu resultado de admisión (Aceptado o Con reservas) y no te falta ningún documento (RN-11).",
-    fuente: "Módulos 6, 7, 8 y 19 · RF-24 a RF-31, RF-68, RF-69, RN-10 a RN-12",
+    requisito: "Se habilita cuando se publica tu resultado de admisión (Aceptado o Con reservas) y no te falta ningún documento.",
     aparte: true,
   },
 ];

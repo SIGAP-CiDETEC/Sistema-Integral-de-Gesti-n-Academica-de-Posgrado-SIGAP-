@@ -125,7 +125,7 @@ export function EditarCalendario() {
 
   const errores: string[] = [];
   if (b.propedeutico.fin < b.propedeutico.inicio) errores.push("La fecha de fin del propedéutico es anterior al inicio.");
-  if (b.examen.fecha <= b.propedeutico.fin) errores.push("El examen debe ser después de que terminen los cursos (es la segunda oportunidad, RN-08).");
+  if (b.examen.fecha <= b.propedeutico.fin) errores.push("El examen debe ser después de que terminen los cursos (es la segunda oportunidad).");
   b.materias.forEach((m) =>
     m.grupos.forEach((g) => {
       if (!g.sesiones.length) errores.push(`${m.nombre}, grupo ${g.id}: agrega al menos una sesión.`);

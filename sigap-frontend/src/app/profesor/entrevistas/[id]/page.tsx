@@ -8,6 +8,7 @@ import { Aviso, Etiqueta, Migas, Tarjeta, botonPrimario, botonSecundario, inputB
 import { ActaVista, DescargarActa, SinodoActa, TEXTO_CONTINUAR, TONO_RESOLUCION } from "@/components/profesor/ActaVista";
 import { useAccionesProfesor } from "@/components/profesor/useAccionesProfesor";
 import { DocumentosAspirante } from "@/components/profesor/DocumentosAspirante";
+import { MODO_API } from "@/lib/api";
 import { hoja1Prellenada } from "@/lib/registro-aspirante";
 import { AREAS_INVESTIGACION } from "@/lib/registro-form";
 import {
@@ -61,12 +62,13 @@ export default function EntrevistaProfesor({ params }: PageProps<"/profesor/entr
   const acta = a.actaEntrevista;
   const yoLaLlene = acta?.capturadaPor === yo;
 
-  const subir = (archivo: File | undefined | { name: string; type: string; size: number }) => {
+  const subir = async (archivo: File | undefined | { name: string; type: string; size: number }) => {
     setError("");
     if (!archivo) return;
     if (archivo.type !== "application/pdf" && !archivo.name.toLowerCase().endsWith(".pdf")) return setError("Sube el acta firmada en PDF.");
     if (archivo.size > 10 * 1024 * 1024) return setError("El PDF no debe pasar de 10 MB.");
-    if (!subirActaFirmada(a, archivo.name, yo)) setError("Otro profesor entrevistador ya subió el acta firmada.");
+    // Con el servidor, el motivo del rechazo lo muestra el aviso flotante
+    if (!(await subirActaFirmada(a, archivo, yo)) && !MODO_API) setError("Otro profesor entrevistador ya subió el acta firmada.");
   };
 
   return (
@@ -121,9 +123,11 @@ export default function EntrevistaProfesor({ params }: PageProps<"/profesor/entr
           <FormularioActa
             a={a}
             inicial={acta}
-            onGuardar={(nueva) => {
-              if (!guardarActa(a, nueva, yo)) setError("Otro profesor entrevistador ya llenó el acta.");
-              setLlenando(false);
+            onGuardar={async (nueva) => {
+              const ok = await guardarActa(a, nueva, yo);
+              if (!ok && !MODO_API) setError("Otro profesor entrevistador ya llenó el acta.");
+              // Con el servidor, si no se guardó (p. ej. falta el motivo) el formulario sigue abierto
+              if (ok || !MODO_API) setLlenando(false);
             }}
             onCancelar={() => setLlenando(false)}
             yo={yo}
@@ -145,7 +149,7 @@ export default function EntrevistaProfesor({ params }: PageProps<"/profesor/entr
                 {acta.firmada
                   ? `${nombreProfesor(acta.firmada.subidaPor)} subió el acta firmada por los 3 el ${fechaCorta(acta.firmada.el)}. `
                   : `Registrado el ${fechaCorta(a.dictamen.registradoEl)}. `}
-                {a.dictamen.resolucion === "Rechazado" ? "El proceso del aspirante concluyó (RN-05)." : "El aspirante pasó a la fase de evaluación."}
+                {a.dictamen.resolucion === "Rechazado" ? "El proceso del aspirante concluyó." : "El aspirante pasó a la fase de evaluación."}
               </Aviso>
             )}
             {!a.dictamen && (
@@ -174,7 +178,7 @@ export default function EntrevistaProfesor({ params }: PageProps<"/profesor/entr
                     <Aviso tono="error" titulo={error} />
                   </div>
                 )}
-                <div className="mt-4 border-t border-dashed border-gray-300 pt-3">
+                {!MODO_API && <div className="mt-4 border-t border-dashed border-gray-300 pt-3">
                   <button
                     type="button"
                     onClick={() => subir({ name: `MTC-EC_${a.id}_firmada.pdf`, type: "application/pdf", size: 1000 })}
@@ -182,7 +186,7 @@ export default function EntrevistaProfesor({ params }: PageProps<"/profesor/entr
                   >
                     <Wand2 size={12} /> Solo cascarón: subir un acta firmada de ejemplo
                   </button>
-                </div>
+                </div>}
               </Tarjeta>
             )}
             <ActaVista a={a} sinDescarga={!a.dictamen} />
@@ -306,9 +310,11 @@ function FormularioActa({ a, inicial, onGuardar, onCancelar, yo }: { a: Aspirant
           {inicial ? "" : "La hoja 1 viene prellenada con el registro y el expediente del aspirante; confírmala o corrígela. "}Llena el acta durante o al terminar la
           entrevista. Al guardarla, los otros dos profesores entrevistadores ya no podrán llenarla y les aparecerá para descargarla, imprimirla y firmarla.
         </p>
-        <button type="button" onClick={ejemplo} className="inline-flex items-center gap-1.5 rounded-full border border-gray-300 bg-white px-3 py-1 text-xs text-gray-700 hover:bg-gray-50">
-          <Wand2 size={12} /> Solo cascarón: llenar con datos de ejemplo
-        </button>
+        {!MODO_API && (
+          <button type="button" onClick={ejemplo} className="inline-flex items-center gap-1.5 rounded-full border border-gray-300 bg-white px-3 py-1 text-xs text-gray-700 hover:bg-gray-50">
+            <Wand2 size={12} /> Solo cascarón: llenar con datos de ejemplo
+          </button>
+        )}
       </div>
 
       <Tarjeta titulo="Hoja 1 · Entrevista al aspirante">
@@ -432,7 +438,7 @@ function FormularioActa({ a, inicial, onGuardar, onCancelar, yo }: { a: Aspirant
             <div className="mt-3">
               <Aviso tono="error" titulo="Efecto de un “No”">
                 <span className="flex items-start gap-1.5">
-                  <TriangleAlert size={14} className="mt-0.5 shrink-0" /> Cuando firmen los 3 profesores entrevistadores, el proceso del aspirante concluye (RN-05).
+                  <TriangleAlert size={14} className="mt-0.5 shrink-0" /> Cuando firmen los 3 profesores entrevistadores, el proceso del aspirante concluye.
                 </span>
               </Aviso>
             </div>

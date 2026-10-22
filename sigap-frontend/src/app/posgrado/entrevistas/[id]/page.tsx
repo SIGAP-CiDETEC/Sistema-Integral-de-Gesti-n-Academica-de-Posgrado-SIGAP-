@@ -10,6 +10,8 @@ import { usePosgrado } from "@/components/posgrado/PosgradoProvider";
 import { Aviso, Etiqueta, Migas, Tarjeta, botonPrimario, botonSecundario, inputBase } from "@/components/posgrado/ui";
 import { AvisoAspirante } from "@/components/posgrado/AvisoAspirante";
 import { citaTexto, usePublicarEntrevistas } from "@/components/posgrado/usePublicarEntrevistas";
+import { MODO_API, api } from "@/lib/api";
+import { mensajeDe, notificar } from "@/lib/avisos-ui";
 import {
   PROFESORES_SINODO,
   TONO_PASO_ENTREVISTA,
@@ -164,14 +166,15 @@ function Dato({ k, v }: { k: string; v: string }) {
 
 /** Captura o actualización del horario (Posgrado ya no asigna profesores: ellos eligen la entrevista). */
 function Horario({ a, alTerminar }: { a: AspiranteP; alTerminar: () => void }) {
-  const { actualizar, aspirantes, enviarAviso } = usePosgrado();
+  const { actualizar, aspirantes, enviarAviso, recargar } = usePosgrado();
   const e = a.entrevista;
-  const [f, setF] = useState({
-    fecha: e?.fecha ?? "2026-03-18",
+  const [guardando, setGuardando] = useState(false);
+  const [f, setF] = useState(() => ({
+    fecha: e?.fecha ?? new Date(Date.now() + 7 * 86_400_000).toISOString().slice(0, 10),
     hora: e?.hora ?? "10:30",
     modalidad: e?.modalidad ?? ("Presencial" as Entrevista["modalidad"]),
     sala: e?.sala ?? "Sala de juntas CIDETEC",
-  });
+  }));
   const sinodo = e?.sinodo ?? [];
 
   // Choques: algún profesor que ya eligió esta entrevista tiene otra a la nueva fecha y hora
@@ -181,7 +184,22 @@ function Horario({ a, alTerminar }: { a: AspiranteP; alTerminar: () => void }) {
   const sinCambio = !!e && e.fecha === f.fecha && e.hora === f.hora && e.modalidad === f.modalidad && e.sala === f.sala;
   const listo = f.fecha && f.hora && f.sala.trim() && !choques.length && !sinCambio;
 
-  const guardar = () => {
+  const guardar = async () => {
+    // Servidor real: la API valida choques y que no exista acta
+    if (MODO_API) {
+      setGuardando(true);
+      try {
+        await api(`/aspirantes/${a.id}/entrevista`, { metodo: "PUT", cuerpo: f });
+        notificar("Horario guardado", "exito");
+        await recargar();
+        alTerminar();
+      } catch (err) {
+        notificar(mensajeDe(err));
+      } finally {
+        setGuardando(false);
+      }
+      return;
+    }
     const nueva: Entrevista = { ...f, sinodo, horarioPublicadoEl: e?.horarioPublicadoEl, notificadaEl: e?.notificadaEl ?? "" };
     actualizar(
       a.id,
@@ -247,7 +265,7 @@ function Horario({ a, alTerminar }: { a: AspiranteP; alTerminar: () => void }) {
             Cancelar
           </button>
         )}
-        <button type="button" className={botonPrimario} disabled={!listo} onClick={guardar}>
+        <button type="button" className={botonPrimario} disabled={!listo || guardando} onClick={guardar}>
           <CheckCircle2 size={15} /> {e ? "Guardar cambios" : "Guardar horario"}
         </button>
       </div>
@@ -276,7 +294,7 @@ function EsperandoActa({ a }: { a: AspiranteP }) {
         <p className="mt-3 text-sm">
           Estado:{" "}
           <Etiqueta tono={a.actaEntrevista ? "bg-sky-50 text-sky-800" : "bg-gray-100 text-gray-700"}>
-            {a.actaEntrevista ? "Acta llenada · por subir firmada" : sinodoCompleto(a.entrevista) ? "Los profesores entrevistadores aún no llenann el acta" : `Profesores entrevistadores ${a.entrevista?.sinodo.length ?? 0} de 3`}
+            {a.actaEntrevista ? "Acta llenada · por subir firmada" : sinodoCompleto(a.entrevista) ? "Los profesores entrevistadores aún no llenan el acta" : `Profesores entrevistadores ${a.entrevista?.sinodo.length ?? 0} de 3`}
           </Etiqueta>
         </p>
         <div className="mt-3">

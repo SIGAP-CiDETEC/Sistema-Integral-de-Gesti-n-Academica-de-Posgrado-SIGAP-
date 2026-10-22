@@ -4,6 +4,7 @@ import { useMemo, useSyncExternalStore } from "react";
 import { AREAS_EVAL, PROFESORES_SINODO, evaluacionEnCaptura, sinodoCompleto, type AreaEvalId, type AspiranteP, type ProfesorP } from "./posgrado/datos";
 import { docenteDe, type Materia } from "./evaluacion";
 import { useSesion } from "./sesion";
+import { MODO_API } from "./api";
 
 /**
  * Profesor de la sesión. SOLO CASCARÓN: para probar el flujo completo con una sola cuenta,
@@ -51,6 +52,13 @@ export function useProfesorActual(): { profesor: ProfesorP | null; propio: Profe
   const como = useSyncExternalStore(suscribir, leer, () => null);
   return useMemo(() => {
     if (sesion?.rol !== "profesor") return { profesor: null, propio: null, simulado: false };
+    // Servidor real: el profesor es el de la cuenta (no hay "actuar como")
+    if (MODO_API) {
+      const p: ProfesorP | null = sesion.profesorId
+        ? (PROFESORES_SINODO.find((x) => x.id === sesion.profesorId) ?? { id: sesion.profesorId, nombre: sesion.nombre, correo: sesion.correo, colegiado: true, vigencia: "", linea: "" })
+        : null;
+      return { profesor: p, propio: p, simulado: false };
+    }
     const propio = profesorPorCorreo(sesion.correo) ?? null;
     const elegido = como ? PROFESORES_SINODO.find((p) => p.id === como) : undefined;
     const profesor = elegido ?? propio;

@@ -86,7 +86,7 @@ export function ResultadosAspirante() {
           {exa && !exa.acreditado && (
             <p className="mt-4 flex items-start gap-2 rounded-lg bg-gray-100 px-3 py-2.5 text-sm text-gray-700">
               <Info size={16} className="mt-0.5 shrink-0" />
-              Tu proceso de admisión en esta convocatoria concluye. Te invitamos a participar en la próxima (RN-08).
+              Tu proceso de admisión en esta convocatoria concluye. Te invitamos a participar en la próxima.
             </p>
           )}
         </Seccion>
@@ -219,7 +219,7 @@ function Simular({
     return { calificacion: Math.round((ns.reduce((t, n) => t + n, 0) / ns.length) * 10) / 10, acreditado: ns.every((n) => n >= 8), registradoEl: hoy(), publicadoEl: hoy(), areas };
   };
   const publicar = (tipo: "propedeutico" | "examen", r: ResultadoEval) =>
-    simularCambioPosgrado(ID, { evaluacion: { [tipo]: r }, ...(r.acreditado ? { etapa: "dictamen" } : tipo === "examen" ? { concluido: "No acreditó la evaluación (RN-08)" } : {}) }, {
+    simularCambioPosgrado(ID, { evaluacion: { [tipo]: r }, ...(r.acreditado ? { etapa: "dictamen" } : tipo === "examen" ? { concluido: "No acreditó la evaluación" } : {}) }, {
       asunto: tipo === "propedeutico" ? "Resultados del curso propedéutico" : "Resultados del examen de admisión",
       mensaje: `Ya se publicaron tus resultados en SIGAP (5 · Resultados).`,
     });

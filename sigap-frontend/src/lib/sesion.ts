@@ -3,6 +3,7 @@
 import { useMemo, useSyncExternalStore } from "react";
 import type { Rol } from "./nav";
 import { leerAccesos, registrarEventoAdmin, rolDeCuenta, useAccesos, type AreaPersonal } from "./admin/accesos";
+import { MODO_API, api, guardarToken } from "./api";
 
 /**
  * Cuentas del personal con credenciales únicas (RF-32, AD-02). SOLO CASCARÓN.
@@ -57,7 +58,53 @@ export const USUARIOS_DEMO: Usuario[] = [
   { correo: "admin.sigap@ipn.mx", contrasena: "Admin#2026", nombre: "Admin CIDETEC", puesto: "Administrador del sistema", rol: "admin" },
 ];
 
-export type Sesion = { correo: string; nombre: string; puesto: string; rol: Rol; desde: string };
+export type Sesion = {
+  correo: string;
+  nombre: string;
+  puesto: string;
+  rol: Rol;
+  desde: string;
+  /** Con el servidor real: profesor ligado a la cuenta y si debe cambiar su contraseña temporal */
+  profesorId?: string | null;
+  debeCambiarContrasena?: boolean;
+};
+
+/** Cuenta que devuelve la API al iniciar sesión. */
+export type UsuarioApi = { id: string; nombre: string; correo: string; rol: Rol; puesto: string; profesorId: string | null; debeCambiarContrasena: boolean };
+
+/** Inicia sesión contra el servidor real. Devuelve la cuenta o lanza el error de la API. */
+export async function autenticarApi(usuario: string, contrasena: string): Promise<UsuarioApi> {
+  const r = await api<{ token: string; usuario: UsuarioApi }>("/auth/login", { cuerpo: { usuario, contrasena } });
+  guardarToken(r.token);
+  const s: Sesion = {
+    correo: r.usuario.correo,
+    nombre: r.usuario.nombre,
+    puesto: r.usuario.puesto,
+    rol: r.usuario.rol,
+    desde: new Date().toISOString(),
+    profesorId: r.usuario.profesorId,
+    debeCambiarContrasena: r.usuario.debeCambiarContrasena,
+  };
+  try {
+    localStorage.setItem(CLAVE, JSON.stringify(s));
+  } catch {
+    /* ignorar */
+  }
+  window.dispatchEvent(new Event(EVENTO));
+  return r.usuario;
+}
+
+/** Cambia la contraseña en el servidor real y quita el aviso de contraseña temporal. */
+export async function cambiarContrasenaApi(actual: string, nueva: string) {
+  await api("/auth/contrasena", { cuerpo: { actual, nueva } });
+  try {
+    const s = JSON.parse(localStorage.getItem(CLAVE) ?? "null") as Sesion | null;
+    if (s) localStorage.setItem(CLAVE, JSON.stringify({ ...s, debeCambiarContrasena: false }));
+  } catch {
+    /* ignorar */
+  }
+  window.dispatchEvent(new Event(EVENTO));
+}
 
 const CLAVE = "sigap-sesion";
 const EVENTO = "sigap-sesion";
@@ -101,6 +148,7 @@ export function iniciarSesion(u: Usuario) {
 }
 
 export function cerrarSesion() {
+  guardarToken(null);
   try {
     localStorage.removeItem(CLAVE);
   } catch {
@@ -134,6 +182,8 @@ export function usePermisos(): Set<string> | null {
   const { sesion } = useSesion();
   const acc = useAccesos();
   return useMemo(() => {
+    // Con el servidor real los permisos los aplica la API según el área de la cuenta
+    if (MODO_API) return null;
     if (!sesion || (sesion.rol !== "posgrado" && sesion.rol !== "uteycv" && sesion.rol !== "subdireccion" && sesion.rol !== "profesor")) return null;
     return new Set(rolDeCuenta(acc, sesion.correo)?.permisos ?? []);
   }, [sesion, acc]);

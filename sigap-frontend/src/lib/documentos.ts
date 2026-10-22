@@ -21,7 +21,6 @@ export type Documento = {
   formatos: "pdf" | "imagen";
   maxMB: number;
   nota?: string;
-  fuente: string;
 };
 
 export const DOCUMENTOS: Documento[] = [
@@ -35,7 +34,6 @@ export const DOCUMENTOS: Documento[] = [
     formatos: "pdf",
     maxMB: 5,
     nota: "Si tu título está en trámite, Posgrado puede darte prórroga para entregarlo y seguir con tu proceso.",
-    fuente: "RF-52 · REP Art. 7-I",
   },
   {
     id: "constancia-titulacion",
@@ -46,7 +44,6 @@ export const DOCUMENTOS: Documento[] = [
     aplica: (r) => r.titulado === "No",
     formatos: "pdf",
     maxMB: 5,
-    fuente: "REP Art. 7-I",
   },
   {
     id: "certificado",
@@ -57,7 +54,6 @@ export const DOCUMENTOS: Documento[] = [
     formatos: "pdf",
     maxMB: 5,
     nota: "Si tu título está en trámite, Posgrado puede darte prórroga para entregarlo y seguir con tu proceso.",
-    fuente: "RF-52 · REP Art. 7-I",
   },
   {
     id: "ingles",
@@ -68,7 +64,6 @@ export const DOCUMENTOS: Documento[] = [
     formatos: "pdf",
     maxMB: 5,
     nota: "La validación corresponde al Departamento de Posgrado. Si la constancia es distinta a la del CENLEX, Posgrado validará ante la DFLE; este trámite puede tardar más de 40 días.",
-    fuente: "RF-09 · RN-09 · REP Art. 7-IV",
   },
   {
     id: "curp",
@@ -78,7 +73,6 @@ export const DOCUMENTOS: Documento[] = [
     requerido: false,
     formatos: "pdf",
     maxMB: 5,
-    fuente: "RF-52",
   },
   {
     id: "acta-nacimiento",
@@ -88,7 +82,6 @@ export const DOCUMENTOS: Documento[] = [
     requerido: true,
     formatos: "pdf",
     maxMB: 5,
-    fuente: "RF-52",
   },
   {
     id: "identificacion",
@@ -98,7 +91,6 @@ export const DOCUMENTOS: Documento[] = [
     requerido: true,
     formatos: "pdf",
     maxMB: 5,
-    fuente: "RF-52",
   },
   {
     id: "extranjero",
@@ -108,7 +100,6 @@ export const DOCUMENTOS: Documento[] = [
     requerido: false,
     formatos: "pdf",
     maxMB: 5,
-    fuente: "REP Art. 11",
   },
   {
     id: "foto",
@@ -119,7 +110,6 @@ export const DOCUMENTOS: Documento[] = [
     formatos: "imagen",
     maxMB: 2,
     nota: "Rostro descubierto: sin lentes, gorra, sombrero ni accesorios que cubran la cara, y con orejas y frente visibles. Imagen JPG o PNG de máximo 2 MB.",
-    fuente: "SIP-01",
   },
 ];
 

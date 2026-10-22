@@ -94,8 +94,8 @@ export default function ConfiguracionConvocatoria() {
           <dl className="mt-4 space-y-3 text-sm">
             {[
               ["Formatos permitidos", "PDF (fotografía en JPG o PNG)"],
-              ["Profesores entrevistadores", "3 profesores colegiados vigentes o de asignatura, que eligen sus entrevistas (RN-07)"],
-              ["Segunda oportunidad", "Examen de admisión después del propedéutico (RN-08)"],
+              ["Profesores entrevistadores", "3 profesores colegiados vigentes o de asignatura, que eligen sus entrevistas"],
+              ["Segunda oportunidad", "Examen de admisión después del propedéutico"],
               ["Fechas de registro de las convocatorias", "Las define el Departamento de Posgrado; se abren y cierran solas"],
               ["Fechas y horarios de la evaluación", "Los edita el Departamento de Posgrado"],
             ].map(([k, v]) => (

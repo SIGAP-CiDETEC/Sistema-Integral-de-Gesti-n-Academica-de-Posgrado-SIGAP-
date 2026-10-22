@@ -9,7 +9,8 @@ import { PERIODO_ESCOLAR } from "@/lib/config";
 import { guardarCuenta, leerCuenta } from "@/lib/cuenta-alumno";
 import { ID_EN_VIVO, fijarAspiranteActivo } from "@/lib/aspirante-activo";
 import { ID_EJEMPLO_OBSERVACION } from "@/lib/posgrado/datos";
-import { USUARIOS_DEMO, autenticar, iniciarSesion } from "@/lib/sesion";
+import { USUARIOS_DEMO, autenticar, autenticarApi, iniciarSesion } from "@/lib/sesion";
+import { MODO_API } from "@/lib/api";
 
 /**
  * Login único para todos los usuarios. El campo acepta:
@@ -58,10 +59,24 @@ export default function LoginPage({ searchParams }: PageProps<"/login">) {
   const [verPassword, setVerPassword] = useState(false);
   const [error, setError] = useState("");
 
-  function onSubmit(e: React.FormEvent) {
+  const [entrando, setEntrando] = useState(false);
+
+  async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!usuario.trim() || !password) {
       setError("Ingresa tu usuario y contraseña.");
+      return;
+    }
+    // Servidor real: credenciales verificadas por la API
+    if (MODO_API) {
+      setEntrando(true);
+      try {
+        const u = await autenticarApi(usuario, password);
+        router.push(u.debeCambiarContrasena ? "/cambiar-contrasena" : `/${u.rol}`);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "No se pudo iniciar sesión.");
+        setEntrando(false);
+      }
       return;
     }
     const destino = destinoSimulado(usuario, password);
@@ -110,7 +125,7 @@ export default function LoginPage({ searchParams }: PageProps<"/login">) {
               />
             </div>
             <p className="mt-1 text-xs text-gray-500">
-              Correo institucional, ID temporal de aspirante o número de registro (alumnos).
+              {MODO_API ? "Correo institucional (o tu CURP, si así te lo indicaron)." : "Correo institucional, ID temporal de aspirante o número de registro (alumnos)."}
             </p>
           </div>
 
@@ -172,9 +187,10 @@ export default function LoginPage({ searchParams }: PageProps<"/login">) {
 
           <button
             type="submit"
-            className="flex w-full items-center justify-center gap-2 rounded-lg bg-navy-950 py-2.5 text-sm font-medium text-white hover:bg-navy-800"
+            disabled={entrando}
+            className="flex w-full items-center justify-center gap-2 rounded-lg bg-navy-950 py-2.5 text-sm font-medium text-white hover:bg-navy-800 disabled:opacity-60"
           >
-            Iniciar sesión <LogIn size={16} />
+            {entrando ? "Verificando…" : "Iniciar sesión"} <LogIn size={16} />
           </button>
         </form>
 
@@ -187,6 +203,7 @@ export default function LoginPage({ searchParams }: PageProps<"/login">) {
         </div>
 
         {/* Solo para el cascarón: accesos de prueba */}
+        {!MODO_API && (
         <div className="mt-6 border-t border-dashed border-gray-200 pt-4">
           <p className="text-center text-xs text-gray-500">Acceso de prueba (solo cascarón)</p>
           <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
@@ -225,6 +242,7 @@ export default function LoginPage({ searchParams }: PageProps<"/login">) {
             ))}
           </ul>
         </div>
+        )}
       </div>
 
       <Link href="/" className="mt-6 flex items-center gap-1.5 text-sm text-gray-600 hover:text-gray-900">

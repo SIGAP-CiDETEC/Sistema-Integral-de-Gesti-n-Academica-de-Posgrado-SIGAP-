@@ -74,7 +74,7 @@ export function BoletaSicep() {
           <p className="font-semibold text-gray-900">Tu boleta definitiva</p>
           <p className="mt-1 text-gray-700">
             Cuando Control Escolar (UTEyCV) valide tu inscripción y registre tu número SICEP, tu boleta reemplazará al ID
-            temporal para iniciar sesión (RF-30, RN-12). Tus documentos y formatos se conservan (RNF-07).
+            temporal para iniciar sesión. Tus documentos y formatos se conservan.
           </p>
           <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-1">
             {pendientes.map((p) => (

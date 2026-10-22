@@ -282,7 +282,7 @@ function Resultados({ a }: { a: AspiranteP }) {
       actualizar(a.id, { evaluacion: ev, etapa: "dictamen" }, `Publicó resultados del ${porPublicar === "propedeutico" ? "propedéutico" : "examen"}: acreditado; pasa a comisión`);
       enviarAviso([a.id], "ambos", "Resultados publicados: acreditaste tu evaluación", `Estimado(a) ${nom}:\n\nYa se publicaron tus resultados en SIGAP (5 · Resultados). Acreditaste tu evaluación; tu resultado pasa a la Comisión de Admisión del Colegio de Profesores.${firma}`);
     } else if (porPublicar === "propedeutico") {
-      actualizar(a.id, { evaluacion: ev }, `Publicó resultados del propedéutico: no acreditó ${reprobadas.map(nombreArea).join(" y ")}; se le ofrece el examen de esas áreas (RN-08)`);
+      actualizar(a.id, { evaluacion: ev }, `Publicó resultados del propedéutico: no acreditó ${reprobadas.map(nombreArea).join(" y ")}; se le ofrece el examen de esas áreas`);
       enviarAviso(
         [a.id],
         "ambos",
@@ -290,7 +290,7 @@ function Resultados({ a }: { a: AspiranteP }) {
         `Estimado(a) ${nom}:\n\nYa se publicaron tus resultados del curso propedéutico en SIGAP (5 · Resultados). No acreditaste: ${reprobadas.map(nombreArea).join(" y ")}.\n\nPuedes presentar el examen de admisión de ${reprobadas.length > 1 ? "esas áreas" : "esa área"} el ${MODALIDADES.examen.fechas}. Entra a SIGAP para indicarnos si quieres presentarlo.${firma}`,
       );
     } else {
-      actualizar(a.id, { evaluacion: ev, concluido: "No acreditó la evaluación (RN-08)" }, "Publicó resultados del examen: no acreditado; el proceso concluye");
+      actualizar(a.id, { evaluacion: ev, concluido: "No acreditó la evaluación" }, "Publicó resultados del examen: no acreditado; el proceso concluye");
       // RN-08: mensaje invitándolo a nuevas convocatorias (RF-17: no se le muestra "Rechazado")
       enviarAviso([a.id], "ambos", "Resultado de tu proceso de admisión", `Estimado(a) ${nom}:\n\nAgradecemos tu participación en el proceso de admisión. Te invitamos a participar en la próxima convocatoria de la Maestría en Tecnología de Cómputo.${firma}`);
     }
@@ -300,7 +300,7 @@ function Resultados({ a }: { a: AspiranteP }) {
     const reprobadas = areasReprobadas(e.propedeutico);
     actualizar(
       a.id,
-      { evaluacion: { ...e, segundaOportunidad: { decision, areas: reprobadas, el: new Date().toISOString() } }, ...(decision === "no" ? { concluido: "Decidió no presentar el examen de las áreas no acreditadas (RN-08)" } : {}) },
+      { evaluacion: { ...e, segundaOportunidad: { decision, areas: reprobadas, el: new Date().toISOString() } }, ...(decision === "no" ? { concluido: "Decidió no presentar el examen de las áreas no acreditadas" } : {}) },
       decision === "examen" ? `Registró que el aspirante presentará el examen de ${reprobadas.map(nombreArea).join(" y ")}` : "Registró que el aspirante no presentará el examen; el proceso concluye",
     );
   };

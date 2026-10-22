@@ -4,3 +4,6 @@ dist/
 coverage/
 .prisma/
 npm-debug.log*
+src/generated/
+storage/
+datos-reales/

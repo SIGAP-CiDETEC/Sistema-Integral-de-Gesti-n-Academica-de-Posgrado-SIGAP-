@@ -1,6 +1,6 @@
 import { BoletaSicep } from "@/components/alumno/BoletaSicep";
 import { DocumentosFase } from "@/components/expediente/DocumentosFase";
-import { FaseEncabezado, FuenteFase } from "@/components/expediente/FaseEncabezado";
+import { FaseEncabezado } from "@/components/expediente/FaseEncabezado";
 import { FormatosFase } from "@/components/expediente/FormatosFase";
 import { EstadoInscripcionAspirante } from "@/components/expediente/EstadoInscripcion";
 
@@ -15,7 +15,6 @@ export default function Inscripcion() {
         <FormatosFase fase="inscripcion" />
         <BoletaSicep />
       </div>
-      <FuenteFase id="inscripcion" />
     </>
   );
 }

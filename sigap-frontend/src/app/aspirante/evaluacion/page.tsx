@@ -1,4 +1,4 @@
-import { FaseEncabezado, FuenteFase } from "@/components/expediente/FaseEncabezado";
+import { FaseEncabezado } from "@/components/expediente/FaseEncabezado";
 import { ModalidadEvaluacion } from "@/components/expediente/ModalidadEvaluacion";
 
 export default function FaseEvaluacion() {
@@ -6,7 +6,6 @@ export default function FaseEvaluacion() {
     <>
       <FaseEncabezado id="evaluacion" />
       <ModalidadEvaluacion />
-      <FuenteFase id="evaluacion" />
     </>
   );
 }
