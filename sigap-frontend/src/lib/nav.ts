@@ -4,6 +4,8 @@
  */
 
 export type Rol = "aspirante" | "alumno" | "posgrado" | "uteycv" | "subdireccion" | "profesor" | "coordinador" | "admin";
+/** Sesiones que, con el servidor real, se muestran como demostración con datos ficticios. */
+export const ROLES_DEMO: Rol[] = ["aspirante", "alumno"];
 
 export type IconName =
   | "home"

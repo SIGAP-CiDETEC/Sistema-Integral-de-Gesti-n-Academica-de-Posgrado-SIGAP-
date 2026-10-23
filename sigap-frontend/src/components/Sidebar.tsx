@@ -6,8 +6,8 @@ import { useState } from "react";
 import { Menu, X } from "lucide-react";
 import { Logos } from "./Logos";
 import { NavIcon } from "./NavIcon";
-import { NAV, NAV_SERVIDOR, ROL_LABEL, USUARIO_DEMO, type Rol } from "@/lib/nav";
-import { MODO_API } from "@/lib/api";
+import { NAV, NAV_SERVIDOR, ROLES_DEMO, ROL_LABEL, USUARIO_DEMO, type Rol } from "@/lib/nav";
+import { DEMO_ASPIRANTES, MODO_API } from "@/lib/api";
 import { cerrarSesion, usePermisos, useSesion } from "@/lib/sesion";
 import { permisoDeRuta } from "@/lib/admin/accesos";
 import { ID_EN_VIVO, useAspiranteActivo } from "@/lib/aspirante-activo";
@@ -18,7 +18,7 @@ export function Sidebar({ rol }: { rol: Rol }) {
   const [abierto, setAbierto] = useState(false);
   const permisos = usePermisos();
   // Solo las pestañas que su rol permite (RF-80, menor privilegio)
-  const items = (MODO_API ? (NAV_SERVIDOR[rol] ?? []) : NAV[rol]).filter((i) => {
+  const items = (MODO_API && !(DEMO_ASPIRANTES && ROLES_DEMO.includes(rol)) ? (NAV_SERVIDOR[rol] ?? []) : NAV[rol]).filter((i) => {
     const p = permisoDeRuta(i.href);
     return !p || !permisos || permisos.has(p.id);
   });

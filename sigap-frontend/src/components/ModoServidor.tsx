@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { KeyRound, Lock } from "lucide-react";
-import { MODO_API } from "@/lib/api";
-import { NAV_SERVIDOR, type Rol } from "@/lib/nav";
+import { FlaskConical, KeyRound, Lock } from "lucide-react";
+import { DEMO_ASPIRANTES, MODO_API } from "@/lib/api";
+import { NAV_SERVIDOR, ROLES_DEMO, type Rol } from "@/lib/nav";
 import { useSesion } from "@/lib/sesion";
 
 /** Sesiones que ya trabajan con el servidor real (prueba de la entrevista colegiada). */
@@ -18,6 +18,24 @@ export function ModoServidor({ rol, children }: { rol: Rol; children: React.Reac
   const { sesion } = useSesion();
   const ruta = usePathname();
   if (!MODO_API) return <>{children}</>;
+  // Aspirante y alumno: demostración con datos ficticios del navegador (sin API ni datos reales)
+  if (DEMO_ASPIRANTES && ROLES_DEMO.includes(rol))
+    return (
+      <>
+        <div role="note" data-demo className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-violet-300 bg-violet-50 px-4 py-3 text-sm text-violet-900">
+          <span className="flex items-center gap-2">
+            <FlaskConical size={16} className="shrink-0" />
+            <span>
+              <strong>Demostración: datos ficticios.</strong> Esta sesión no está conectada al servidor; lo que hagas aquí solo se guarda en este navegador y no afecta a los aspirantes reales.
+            </span>
+          </span>
+          <Link href="/login" className="font-medium underline">
+            Salir de la demostración
+          </Link>
+        </div>
+        {children}
+      </>
+    );
   // Solo las pantallas del menú conectado (y sus detalles); las demás aún trabajan con datos de ejemplo
   const permitida = (NAV_SERVIDOR[rol] ?? []).some((i) => ruta === i.href || (i.href !== `/${rol}` && ruta.startsWith(`${i.href}/`)));
   if (!ROLES_CON_SERVIDOR.includes(rol) || !permitida)

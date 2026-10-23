@@ -9,8 +9,8 @@ import { PERIODO_ESCOLAR } from "@/lib/config";
 import { guardarCuenta, leerCuenta } from "@/lib/cuenta-alumno";
 import { ID_EN_VIVO, fijarAspiranteActivo } from "@/lib/aspirante-activo";
 import { ID_EJEMPLO_OBSERVACION } from "@/lib/posgrado/datos";
-import { USUARIOS_DEMO, autenticar, autenticarApi, iniciarSesion } from "@/lib/sesion";
-import { MODO_API } from "@/lib/api";
+import { USUARIOS_DEMO, autenticar, autenticarApi, cerrarSesion, iniciarSesion } from "@/lib/sesion";
+import { DEMO_ASPIRANTES, MODO_API } from "@/lib/api";
 
 /**
  * Login único para todos los usuarios. El campo acepta:
@@ -51,6 +51,17 @@ function destinoSimulado(usuario: string, password: string): { ruta: string } | 
   return { error: "Usuario no reconocido. Usa tu correo institucional, tu ID temporal o tu número de registro." };
 }
 
+/** ID temporal de aspirante o número de registro de los perfiles de demostración (no son correos ni CURP). */
+const esUsuarioDemo = (usuario: string) => {
+  const u = usuario.trim().toUpperCase();
+  return u.startsWith("ASP-") || /^MTC-[AB]\d{2}-?\d{3}$/.test(u) || /^[A-Z]?\d{6,}$/.test(u);
+};
+
+/** Entrar a la demostración con el servidor real: se cierra cualquier sesión del personal. */
+const entrarDemo = () => {
+  if (MODO_API) cerrarSesion();
+};
+
 export default function LoginPage({ searchParams }: PageProps<"/login">) {
   const inicial = use(searchParams).usuario;
   const router = useRouter();
@@ -67,8 +78,8 @@ export default function LoginPage({ searchParams }: PageProps<"/login">) {
       setError("Ingresa tu usuario y contraseña.");
       return;
     }
-    // Servidor real: credenciales verificadas por la API
-    if (MODO_API) {
+    // Servidor real: credenciales verificadas por la API (salvo los perfiles de demostración)
+    if (MODO_API && !(DEMO_ASPIRANTES && esUsuarioDemo(usuario))) {
       setEntrando(true);
       try {
         const u = await autenticarApi(usuario, password);
@@ -79,6 +90,7 @@ export default function LoginPage({ searchParams }: PageProps<"/login">) {
       }
       return;
     }
+    entrarDemo();
     const destino = destinoSimulado(usuario, password);
     if ("error" in destino) setError(destino.error);
     else router.push(destino.ruta);
@@ -125,7 +137,7 @@ export default function LoginPage({ searchParams }: PageProps<"/login">) {
               />
             </div>
             <p className="mt-1 text-xs text-gray-500">
-              {MODO_API ? "Correo institucional (o tu CURP, si así te lo indicaron)." : "Correo institucional, ID temporal de aspirante o número de registro (alumnos)."}
+              {MODO_API ? `Correo institucional (o tu CURP, si así te lo indicaron).${DEMO_ASPIRANTES ? " Para la demostración: ID de aspirante (ASP-2026-001) o número de registro (B260842)." : ""}` : "Correo institucional, ID temporal de aspirante o número de registro (alumnos)."}
             </p>
           </div>
 
@@ -201,6 +213,24 @@ export default function LoginPage({ searchParams }: PageProps<"/login">) {
             son personales e intransferibles.
           </p>
         </div>
+
+        {/* Servidor real: demostración de los portales de aspirante y alumno con datos ficticios */}
+        {DEMO_ASPIRANTES && (
+          <div className="mt-6 border-t border-dashed border-gray-200 pt-4" data-accesos-demo>
+            <p className="text-center text-xs text-gray-500">Demostración con datos ficticios (no usa el servidor)</p>
+            <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
+              <Link href="/aspirante" onClick={() => { entrarDemo(); fijarAspiranteActivo(ID_EN_VIVO); }} className="rounded-md border border-gray-200 py-1.5 text-center hover:bg-gray-50">
+                Aspirante
+              </Link>
+              <Link href="/alumno" onClick={entrarDemo} className="rounded-md border border-gray-200 py-1.5 text-center hover:bg-gray-50">
+                Alumno
+              </Link>
+              <Link href="/aspirante/admision" onClick={() => { entrarDemo(); fijarAspiranteActivo(ID_EJEMPLO_OBSERVACION); }} className="col-span-2 rounded-md border border-gray-200 py-1.5 text-center hover:bg-gray-50">
+                Aspirante con un documento observado ({ID_EJEMPLO_OBSERVACION})
+              </Link>
+            </div>
+          </div>
+        )}
 
         {/* Solo para el cascarón: accesos de prueba */}
         {!MODO_API && (

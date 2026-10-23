@@ -6,7 +6,7 @@ import { CheckCircle2, Circle, Eye, EyeOff, KeyRound, Lock } from "lucide-react"
 import { Logos } from "@/components/Logos";
 import { PROGRAMA_INDIVIDUAL_DEMO } from "@/lib/programa-individual";
 import { ID_TEMPORAL_DEMO, guardarCuenta, leerCuenta, useCuentaAlumno } from "@/lib/cuenta-alumno";
-import { MODO_API } from "@/lib/api";
+import { DEMO_ASPIRANTES, MODO_API } from "@/lib/api";
 import { cambiarContrasenaApi, useSesion } from "@/lib/sesion";
 
 /**
@@ -15,7 +15,9 @@ import { cambiarContrasenaApi, useSesion } from "@/lib/sesion";
  * Con backend: PATCH /auth/password (hash con bcrypt/argon2, invalida la temporal).
  */
 export default function CambiarContrasena() {
-  return MODO_API ? <CambioPersonal /> : <CambioAlumno />;
+  const { sesion } = useSesion();
+  // Con el servidor real, el alumno de la demostración (sin sesión del personal) usa el cambio de prueba
+  return MODO_API && (sesion || !DEMO_ASPIRANTES) ? <CambioPersonal /> : <CambioAlumno />;
 }
 
 function CambioAlumno() {

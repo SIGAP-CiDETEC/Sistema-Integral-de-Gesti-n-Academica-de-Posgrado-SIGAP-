@@ -7,6 +7,11 @@
  */
 export const API_URL = (process.env.NEXT_PUBLIC_API_URL ?? "").replace(/\/$/, "");
 export const MODO_API = API_URL.length > 0;
+/**
+ * Con el servidor real, las sesiones de aspirante y alumno pueden abrirse como demostración con datos
+ * ficticios del navegador (no tocan la API ni a los aspirantes reales). Se apaga con NEXT_PUBLIC_DEMO=0.
+ */
+export const DEMO_ASPIRANTES = MODO_API && process.env.NEXT_PUBLIC_DEMO !== "0";
 
 const CLAVE_TOKEN = "sigap-token";
 
