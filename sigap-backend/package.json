@@ -17,7 +17,8 @@
     "prisma:studio": "prisma studio",
     "prisma:validate": "prisma validate",
     "migrar": "node scripts/migrar.js",
-    "cargar-datos": "node dist/carga/cargar-datos.js"
+    "cargar-datos": "node dist/carga/cargar-datos.js",
+    "aspirante-demo": "node dist/carga/aspirante-demo.js"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.0",

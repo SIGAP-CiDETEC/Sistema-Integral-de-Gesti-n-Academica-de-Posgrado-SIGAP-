@@ -118,6 +118,20 @@ bash /opt/sigap/app/deploy/actualizar.sh
 4. **Profesores:** uno llena el acta MTC-EC y queda bloqueada para los demás. La descargan, la firman los 3 y uno la sube en PDF; con eso se aplica el dictamen.
 5. **Posgrado:** ve el dictamen, abre el acta firmada y revisa la bitácora.
 
+## Demostración
+
+- **Aspirante ficticio en el servidor** (`DEMO2701`, "Aspirante Demostración Ficticio", con 8 PDF que dicen
+  "DOCUMENTO DE DEMOSTRACIÓN"). Aparece junto a los aspirantes reales y permite hacer toda la entrevista colegiada:
+
+  ```bash
+  cd /opt/sigap/app/sigap-backend
+  npm run aspirante-demo            # lo crea; si ya existía, lo deja como nuevo (sin entrevista ni acta)
+  npm run aspirante-demo -- borrar  # al terminar la demostración: lo elimina con su entrevista, acta y bitácora
+  ```
+
+- **Portales de aspirante y alumno**: en el login, botones de "Demostración con datos ficticios". Usan datos del
+  navegador, no el servidor. Se quitan compilando el front con `NEXT_PUBLIC_DEMO=0`.
+
 ## Respaldos
 
 ```bash
