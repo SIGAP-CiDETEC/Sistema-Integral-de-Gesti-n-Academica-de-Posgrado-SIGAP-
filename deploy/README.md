@@ -118,6 +118,27 @@ bash /opt/sigap/app/deploy/actualizar.sh
 4. **Profesores:** uno llena el acta MTC-EC y queda bloqueada para los demás. La descargan, la firman los 3 y uno la sube en PDF; con eso se aplica el dictamen.
 5. **Posgrado:** ve el dictamen, abre el acta firmada y revisa la bitácora.
 
+## Certificado HTTPS
+
+TI del CIDETEC entrega el certificado de Let's Encrypt (carpeta `virtual.cidetec.ipn.mx_ecc`). Solo se usan
+`fullchain.cer` y `virtual.cidetec.ipn.mx.key`; la llave es secreta y **nunca** va al repositorio.
+
+```bash
+# En tu computadora (PowerShell), desde la carpeta virtual.cidetec.ipn.mx_ecc
+scp -P 2222 fullchain.cer virtual.cidetec.ipn.mx.key deployer@148.204.67.192:~/
+
+# En el servidor
+sudo install -d -m 755 /etc/ssl/sigap
+sudo install -m 644 ~/fullchain.cer /etc/ssl/sigap/fullchain.pem
+sudo install -m 600 ~/virtual.cidetec.ipn.mx.key /etc/ssl/sigap/privkey.pem
+rm ~/fullchain.cer ~/virtual.cidetec.ipn.mx.key
+sudo cp /opt/sigap/app/deploy/nginx-sigap.conf /etc/nginx/sites-available/sigap
+sudo /usr/sbin/nginx -t && sudo systemctl reload nginx
+```
+
+El certificado dura 90 días: cuando TI entregue el renovado, se repiten los mismos pasos (sin el `cp` de la
+configuración). Para ver hasta cuándo es válido: `sudo openssl x509 -in /etc/ssl/sigap/fullchain.pem -noout -enddate`.
+
 ## Demostración
 
 - **Aspirante ficticio en el servidor** (`DEMO2701`, "Aspirante Demostración Ficticio", con 8 PDF que dicen

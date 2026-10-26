@@ -78,6 +78,12 @@ export const TONO_ENTREVISTA_PROF: Record<EstadoEntrevistaProf, string> = {
   Concluida: "bg-gray-100 text-gray-600",
 };
 
+/**
+ * true cuando Posgrado ya publicó la cita al aspirante (o la entrevista ya avanzó a acta o dictamen). Antes de eso el
+ * profesor no ve los datos del aspirante y todavía puede dejar su lugar.
+ */
+export const citaPublicada = (a: AspiranteP) => !!a.entrevista?.notificadaEl || !!a.actaEntrevista || !!a.dictamen;
+
 /** Entrevistas donde el profesor forma parte de los profesores entrevistadores. */
 export const entrevistasDe = (lista: AspiranteP[], prof?: string) => lista.filter((a) => !!prof && !!a.entrevista?.sinodo.includes(prof));
 

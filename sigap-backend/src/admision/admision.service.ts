@@ -19,6 +19,14 @@ const conTodo = {
 } satisfies Prisma.PostulacionInclude;
 type PostulacionCompleta = Prisma.PostulacionGetPayload<{ include: typeof conTodo }>;
 
+/**
+ * Qué datos del aspirante ve cada cuenta:
+ * - completa: Posgrado y Subdirección.
+ * - profesor: profesor entrevistador de una cita ya publicada (nombre, procedencia, promedio y correo; solo su SIP-02).
+ * - anonima: solo día, hora y lugares de la entrevista (profesores que aún no integran la entrevista o cuya cita no se publica).
+ */
+type Vista = 'completa' | 'profesor' | 'anonima';
+
 const etapaDe = (e: EstadoPostulacion) =>
   e === 'EN_EVALUACION' ? 'evaluacion' : e === 'ESPERANDO_RESOLUCION' || e === 'ADMITIDA' || e === 'NO_ADMITIDA' ? 'dictamen' : ['BORRADOR', 'REGISTRO_INCOMPLETO'].includes(e) ? 'registro' : ['ENVIADA', 'EN_REVISION', 'OBSERVADA'].includes(e) ? 'documentos' : 'entrevista';
 
@@ -37,7 +45,9 @@ export class AdmisionService {
   }
 
   /** Convierte la postulación al formato que usa el front (AspiranteP). */
-  private aFront(p: PostulacionCompleta, completo: boolean) {
+  private aFront(p: PostulacionCompleta, vista: Vista) {
+    const completo = vista !== 'anonima';
+    const todo = vista === 'completa';
     const r = (p.respuestasRegistro ?? {}) as Record<string, string>;
     const a = p.aspirante;
     const e = p.entrevista;
@@ -47,9 +57,9 @@ export class AdmisionService {
     const base = {
       id: p.folio,
       nombre: completo ? [a.nombres, a.apellidoPaterno, a.apellidoMaterno].filter(Boolean).join(' ') : 'Aspirante',
-      curp: completo ? (a.curp ?? '') : '',
+      curp: todo ? (a.curp ?? '') : '',
       correo: completo && !a.correo.endsWith('@sin-correo.sigap.local') ? a.correo : '',
-      telefono: completo ? (a.telefono ?? '') : '',
+      telefono: todo ? (a.telefono ?? '') : '',
       procedencia: completo ? (r.procedencia ?? '') : '',
       promedio: completo ? (r.promedio ?? '') : '',
       registradoEl: (p.enviadaEn ?? p.creadoEn).toISOString(),
@@ -59,7 +69,7 @@ export class AdmisionService {
       documentos: completo
         ? p.documentos
             .filter((d) => d.catalogo.clave !== 'sip-02')
-            .map((d) => ({ id: d.catalogo.clave, nombre: d.catalogo.nombre, archivo: d.nombreArchivo ?? undefined, estado: d.estado === 'APROBADO' ? 'aprobado' : d.estado === 'OBSERVADO' ? 'observado' : d.estado === 'PRORROGA' ? 'prorroga' : d.nombreArchivo ? 'pendiente' : 'falta', opcional: !d.catalogo.obligatorio }))
+            .map((d) => ({ id: d.catalogo.clave, nombre: d.catalogo.nombre, archivo: todo ? (d.nombreArchivo ?? undefined) : undefined, estado: d.estado === 'APROBADO' ? 'aprobado' : d.estado === 'OBSERVADO' ? 'observado' : d.estado === 'PRORROGA' ? 'prorroga' : d.nombreArchivo ? 'pendiente' : 'falta', opcional: !d.catalogo.obligatorio }))
         : [],
       formatos: completo && p.documentos.some((d) => d.catalogo.clave === 'sip-02') ? { 'sip-02': true } : {},
       evaluacion: { grupos: {} },
@@ -98,12 +108,19 @@ export class AdmisionService {
   /**
    * Aspirantes visibles para la cuenta:
    * - Posgrado y Subdirección: todos con todos sus datos.
-   * - Profesores: solo las entrevistas cuyo horario ya se publicó; los datos del aspirante solo si integran su entrevista.
+   * - Profesores: solo las entrevistas cuyo horario ya se publicó; los datos del aspirante solo si integran su entrevista
+   *   y Posgrado ya publicó la cita.
    */
   async listar(u: UsuarioSesion) {
     const lista = await this.prisma.postulacion.findMany({ include: conTodo, orderBy: { folio: 'asc' } });
-    if (u.area !== 'PROFESORES') return lista.map((p) => this.aFront(p, true));
-    return lista.filter((p) => p.entrevista?.horarioPublicadoEn).map((p) => this.aFront(p, !!p.entrevista?.sinodo.some((s) => s.profesorId === u.profesorId)));
+    if (u.area !== 'PROFESORES') return lista.map((p) => this.aFront(p, 'completa'));
+    return lista.filter((p) => p.entrevista?.horarioPublicadoEn).map((p) => this.aFront(p, this.vistaProfesor(p, u.profesorId)));
+  }
+
+  /** El profesor ve los datos del aspirante solo si integra su entrevista y Posgrado ya publicó la cita. */
+  private vistaProfesor(p: PostulacionCompleta, prof?: string | null): Vista {
+    const e = p.entrevista;
+    return prof && e?.publicadaAspiranteEn && e.sinodo.some((s) => s.profesorId === prof) ? 'profesor' : 'anonima';
   }
 
   async profesores() {
@@ -146,17 +163,17 @@ export class AdmisionService {
     });
     if (p.estado === 'VALIDADA') await this.prisma.postulacion.update({ where: { id: p.id }, data: { estado: 'ENTREVISTA_PROGRAMADA' } });
     await this.bitacora(folio, u.nombre, `${p.entrevista ? (cambio ? 'Actualizó' : 'Guardó') : 'Programó'} el horario de entrevista: ${d.fecha} ${d.hora} h · ${d.modalidad} · ${d.sala}`);
-    return this.aFront(await this.postulacion(folio), true);
+    return this.aFront(await this.postulacion(folio), 'completa');
   }
 
   async publicarHorario(folio: string, u: UsuarioSesion) {
     const p = await this.postulacion(folio);
     if (!p.entrevista) throw new BadRequestException('Primero captura el horario');
-    if (p.entrevista.horarioPublicadoEn) return this.aFront(p, true);
+    if (p.entrevista.horarioPublicadoEn) return this.aFront(p, 'completa');
     await this.prisma.entrevista.update({ where: { id: p.entrevista.id }, data: { horarioPublicadoEn: new Date() } });
     const { fecha, hora } = deFechaHora(p.entrevista.fechaHora);
     await this.bitacora(folio, u.nombre, `Publicó el horario de entrevista ${fecha} ${hora} h para que los profesores lo elijan`);
-    return this.aFront(await this.postulacion(folio), true);
+    return this.aFront(await this.postulacion(folio), 'completa');
   }
 
   async publicarEntrevista(folio: string, u: UsuarioSesion) {
@@ -164,12 +181,12 @@ export class AdmisionService {
     const e = p.entrevista;
     if (!e?.horarioPublicadoEn) throw new BadRequestException('Primero publica el horario a los profesores');
     if (e.sinodo.length < LUGARES) throw new BadRequestException(`Faltan profesores entrevistadores (${e.sinodo.length} de ${LUGARES})`);
-    if (e.publicadaAspiranteEn) return this.aFront(p, true);
+    if (e.publicadaAspiranteEn) return this.aFront(p, 'completa');
     await this.prisma.entrevista.update({ where: { id: e.id }, data: { publicadaAspiranteEn: new Date() } });
     const nombres = await this.prisma.profesor.findMany({ where: { id: { in: e.sinodo.map((s) => s.profesorId) } } });
     const { fecha, hora } = deFechaHora(e.fechaHora);
     await this.bitacora(folio, u.nombre, `Publicó la entrevista al aspirante: ${fecha} ${hora} h · ${MODALIDAD[e.modalidad]} · ${e.sala}; profesores entrevistadores: ${nombres.map((n) => n.nombre).join(', ')}`);
-    return this.aFront(await this.postulacion(folio), true);
+    return this.aFront(await this.postulacion(folio), 'completa');
   }
 
   // ---------- Profesores ----------
@@ -198,7 +215,8 @@ export class AdmisionService {
       },
       { isolationLevel: 'Serializable' },
     );
-    return this.aFront(await this.postulacion(folio), true);
+    const p = await this.postulacion(folio);
+    return this.aFront(p, this.vistaProfesor(p, prof));
   }
 
   async dejar(folio: string, u: UsuarioSesion) {
@@ -210,7 +228,7 @@ export class AdmisionService {
     await this.prisma.integranteSinodo.delete({ where: { entrevistaId_profesorId: { entrevistaId: e.id, profesorId: prof } } });
     const { fecha, hora } = deFechaHora(e.fechaHora);
     await this.bitacora(folio, u.nombre, `Dejó su lugar en la entrevista del ${fecha} a las ${hora} h · profesores entrevistadores ${e.sinodo.length - 1} de ${LUGARES}`);
-    return this.aFront(await this.postulacion(folio), false);
+    return this.aFront(await this.postulacion(folio), 'anonima');
   }
 
   private exigirIntegrante(p: PostulacionCompleta, prof: string) {
@@ -233,7 +251,7 @@ export class AdmisionService {
     const data = { hoja1: d.hoja1 as Prisma.InputJsonValue, criterios: d.criterios as Prisma.InputJsonValue, proyeccion: d.proyeccion, observaciones: d.observaciones, resolucion, motivo: d.motivo, capturadaPor: prof, capturadaEn: new Date() };
     await this.prisma.actaEntrevista.upsert({ where: { entrevistaId: e.id }, create: { entrevistaId: e.id, ...data }, update: data });
     await this.bitacora(folio, u.nombre, `${previa?.capturadaPor ? 'Corrigió' : 'Llenó'} el acta de entrevista colegiada (MTC-EC); queda lista para imprimirse, firmarse y subirse`);
-    return this.aFront(await this.postulacion(folio), true);
+    return this.aFront(await this.postulacion(folio), 'profesor');
   }
 
   /** El primero que sube el acta firmada por los 3 aplica el dictamen; a los demás se les bloquea la subida. */
@@ -258,16 +276,19 @@ export class AdmisionService {
     await this.prisma.integranteSinodo.updateMany({ where: { entrevistaId: e.id }, data: { firmadoEn: ahora } });
     await this.prisma.postulacion.update({ where: { id: p.id }, data: { estado: rechazado ? 'RECHAZADA' : 'EN_EVALUACION' } });
     await this.bitacora(folio, u.nombre, `Subió el acta MTC-EC firmada por los 3 profesores entrevistadores (${nombre}). Dictamen de entrevista: ${RESOLUCION[acta.resolucion!]}${rechazado ? '. El proceso queda concluido' : '; pasa a evaluación'}`);
-    return this.aFront(await this.postulacion(folio), true);
+    return this.aFront(await this.postulacion(folio), 'profesor');
   }
 
   // ---------- Archivos ----------
 
-  /** Comprueba que la cuenta pueda ver los archivos de ese aspirante. */
-  async puedeVerArchivos(folio: string, u: UsuarioSesion) {
+  /**
+   * Comprueba que la cuenta pueda ver los archivos de ese aspirante. Posgrado y Subdirección ven todo; el profesor
+   * entrevistador, ya publicada la cita, solo el SIP-02 (currículum) y el acta firmada; nunca el resto del expediente.
+   */
+  async puedeVerArchivos(folio: string, u: UsuarioSesion, clave?: string) {
     const p = await this.postulacion(folio);
     if (u.area === 'POSGRADO' || u.area === 'SUBDIRECCION') return p;
-    if (u.area === 'PROFESORES' && u.profesorId && p.entrevista?.sinodo.some((s) => s.profesorId === u.profesorId)) return p;
+    if (u.area === 'PROFESORES' && this.vistaProfesor(p, u.profesorId) === 'profesor' && (clave === undefined || clave === 'sip-02')) return p;
     throw new ForbiddenException('No tienes acceso a los documentos de este aspirante');
   }
 }

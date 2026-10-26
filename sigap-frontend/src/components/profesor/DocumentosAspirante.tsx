@@ -15,24 +15,26 @@ export function DocumentosAspirante({ a }: { a: AspiranteP }) {
   return <DocumentosLocales a={a} />;
 }
 
-/** Con el servidor real: los PDF que entregó el aspirante (SIP-02 y documentos de su expediente). */
+/**
+ * Con el servidor real: el profesor entrevistador solo recibe el currículum del aspirante (SIP-02), equivalente al
+ * registro de admisión; el resto del expediente (acta de nacimiento, identificación, CURP…) lo revisa solo Posgrado.
+ */
 function DocumentosServidor({ a }: { a: AspiranteP }) {
-  const docs = [...(a.formatos["sip-02"] ? [{ id: "sip-02", nombre: "Currículum vitae (SIP-02)" }] : []), ...a.documentos.filter((d) => d.archivo)];
   return (
     <Tarjeta titulo="Documentos del aspirante">
-      {docs.length ? (
-        <ul className="divide-y divide-gray-100 text-sm">
-          {docs.map((d) => (
-            <li key={d.id} className="flex flex-wrap items-center justify-between gap-3 py-2.5">
-              <span className="flex items-center gap-2 font-medium text-gray-900">
-                <FileText size={16} className="shrink-0 text-primary" /> {d.nombre}
-              </span>
-              <ArchivoServidor ruta={`/aspirantes/${a.id}/documentos/${d.id}`} texto="Ver PDF" />
-            </li>
-          ))}
-        </ul>
+      {a.formatos["sip-02"] ? (
+        <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
+          <span className="flex items-start gap-2">
+            <FileText size={18} className="mt-0.5 shrink-0 text-primary" />
+            <span>
+              <span className="block font-medium text-gray-900">Currículum vitae (SIP-02)</span>
+              <span className="text-xs text-gray-500">Formación, experiencia e intereses del aspirante, para preparar la entrevista.</span>
+            </span>
+          </span>
+          <ArchivoServidor ruta={`/aspirantes/${a.id}/documentos/sip-02`} texto="Ver PDF" />
+        </div>
       ) : (
-        <p className="text-sm text-gray-500">El aspirante no tiene documentos cargados.</p>
+        <p className="text-sm text-gray-500">El aspirante aún no tiene su currículum (SIP-02) en el sistema.</p>
       )}
     </Tarjeta>
   );

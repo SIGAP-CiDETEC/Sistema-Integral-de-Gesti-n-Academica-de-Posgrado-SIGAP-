@@ -22,7 +22,7 @@ import {
   type Resolucion,
   type Valoracion,
 } from "@/lib/posgrado/datos";
-import { TONO_ENTREVISTA_PROF, estadoEntrevistaProf, useProfesorActual } from "@/lib/profesor";
+import { TONO_ENTREVISTA_PROF, citaPublicada, estadoEntrevistaProf, useProfesorActual } from "@/lib/profesor";
 
 /**
  * Entrevista colegiada desde la sesión del profesor. El acta MTC-EC funciona como cola: el primer profesor entrevistador que la llena
@@ -54,6 +54,19 @@ export default function EntrevistaProfesor({ params }: PageProps<"/profesor/entr
         <Aviso tono="alerta" titulo="No eres uno de los profesores entrevistadores de esta entrevista">
           {lugaresLibres(a.entrevista) > 0 ? "Si quieres participar, elígela en Mis entrevistas: todavía tiene lugares libres." : "Ya están asignados los 3 profesores entrevistadores."} En la vista de
           prueba puedes actuar como alguno de sus integrantes.
+        </Aviso>
+      </>
+    );
+
+  // Antes de que Posgrado publique la cita, el profesor no ve los datos del aspirante
+  if (!citaPublicada(a) && !a.concluido)
+    return (
+      <>
+        {migas}
+        <PageHeader titulo="Entrevista colegiada" subtitulo={`${fechaCorta(a.entrevista.fecha)} · ${a.entrevista.hora} h`} />
+        <Aviso tono="info" titulo="Aún no se publica la cita">
+          Verás los datos del aspirante y podrás llenar el acta MTC-EC cuando el Departamento de Posgrado publique la cita (profesores entrevistadores:{" "}
+          {a.entrevista.sinodo.length} de 3). Mientras tanto puedes dejar tu lugar desde Mis entrevistas.
         </Aviso>
       </>
     );

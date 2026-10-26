@@ -114,7 +114,7 @@ export class AdmisionController {
   @Get('aspirantes/:folio/documentos/:clave')
   @Areas('POSGRADO', 'SUBDIRECCION', 'PROFESORES')
   async documento(@Param('folio') f: string, @Param('clave') clave: string, @Req() r: Req_, @Res() res: Response) {
-    const p = await this.s.puedeVerArchivos(this.folio(f), r.usuario);
+    const p = await this.s.puedeVerArchivos(this.folio(f), r.usuario, clave);
     const d = p.documentos.find((x) => x.catalogo.clave === clave);
     if (!d?.urlArchivo || !existeArchivo(d.urlArchivo)) throw new NotFoundException('Documento no disponible');
     res.setHeader('Content-Disposition', `inline; filename="${clave}_${p.folio}.pdf"`);
