@@ -39,8 +39,9 @@ export type Entrevista = {
 };
 
 /** Duraciones que puede elegir Posgrado para la entrevista colegiada (minutos). */
-export const DURACIONES_ENTREVISTA = [30, 45, 60, 90, 120] as const;
-export const DURACION_PREDETERMINADA = 60;
+export const DURACIONES_ENTREVISTA = [20, 25, 30, 40, 45, 60, 90, 120] as const;
+/** Lo habitual en el CIDETEC: 25 minutos por entrevista. */
+export const DURACION_PREDETERMINADA = 25;
 export const duracionDe = (e: Pick<Entrevista, "duracion">) => e.duracion ?? DURACION_PREDETERMINADA;
 const aMinutos = (hora: string) => {
   const [h, m] = hora.split(":").map(Number);

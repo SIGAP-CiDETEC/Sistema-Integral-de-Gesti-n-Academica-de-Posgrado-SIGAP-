@@ -172,7 +172,7 @@ export class AdmisionService {
     const fechaHora = aFechaHora(d.fecha, d.hora);
     if (Number.isNaN(+fechaHora)) throw new BadRequestException('Fecha u hora inválida');
     const modalidad: ModalidadEntrevista = d.modalidad === 'En línea' ? 'EN_LINEA' : 'PRESENCIAL';
-    const duracionMin = d.duracion ?? p.entrevista?.duracionMin ?? 60;
+    const duracionMin = d.duracion ?? p.entrevista?.duracionMin ?? 25;
     // Choques: algún profesor del grupo ya tiene otra entrevista que se encima con el nuevo horario
     const miembros = p.entrevista?.sinodo.map((s) => s.profesorId) ?? [];
     if (await this.choqueDe(this.prisma, miembros, fechaHora, duracionMin, p.id)) throw new ConflictException('Un profesor entrevistador ya tiene otra entrevista que se encima con ese horario');
