@@ -28,12 +28,12 @@ export const CALENDARIOS_EJEMPLO: Record<IdConvocatoria, Calendario> = {
 };
 
 /**
- * Centros de Lenguas Extranjeras (CENLEX) del IPN donde se presenta el examen de dominio de idioma para posgrado,
- * con el documento oficial de cada uno (registro, requisitos y preparación).
+ * Centros de Lenguas Extranjeras (CENLEX) del IPN donde se presenta el examen de dominio de idioma para posgrado.
+ * Se enlaza a sus páginas web (no a PDF sueltos, que cambian de dirección cada convocatoria).
  */
 export const CENTROS_INGLES = [
-  { nombre: "CENLEX Zacatenco", detalle: "Examen de dominio de idioma 2026: registro y requisitos", href: "https://ipn.mx/assets/files/cenlexz/docs/posgrado/preguntas-frecuentes-presencial-2026.pdf" },
-  { nombre: "CENLEX Santo Tomás", detalle: "Examen de 4 habilidades para posgrado: guía de preparación", href: "https://www.ipn.mx/assets/files/cenlexsto/docs/Examenes/posgrado/guia-de-preparaci%C3%B3n-para-el-examen-de-4h.pdf" },
+  { nombre: "CENLEX Zacatenco", detalle: "Página del Centro de Lenguas Extranjeras Unidad Zacatenco", href: "https://www.ipn.mx/cenlexz/" },
+  { nombre: "CENLEX Santo Tomás", detalle: "Exámenes de 4 habilidades (dominio de idioma para posgrado)", href: "https://www.ipn.mx/stomas.cenlex/examenes/examenes-de-4-habilidades.html" },
 ];
 /**
  * Enlaces oficiales para acreditar el dominio del idioma inglés:
