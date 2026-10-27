@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { FileText, Paperclip } from "lucide-react";
 import { ArchivoServidor } from "@/components/ArchivoServidor";
 import { PageHeader } from "@/components/PageHeader";
@@ -104,12 +103,7 @@ export default function DictamenEntrevistaColegiada() {
                       )}
                     </td>
                     <td className="px-2 py-2.5 text-right">
-                      <span className="inline-flex flex-wrap items-center justify-end gap-2">
-                        {acta && <DescargarActa a={a} />}
-                        <Link href={`/posgrado/entrevistas/${a.id}`} className="text-sm font-medium text-primary hover:underline">
-                          Ver
-                        </Link>
-                      </span>
+                      {acta ? <DescargarActa a={a} /> : <span className="text-xs text-gray-400">—</span>}
                     </td>
                   </tr>
                 );
