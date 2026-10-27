@@ -168,18 +168,29 @@ export default function EntrevistaProfesor({ params }: PageProps<"/profesor/entr
                 {a.dictamen.resolucion === "Rechazado" ? "El proceso del aspirante concluyó." : "El aspirante pasó a la fase de evaluación."}
               </Aviso>
             )}
+            {/* Primero el contenido del acta (lo que trae el PDF) para revisarlo; abajo, descargar, firmar y subir */}
+            <ActaVista
+              a={a}
+              sinDescarga={!a.dictamen}
+              aviso={
+                a.dictamen ? undefined : cerrada ? (
+                  <Aviso tono="info" titulo="Acta cerrada">
+                    {nombreProfesor(acta.descargada!.por)} la descargó el {fechaCorta(acta.descargada!.el)}. Ya no se puede modificar ni en el sistema ni en el PDF.
+                  </Aviso>
+                ) : (
+                  <Aviso tono="alerta" titulo="Lee y verifica la información antes de descargar el acta">
+                    Una vez descargado el PDF, el acta ya no podrá editarse ni en el sistema ni en el PDF.
+                    {yoLaLlene ? " Si algo no es correcto, usa Corregir acta antes de descargarla." : ""}
+                  </Aviso>
+                )
+              }
+            />
             {!a.dictamen && (
               <Tarjeta titulo="Acta firmada por los 3 profesores entrevistadores">
                 <ol className="list-decimal space-y-1 pl-5 text-sm text-gray-700">
                   <li>
-                    {yoLaLlene ? "Tú llenaste el acta." : `La llenó ${nombreProfesor(acta.capturadaPor)}; ya no se puede llenar de nuevo.`} Descárgala e imprímela.{" "}
-                    {cerrada ? (
-                      <b>
-                        {nombreProfesor(acta.descargada!.por)} la descargó el {fechaCorta(acta.descargada!.el)}: el acta está cerrada y ya no se puede modificar.
-                      </b>
-                    ) : (
-                      <b>Al descargarla queda cerrada: ya no se podrá corregir{yoLaLlene ? ", así que revísala antes" : ""}.</b>
-                    )}
+                    {yoLaLlene ? "Tú llenaste el acta." : `La llenó ${nombreProfesor(acta.capturadaPor)}; ya no se puede llenar de nuevo.`} Revisa el contenido de arriba,
+                    descárgala e imprímela.
                   </li>
                   <li>Fírmenla los 3 profesores entrevistadores.</li>
                   <li>Súbela escaneada en PDF: el primero que la suba aplica el dictamen y se bloquea la subida para los demás.</li>
@@ -212,7 +223,7 @@ export default function EntrevistaProfesor({ params }: PageProps<"/profesor/entr
                 </div>}
               </Tarjeta>
             )}
-            <ActaVista a={a} sinDescarga={!a.dictamen} />
+
           </>
         )}
         {error && !acta && <Aviso tono="error" titulo={error} />}

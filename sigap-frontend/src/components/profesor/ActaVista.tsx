@@ -79,7 +79,18 @@ export function SinodoActa({ a }: { a: AspiranteP }) {
 }
 
 /** Contenido del acta MTC-EC (solo lectura). */
-export function ActaVista({ a, titulo = "Acta de entrevista colegiada (MTC-EC)", sinDescarga = false }: { a: AspiranteP; titulo?: string; sinDescarga?: boolean }) {
+export function ActaVista({
+  a,
+  titulo = "Acta de entrevista colegiada (MTC-EC)",
+  sinDescarga = false,
+  aviso,
+}: {
+  a: AspiranteP;
+  titulo?: string;
+  sinDescarga?: boolean;
+  /** Mensaje destacado arriba del contenido (p. ej. revisar antes de descargar) */
+  aviso?: React.ReactNode;
+}) {
   const acta = a.actaEntrevista;
   if (!acta) return null;
   const h = acta.hoja1;
@@ -95,6 +106,7 @@ export function ActaVista({ a, titulo = "Acta de entrevista colegiada (MTC-EC)",
   ];
   return (
     <Tarjeta titulo={titulo} accion={sinDescarga ? undefined : <DescargarActa a={a} />}>
+      {aviso && <div className="mb-4">{aviso}</div>}
       <div className="grid gap-6 lg:grid-cols-2">
         <div>
           <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-500">Hoja 1 · Entrevista</h3>
