@@ -68,9 +68,10 @@ export const NAV: Record<Rol, NavItem[]> = {
     { label: "Inicio", href: "/posgrado", icon: "home" },
     { label: "Aspirantes", href: "/posgrado/aspirantes", icon: "expedientes" },
     { label: "Entrevistas", href: "/posgrado/entrevistas", icon: "entrevistas" },
+    { label: "Dictamen de entrevista colegiada", href: "/posgrado/dictamen-entrevista", icon: "dictamen" },
     { label: "Evaluación", href: "/posgrado/evaluacion", icon: "evaluacion" },
     { label: "Calificaciones", href: "/posgrado/calificaciones", icon: "resultados" },
-    { label: "Comisión y dictamen", href: "/posgrado/comision", icon: "dictamen" },
+    { label: "Comisión y dictamen final", href: "/posgrado/comision", icon: "dictamen" },
     { label: "Comunicados", href: "/posgrado/comunicados", icon: "comunicados" },
     { label: "Inicio del aspirante", href: "/posgrado/inicio-aspirante", icon: "contenido" },
     { label: "Convocatorias y calendario", href: "/posgrado/calendario", icon: "calendario" },
@@ -116,6 +117,7 @@ export const NAV_SERVIDOR: Partial<Record<Rol, NavItem[]>> = {
   posgrado: [
     { label: "Inicio", href: "/posgrado", icon: "home" },
     { label: "Entrevistas", href: "/posgrado/entrevistas", icon: "entrevistas" },
+    { label: "Dictamen de entrevista colegiada", href: "/posgrado/dictamen-entrevista", icon: "dictamen" },
     { label: "Bitácora", href: "/posgrado/bitacora", icon: "bitacora" },
   ],
   profesor: [

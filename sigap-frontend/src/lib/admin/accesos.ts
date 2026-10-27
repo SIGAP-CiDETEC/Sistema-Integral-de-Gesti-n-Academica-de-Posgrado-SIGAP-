@@ -161,4 +161,9 @@ export function rolDeCuenta(e: Estado, correo: string): RolPersonal | undefined 
 }
 
 /** Pestaña que exige permiso (null = libre, como el Inicio). */
-export const permisoDeRuta = (ruta: string) => PERMISOS.find((p) => ruta === p.ruta || ruta.startsWith(`${p.ruta}/`)) ?? null;
+/** Pantallas que se rigen por el permiso de otra (el dictamen de entrevista es parte de las entrevistas). */
+const RUTAS_DE_PERMISO: Record<string, string> = { "/posgrado/dictamen-entrevista": "/posgrado/entrevistas" };
+export const permisoDeRuta = (ruta: string) => {
+  const base = Object.entries(RUTAS_DE_PERMISO).find(([r]) => ruta === r || ruta.startsWith(`${r}/`))?.[1] ?? ruta;
+  return PERMISOS.find((p) => base === p.ruta || base.startsWith(`${p.ruta}/`)) ?? null;
+};

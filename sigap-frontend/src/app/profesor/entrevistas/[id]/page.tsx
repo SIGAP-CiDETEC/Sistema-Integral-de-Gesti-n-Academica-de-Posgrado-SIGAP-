@@ -235,6 +235,8 @@ export default function EntrevistaProfesor({ params }: PageProps<"/profesor/entr
 // ---------------- Formulario del acta ----------------
 
 type Hoja1 = ActaEntrevista["hoja1"];
+/** Lo que cabe en el renglón "Motivo" del acta impresa (con letra reducida). */
+const MAX_MOTIVO = 180;
 const SI_NO = ["Sí", "No"] as const;
 
 function Opciones<T extends string>({ nombre, opciones, valor, onChange, texto }: { nombre: string; opciones: readonly T[]; valor?: T; onChange: (v: T) => void; texto?: (v: T) => string }) {
@@ -282,7 +284,7 @@ function FormularioActa({ a, inicial, onGuardar, onCancelar, yo }: { a: Aspirant
     CRITERIOS_ACTA.some((c) => !criterios[c.id]) && "consideraciones (hoja 2)",
     !observaciones.trim() && "observaciones generales",
     !resolucion && "¿continuar proceso?",
-    resolucion && resolucion !== "Aprobado" && !motivo.trim() && "motivo",
+    resolucion && !motivo.trim() && "motivo",
   ].filter(Boolean) as string[];
 
   const ejemplo = () => {
@@ -302,7 +304,7 @@ function FormularioActa({ a, inicial, onGuardar, onCancelar, yo }: { a: Aspirant
     setProyeccion("Concluir la maestría en tiempo y continuar a doctorado.");
     setObservaciones("Perfil adecuado para la línea de Computación inteligente.");
     setResolucion("Aprobado");
-    setMotivo("");
+    setMotivo("Perfil acorde a la línea de investigación y buena argumentación de su anteproyecto.");
   };
 
   const guardar = () => {
@@ -313,7 +315,7 @@ function FormularioActa({ a, inicial, onGuardar, onCancelar, yo }: { a: Aspirant
       proyeccion: proyeccion.trim(),
       observaciones: observaciones.trim(),
       resolucion,
-      motivo: resolucion === "Aprobado" ? "" : motivo.trim(),
+      motivo: motivo.trim(),
       capturadaPor: yo,
       capturadaEl: new Date().toISOString(),
     });
@@ -462,10 +464,22 @@ function FormularioActa({ a, inicial, onGuardar, onCancelar, yo }: { a: Aspirant
             </div>
             <p className="mt-1 text-xs text-gray-500">La entrevista no lleva ponderación: Sí = aprobado, Con reservas, No = rechazado.</p>
           </Pregunta>
-          {resolucion && resolucion !== "Aprobado" && (
+          {resolucion && (
             <label className="mt-3 block text-sm">
-              <span className="font-medium text-gray-900">Motivo</span>
-              <input value={motivo} onChange={(e) => setMotivo(e.target.value)} className={`${inputBase} mt-1`} />
+              <span className="font-medium text-gray-900">
+                Motivo <span className="text-red-600">*</span>
+              </span>
+              <textarea
+                rows={2}
+                maxLength={MAX_MOTIVO}
+                value={motivo}
+                onChange={(e) => setMotivo(e.target.value)}
+                placeholder={resolucion === "Aprobado" ? "Explica por qué recomiendan que continúe" : resolucion === "Con reservas" ? "Explica las reservas" : "Explica por qué no continúa"}
+                className={`${inputBase} mt-1`}
+              />
+              <span className="mt-0.5 block text-right text-xs text-gray-400">
+                {motivo.length}/{MAX_MOTIVO}
+              </span>
             </label>
           )}
           {resolucion === "Rechazado" && (

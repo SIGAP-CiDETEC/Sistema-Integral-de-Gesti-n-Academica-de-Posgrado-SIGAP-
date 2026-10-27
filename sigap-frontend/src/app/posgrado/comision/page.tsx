@@ -6,12 +6,11 @@ import { ArrowRight, CalendarClock, CheckCircle2, Download, FileText, Gavel, Pap
 import { PageHeader } from "@/components/PageHeader";
 import { usePosgrado } from "@/components/posgrado/PosgradoProvider";
 import { Aviso, Etiqueta, Regresar, Tarjeta, botonPrimario, botonSecundario, inputBase } from "@/components/posgrado/ui";
-import { DescargarActa } from "@/components/profesor/ActaVista";
 import { generarResultadosFinales } from "@/lib/pdf/resultados-finales";
 import { descargarCsv } from "@/lib/csv";
 import { convocatoriaActual } from "@/lib/config";
 import { fechaResultados, guardarConvocatorias, hoyISO, useConvocatorias } from "@/lib/convocatoria";
-import { fechaCorta, nombreProfesor, prorrogasDe, resultadoFinal, type AspiranteP, type ResolucionColegio } from "@/lib/posgrado/datos";
+import { fechaCorta, prorrogasDe, resultadoFinal, type AspiranteP, type ResolucionColegio } from "@/lib/posgrado/datos";
 import { DICTAMEN_FINAL, TONO_DICTAMEN } from "@/lib/reporte-aspirantes";
 
 const TONO: Record<ResolucionColegio, string> = {
@@ -19,121 +18,30 @@ const TONO: Record<ResolucionColegio, string> = {
   "Con reservas": "bg-amber-50 text-amber-800",
   "No aceptado": "bg-red-50 text-red-700",
 };
-const TONO_ENTREVISTA = { Aprobado: "bg-emerald-50 text-emerald-700", "Con reservas": "bg-amber-50 text-amber-800", Rechazado: "bg-red-50 text-red-700" } as const;
 const fechaLarga = (f: string) => (f ? new Date(`${f}T12:00:00`).toLocaleDateString("es-MX", { day: "numeric", month: "long", year: "numeric" }) : "");
 
-type Pestana = "entrevista" | "final";
-
 /**
- * Comisión y dictamen (RF-12, RF-57 a RF-60). Son dos dictámenes distintos:
- * - Dictamen de entrevista colegiada: lo emiten los profesores entrevistadores con el acta MTC-EC firmada por los 3 profesores.
- * - Dictamen final: informe de la Comisión de Admisión, resolución del Colegio de Profesores y publicación de resultados.
+ * Comisión y dictamen final (RF-57 a RF-60): informe de la Comisión de Admisión, resolución del Colegio de Profesores
+ * y publicación de resultados. El dictamen de la entrevista colegiada tiene su propia sección (/posgrado/dictamen-entrevista).
  */
 export default function Comision() {
   const { cargado } = usePosgrado();
-  const [tab, setTab] = useState<Pestana>("final");
   if (!cargado) return null;
   return (
     <>
       <Regresar href="/posgrado" t="Inicio" />
-      <PageHeader titulo="Comisión y dictamen" subtitulo="Dictamen de la entrevista colegiada y dictamen final del proceso de admisión" />
-      <div className="mb-5 flex flex-wrap gap-2" role="tablist">
-        {(
-          [
-            ["entrevista", "Dictamen de entrevista colegiada"],
-            ["final", "Dictamen final (Comisión y Colegio)"],
-          ] as [Pestana, string][]
-        ).map(([id, t]) => (
-          <button
-            key={id}
-            role="tab"
-            aria-selected={tab === id}
-            onClick={() => setTab(id)}
-            className={`rounded-full border px-3.5 py-1.5 text-sm ${tab === id ? "border-primary bg-primary text-white" : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50"}`}
-          >
-            {t}
-          </button>
-        ))}
+      <PageHeader titulo="Comisión y dictamen final" subtitulo="Informe de la Comisión de Admisión, resolución del Colegio de Profesores y publicación de resultados" />
+      <Aviso tono="info" titulo="El dictamen de la entrevista colegiada está en su propia sección">
+        Las actas MTC-EC y el dictamen de cada entrevista se consultan en{" "}
+        <Link href="/posgrado/dictamen-entrevista" className="font-medium underline">
+          Dictamen de entrevista colegiada
+        </Link>
+        .
+      </Aviso>
+      <div className="mt-5">
+        <DictamenFinal />
       </div>
-      {tab === "entrevista" ? <DictamenEntrevista /> : <DictamenFinal />}
     </>
-  );
-}
-
-/** Actas MTC-EC que llenaron los grupos de profesores entrevistadores y que subieron firmadas por los 3 profesores. */
-function DictamenEntrevista() {
-  const { aspirantes } = usePosgrado();
-  const lista = aspirantes
-    .filter((a) => a.actaEntrevista || a.dictamen)
-    .sort((x, y) => (x.dictamen ? 1 : 0) - (y.dictamen ? 1 : 0) || x.nombre.localeCompare(y.nombre, "es"));
-  return (
-    <Tarjeta titulo={<span className="flex items-center gap-2"><FileText size={17} className="text-primary" /> Actas de entrevista colegiada (MTC-EC)</span>}>
-      <p className="mb-3 text-sm text-gray-600">
-        El dictamen de la entrevista lo emiten los profesores entrevistadores: un profesor llena el acta, los tres la firman y el primero que la sube firmada aplica el dictamen. Este
-        dictamen es distinto del dictamen final del proceso de admisión.
-      </p>
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[920px] text-left text-sm">
-          <thead className="border-b border-gray-100 text-xs uppercase tracking-wide text-gray-500">
-            <tr>
-              <th className="px-2 py-2 font-medium">Aspirante</th>
-              <th className="px-2 py-2 font-medium">Profesores entrevistadores</th>
-              <th className="px-2 py-2 font-medium">Acta firmada</th>
-              <th className="px-2 py-2 font-medium">Dictamen de entrevista</th>
-              <th className="px-2 py-2 text-right font-medium">Acta</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {lista.map((a) => {
-              const acta = a.actaEntrevista;
-              return (
-                <tr key={a.id} data-acta={a.id}>
-                  <td className="px-2 py-2.5">
-                    <p className="font-medium text-gray-900">{a.nombre}</p>
-                    <p className="font-mono text-xs text-gray-500">{a.id}</p>
-                  </td>
-                  <td className="px-2 py-2.5 text-xs text-gray-600">{a.entrevista?.sinodo.map(nombreProfesor).join(", ") ?? "—"}</td>
-                  <td className="px-2 py-2.5 text-xs text-gray-700">
-                    {acta?.firmada ? (
-                      <>
-                        <span className="flex items-center gap-1 text-emerald-700">
-                          <Paperclip size={12} /> {acta.firmada.archivo}
-                        </span>
-                        <span className="text-gray-500">
-                          Subida por {nombreProfesor(acta.firmada.subidaPor)} el {fechaCorta(acta.firmada.el)}
-                        </span>
-                      </>
-                    ) : acta ? (
-                      <span className="text-amber-700">Llenada por {nombreProfesor(acta.capturadaPor)} · falta subirla firmada</span>
-                    ) : (
-                      <span className="text-gray-500">Registrada antes de SIGAP (ejemplo)</span>
-                    )}
-                  </td>
-                  <td className="px-2 py-2.5">
-                    {a.dictamen ? <Etiqueta tono={TONO_ENTREVISTA[a.dictamen.resolucion]}>{a.dictamen.resolucion}</Etiqueta> : <Etiqueta>Pendiente</Etiqueta>}
-                  </td>
-                  <td className="px-2 py-2.5 text-right">
-                    <span className="inline-flex flex-wrap items-center justify-end gap-2">
-                      {acta && <DescargarActa a={a} />}
-                      <Link href={`/posgrado/entrevistas/${a.id}`} className="text-sm font-medium text-primary hover:underline">
-                        Ver
-                      </Link>
-                    </span>
-                  </td>
-                </tr>
-              );
-            })}
-            {!lista.length && (
-              <tr>
-                <td colSpan={5} className="py-6 text-center text-gray-500">
-                  Aún no hay actas de entrevista.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-    </Tarjeta>
   );
 }
 

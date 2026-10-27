@@ -517,7 +517,8 @@ async function mtcEc(doc: PDFDocument, d: DatosPdf) {
     try {
       const f = form.getTextField(campo);
       if (campo === "Observaciones generales") f.enableMultiline();
-      f.setFontSize(campo.startsWith("ProfesoraRow") ? 9 : 10);
+      const largo = v(k).length;
+      f.setFontSize(campo.startsWith("ProfesoraRow") ? 9 : campo === "Motivo" ? (largo > 120 ? 6 : largo > 90 ? 7 : largo > 65 ? 8 : 10) : 10);
     } catch {
       /* ignorar */
     }

@@ -270,7 +270,7 @@ export class AdmisionService {
     if (previa?.capturadaPor && previa.capturadaPor !== prof) throw new ConflictException('Otro profesor entrevistador ya llenó el acta');
     const resolucion = RESOLUCION_DB[d.resolucion];
     if (!resolucion) throw new BadRequestException('Resolución inválida');
-    if (resolucion !== 'APROBADO' && !d.motivo?.trim()) throw new BadRequestException('Indica el motivo de la resolución');
+    if (!d.motivo?.trim()) throw new BadRequestException('Indica el motivo de la resolución (también cuando es Sí)');
     const data = { hoja1: d.hoja1 as Prisma.InputJsonValue, criterios: d.criterios as Prisma.InputJsonValue, proyeccion: d.proyeccion, observaciones: d.observaciones, resolucion, motivo: d.motivo, capturadaPor: prof, capturadaEn: new Date() };
     await this.prisma.actaEntrevista.upsert({ where: { entrevistaId: e.id }, create: { entrevistaId: e.id, ...data }, update: data });
     await this.bitacora(folio, u.nombre, `${previa?.capturadaPor ? 'Corrigió' : 'Llenó'} el acta de entrevista colegiada (MTC-EC); queda lista para imprimirse, firmarse y subirse`);

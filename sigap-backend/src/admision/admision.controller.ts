@@ -22,7 +22,7 @@ class ActaDto {
   @IsString() @MaxLength(4000) proyeccion!: string;
   @IsString() @MaxLength(4000) observaciones!: string;
   @IsIn(['Aprobado', 'Con reservas', 'Rechazado']) resolucion!: string;
-  @IsString() @MaxLength(4000) motivo!: string;
+  @IsString() @MaxLength(180) motivo!: string;
 }
 
 /** Proceso de admisión: entrevista colegiada (horarios, profesores entrevistadores y acta MTC-EC). */
