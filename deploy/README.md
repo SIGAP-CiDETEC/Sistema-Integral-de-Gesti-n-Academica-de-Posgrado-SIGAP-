@@ -120,8 +120,9 @@ bash /opt/sigap/app/deploy/actualizar.sh
 
 ## Profesores del Colegio
 
-`profesores.json` se genera del Excel "Situación Colegio" (hojas *colegiado y asignatura* y *asignatura externos*;
-la hoja *visitante* va en `bajas`). Trae CURP, así que vive en la carpeta privada `datos-reales`, nunca en el repo.
+`profesores.json` se genera del Excel "Situación Colegio" (hojas *colegiado y asignatura* y *asignatura externos*,
+con la columna *Correo electrónico*; la hoja *visitante* va en `bajas`). Trae correos y CURP, así que vive en la
+carpeta privada `datos-reales`, nunca en el repo.
 
 ```bash
 # En tu computadora (PowerShell), desde la carpeta SIGAP
@@ -130,11 +131,14 @@ scp -P 2222 datos-reales\profesores.json datos-reales\datos.json deployer@148.20
 # En el servidor
 cd /opt/sigap/app/sigap-backend
 SIGAP_DATOS=/opt/sigap/datos-reales npm run cargar-profesores
-column -s, -t /opt/sigap/datos-reales/credenciales-profesores-*.csv   # contraseñas temporales de las cuentas nuevas
+# Contraseñas temporales nuevas a quien aún no cambia la suya (opcional):
+SIGAP_DATOS=/opt/sigap/datos-reales REGENERAR=1 npm run cargar-profesores
+column -s, -t /opt/sigap/datos-reales/credenciales-profesores-*.csv   # usuario (correo) y contraseña temporal
 ```
 
-Cada profesor entra con su **CURP** (o su RFC si no tiene CURP en el Excel) y la contraseña temporal; al entrar la
-cambia. Se puede volver a correr cuando cambie el Excel: actualiza nombres y vigencias sin tocar contraseñas.
+Cada profesor entra con su **correo institucional** (o con su CURP/RFC) y la contraseña temporal; al entrar la cambia.
+Se puede volver a correr cuando cambie el Excel: actualiza correos, nombres y vigencias sin tocar contraseñas
+(salvo con `REGENERAR=1`, y solo a quien no la ha cambiado).
 
 ## Certificado HTTPS
 
