@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { Megaphone } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
-import { useContenido } from "@/lib/contenido";
+import { enlaceTarjeta, esExterno, useContenido } from "@/lib/contenido";
+import { MenuCentrosIngles } from "@/components/MenuCentrosIngles";
 
 /** Inicio del aspirante (mockup "Inicio del aspirante", RF-08). El contenido lo edita el Departamento de Posgrado. */
 export default function AspiranteInicio() {
@@ -30,16 +31,10 @@ export default function AspiranteInicio() {
           <article key={r.id} className="rounded-xl border border-gray-200 bg-white p-5">
             <h2 className="font-semibold text-gray-900">{r.titulo}</h2>
             <p className="mt-1.5 whitespace-pre-line text-sm text-gray-600">{r.texto}</p>
-            {r.accion && (
-              <a
-                href={r.href || "#"}
-                target={r.href?.startsWith("http") ? "_blank" : undefined}
-                rel="noreferrer"
-                className="mt-3 inline-block rounded-full bg-indigo-50 px-3 py-1 text-xs font-medium text-primary hover:bg-indigo-100"
-              >
-                {r.accion}
-              </a>
-            )}
+            <div className="mt-3 flex flex-wrap gap-2">
+              {r.id === "ingles" ? <MenuCentrosIngles /> : r.accion && <Enlace href={enlaceTarjeta(r)}>{r.accion}</Enlace>}
+              {r.id === "ingles" && <Enlace href={enlaceTarjeta(r, "hrefReferentes")}>Referentes</Enlace>}
+            </div>
           </article>
         ))}
       </div>
@@ -51,5 +46,17 @@ export default function AspiranteInicio() {
         </Link>
       </div>
     </>
+  );
+}
+
+function Enlace({ href, children }: { href: string; children: React.ReactNode }) {
+  return (
+    <a
+      href={href}
+      {...(esExterno(href) ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+      className="inline-block rounded-full bg-indigo-50 px-3 py-1 text-xs font-medium text-primary hover:bg-indigo-100"
+    >
+      {children}
+    </a>
   );
 }

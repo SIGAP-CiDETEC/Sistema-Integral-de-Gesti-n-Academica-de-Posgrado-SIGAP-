@@ -27,6 +27,33 @@ export const CALENDARIOS_EJEMPLO: Record<IdConvocatoria, Calendario> = {
   B: { imagen: "/img/calendario-b27.jpg", nombre: "CalendarioAdmision-B27-CIDETEC" },
 };
 
+/**
+ * Centros de Lenguas Extranjeras (CENLEX) del IPN donde se presenta el examen de dominio de idioma para posgrado,
+ * con el documento oficial de cada uno (registro, requisitos y preparación).
+ */
+export const CENTROS_INGLES = [
+  { nombre: "CENLEX Zacatenco", detalle: "Examen de dominio de idioma 2026: registro y requisitos", href: "https://ipn.mx/assets/files/cenlexz/docs/posgrado/preguntas-frecuentes-presencial-2026.pdf" },
+  { nombre: "CENLEX Santo Tomás", detalle: "Examen de 4 habilidades para posgrado: guía de preparación", href: "https://www.ipn.mx/assets/files/cenlexsto/docs/Examenes/posgrado/guia-de-preparaci%C3%B3n-para-el-examen-de-4h.pdf" },
+];
+/**
+ * Enlaces oficiales para acreditar el dominio del idioma inglés:
+ * - centros: el primer CENLEX (si una tarjeta de inglés no trae enlace propio).
+ * - referentes: referente de la Dirección de Formación en Lenguas Extranjeras del IPN con los exámenes y centros
+ *   certificadores aceptados (CENLEX, British Council, Cambridge, TOEFL…) y sus puntajes mínimos.
+ */
+export const ENLACES_INGLES = {
+  centros: CENTROS_INGLES[0].href,
+  referentes: "https://www.ipn.mx/assets/files/dfle/docs/Repositorio%20Digital/referente-2025.pdf",
+};
+/** Abre en otra pestaña los enlaces que salen de SIGAP. */
+export const esExterno = (href?: string) => !!href && /^https?:\/\//.test(href);
+/** Enlace de una tarjeta: las de inglés usan los oficiales si aún no tienen uno real. */
+export const enlaceTarjeta = (t: TarjetaInicio, cual: "href" | "hrefReferentes" = "href") => {
+  const v = t[cual];
+  if (t.id === "ingles" && (!v || v === "#")) return cual === "href" ? ENLACES_INGLES.centros : ENLACES_INGLES.referentes;
+  return v || "#";
+};
+
 export const INICIO_ASPIRANTE_DEFECTO: InicioAspirante = {
   aviso: {
     visible: true,
@@ -35,8 +62,14 @@ export const INICIO_ASPIRANTE_DEFECTO: InicioAspirante = {
   },
   tarjetas: [
     { id: "calendario", titulo: "Calendario IPN", texto: "Periodos escolares, registro, exámenes y resultados del IPN.", accion: "Consultar calendario", href: "https://www.ipn.mx/calendario-academico.html" },
-    { id: "convocatorias", titulo: "Convocatorias", texto: "Convocatorias vigentes, requisitos y fechas importantes.", accion: "Ver convocatorias", href: "/#convocatoria" },
-    { id: "ingles", titulo: "Dominio del idioma inglés", texto: "Consulta los centros autorizados y los referentes para acreditar el dominio del idioma inglés.", accion: "Ver centros", href: "#", hrefReferentes: "#" },
+    {
+      id: "ingles",
+      titulo: "Dominio del idioma inglés",
+      texto: "Consulta los centros autorizados y los referentes para acreditar el dominio del idioma inglés.",
+      accion: "Ver centros",
+      href: ENLACES_INGLES.centros,
+      hrefReferentes: ENLACES_INGLES.referentes,
+    },
   ],
 };
 

@@ -4,7 +4,8 @@ import Link from "next/link";
 import { ArrowRight, CheckCircle2, LogIn, Lock } from "lucide-react";
 import { Logos } from "@/components/Logos";
 import { PERIODO_ESCOLAR, convocatoriaActual } from "@/lib/config";
-import { useContenido } from "@/lib/contenido";
+import { enlaceTarjeta, esExterno, useContenido } from "@/lib/contenido";
+import { MenuCentrosIngles } from "@/components/MenuCentrosIngles";
 import { useConvocatorias } from "@/lib/convocatoria";
 
 /**
@@ -163,7 +164,7 @@ export function InicioPublico({ forzarCerrada }: { forzarCerrada: boolean }) {
           <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500">
             Información para aspirantes
           </h2>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2">
             {inicioAspirante.tarjetas.map((r) => (
               <article
                 key={r.id}
@@ -172,17 +173,8 @@ export function InicioPublico({ forzarCerrada }: { forzarCerrada: boolean }) {
                 <h3 className="font-semibold text-gray-900">{r.id === "ingles" ? "Dominio del idioma inglés" : r.titulo}</h3>
                 <p className="mt-1.5 flex-1 text-sm text-gray-600">{r.id === "ingles" ? "Consulta los centros autorizados y los referentes para acreditar el dominio del idioma inglés." : r.texto}</p>
                 <div className="mt-4 flex flex-wrap gap-2">
-                <a
-                  href={r.href}
-                  className="self-start rounded-full bg-indigo-50 px-3 py-1 text-xs font-medium text-primary hover:bg-indigo-100"
-                >
-                  {r.id === "ingles" ? "Ver centros" : r.accion}
-                </a>
-                {r.id === "ingles" && (
-                  <a href={r.hrefReferentes ?? "#"} className="self-start rounded-full bg-indigo-50 px-3 py-1 text-xs font-medium text-primary hover:bg-indigo-100">
-                    Referentes
-                  </a>
-                )}
+                {r.id === "ingles" ? <MenuCentrosIngles /> : <EnlaceTarjeta href={enlaceTarjeta(r)}>{r.accion}</EnlaceTarjeta>}
+                {r.id === "ingles" && <EnlaceTarjeta href={enlaceTarjeta(r, "hrefReferentes")}>Referentes</EnlaceTarjeta>}
                 </div>
               </article>
             ))}
@@ -219,5 +211,18 @@ export function InicioPublico({ forzarCerrada }: { forzarCerrada: boolean }) {
         </p>
       </footer>
     </div>
+  );
+}
+
+/** Botón de una tarjeta de información: los enlaces externos se abren en otra pestaña. */
+function EnlaceTarjeta({ href, children }: { href: string; children: React.ReactNode }) {
+  return (
+    <a
+      href={href}
+      {...(esExterno(href) ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+      className="self-start rounded-full bg-indigo-50 px-3 py-1 text-xs font-medium text-primary hover:bg-indigo-100"
+    >
+      {children}
+    </a>
   );
 }

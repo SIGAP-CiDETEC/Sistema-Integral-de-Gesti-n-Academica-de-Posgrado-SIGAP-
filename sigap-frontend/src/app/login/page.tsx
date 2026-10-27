@@ -9,7 +9,7 @@ import { PERIODO_ESCOLAR } from "@/lib/config";
 import { guardarCuenta, leerCuenta } from "@/lib/cuenta-alumno";
 import { ID_EN_VIVO, fijarAspiranteActivo } from "@/lib/aspirante-activo";
 import { ID_EJEMPLO_OBSERVACION } from "@/lib/posgrado/datos";
-import { USUARIOS_DEMO, autenticar, autenticarApi, cerrarSesion, iniciarSesion } from "@/lib/sesion";
+import { autenticar, autenticarApi, cerrarSesion, iniciarSesion } from "@/lib/sesion";
 import { DEMO_ASPIRANTES, MODO_API } from "@/lib/api";
 
 /**
@@ -213,66 +213,6 @@ export default function LoginPage({ searchParams }: PageProps<"/login">) {
             son personales e intransferibles.
           </p>
         </div>
-
-        {/* Servidor real: demostración de los portales de aspirante y alumno con datos ficticios */}
-        {DEMO_ASPIRANTES && (
-          <div className="mt-6 border-t border-dashed border-gray-200 pt-4" data-accesos-demo>
-            <p className="text-center text-xs text-gray-500">Demostración con datos ficticios (no usa el servidor)</p>
-            <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
-              <Link href="/aspirante" onClick={() => { entrarDemo(); fijarAspiranteActivo(ID_EN_VIVO); }} className="rounded-md border border-gray-200 py-1.5 text-center hover:bg-gray-50">
-                Aspirante
-              </Link>
-              <Link href="/alumno" onClick={entrarDemo} className="rounded-md border border-gray-200 py-1.5 text-center hover:bg-gray-50">
-                Alumno
-              </Link>
-              <Link href="/aspirante/admision" onClick={() => { entrarDemo(); fijarAspiranteActivo(ID_EJEMPLO_OBSERVACION); }} className="col-span-2 rounded-md border border-gray-200 py-1.5 text-center hover:bg-gray-50">
-                Aspirante con un documento observado ({ID_EJEMPLO_OBSERVACION})
-              </Link>
-            </div>
-          </div>
-        )}
-
-        {/* Solo para el cascarón: accesos de prueba */}
-        {!MODO_API && (
-        <div className="mt-6 border-t border-dashed border-gray-200 pt-4">
-          <p className="text-center text-xs text-gray-500">Acceso de prueba (solo cascarón)</p>
-          <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
-            <Link href="/aspirante" onClick={() => fijarAspiranteActivo(ID_EN_VIVO)} className="rounded-md border border-gray-200 py-1.5 text-center hover:bg-gray-50">
-              Aspirante
-            </Link>
-            <Link href="/alumno" className="rounded-md border border-gray-200 py-1.5 text-center hover:bg-gray-50">
-              Alumno
-            </Link>
-            <Link href="/aspirante/admision" onClick={() => fijarAspiranteActivo(ID_EJEMPLO_OBSERVACION)} className="col-span-2 rounded-md border border-gray-200 py-1.5 text-center hover:bg-gray-50">
-              Aspirante con un documento observado ({ID_EJEMPLO_OBSERVACION})
-            </Link>
-          </div>
-          <p className="mt-3 text-xs text-gray-500">Cuentas del personal (cada una con su contraseña):</p>
-          <ul className="mt-1.5 space-y-1.5 text-xs">
-            {USUARIOS_DEMO.map((u) => (
-              <li key={u.correo} className="flex items-center justify-between gap-2 rounded-md border border-gray-200 px-2.5 py-1.5">
-                <span className="min-w-0">
-                  <span className="block truncate font-medium text-gray-800">{u.puesto}</span>
-                  <span className="block truncate font-mono text-gray-500">
-                    {u.correo} · {u.contrasena}
-                  </span>
-                </span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setUsuario(u.correo);
-                    setPassword(u.contrasena);
-                    setError("");
-                  }}
-                  className="shrink-0 rounded border border-gray-300 px-2 py-0.5 text-gray-700 hover:bg-gray-50"
-                >
-                  Usar
-                </button>
-              </li>
-            ))}
-          </ul>
-        </div>
-        )}
       </div>
 
       <Link href="/" className="mt-6 flex items-center gap-1.5 text-sm text-gray-600 hover:text-gray-900">

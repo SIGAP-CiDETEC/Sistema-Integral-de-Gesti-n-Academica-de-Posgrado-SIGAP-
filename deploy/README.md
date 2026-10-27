@@ -118,6 +118,24 @@ bash /opt/sigap/app/deploy/actualizar.sh
 4. **Profesores:** uno llena el acta MTC-EC y queda bloqueada para los demás. La descargan, la firman los 3 y uno la sube en PDF; con eso se aplica el dictamen.
 5. **Posgrado:** ve el dictamen, abre el acta firmada y revisa la bitácora.
 
+## Profesores del Colegio
+
+`profesores.json` se genera del Excel "Situación Colegio" (hojas *colegiado y asignatura* y *asignatura externos*;
+la hoja *visitante* va en `bajas`). Trae CURP, así que vive en la carpeta privada `datos-reales`, nunca en el repo.
+
+```bash
+# En tu computadora (PowerShell), desde la carpeta SIGAP
+scp -P 2222 datos-reales\profesores.json datos-reales\datos.json deployer@148.204.67.192:/opt/sigap/datos-reales/
+
+# En el servidor
+cd /opt/sigap/app/sigap-backend
+SIGAP_DATOS=/opt/sigap/datos-reales npm run cargar-profesores
+column -s, -t /opt/sigap/datos-reales/credenciales-profesores-*.csv   # contraseñas temporales de las cuentas nuevas
+```
+
+Cada profesor entra con su **CURP** (o su RFC si no tiene CURP en el Excel) y la contraseña temporal; al entrar la
+cambia. Se puede volver a correr cuando cambie el Excel: actualiza nombres y vigencias sin tocar contraseñas.
+
 ## Certificado HTTPS
 
 TI del CIDETEC entrega el certificado de Let's Encrypt (carpeta `virtual.cidetec.ipn.mx_ecc`). Solo se usan
@@ -150,8 +168,9 @@ configuración). Para ver hasta cuándo es válido: `sudo openssl x509 -in /etc/
   npm run aspirante-demo -- borrar  # al terminar la demostración: lo elimina con su entrevista, acta y bitácora
   ```
 
-- **Portales de aspirante y alumno**: en el login, botones de "Demostración con datos ficticios". Usan datos del
-  navegador, no el servidor. Se quitan compilando el front con `NEXT_PUBLIC_DEMO=0`.
+- **Portales de aspirante y alumno**: apagados en el servidor (el login no tiene accesos de prueba). Para una
+  demostración con datos ficticios del navegador, compilar el front con `NEXT_PUBLIC_DEMO=1` y entrar con
+  `ASP-2026-001` o `B260842` (cualquier contraseña).
 
 ## Respaldos
 
