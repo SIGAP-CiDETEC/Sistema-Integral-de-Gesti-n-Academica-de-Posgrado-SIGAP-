@@ -5,7 +5,7 @@ import { CalendarClock, CalendarDays, ClipboardPenLine, PenLine } from "lucide-r
 import { PageHeader } from "@/components/PageHeader";
 import { usePosgrado } from "@/components/posgrado/PosgradoProvider";
 import { Etiqueta, Kpi, Tarjeta } from "@/components/posgrado/ui";
-import { fechaCorta, nombreArea } from "@/lib/posgrado/datos";
+import { fechaCorta, horarioEntrevista, nombreArea } from "@/lib/posgrado/datos";
 import { useConfigEvaluacion } from "@/lib/evaluacion-config";
 import { MODO_API } from "@/lib/api";
 import { describirGrupo, docenteDe, lugarDe } from "@/lib/evaluacion";
@@ -43,7 +43,7 @@ export default function ProfesorInicio() {
                   <span>
                     <span className="font-medium text-gray-900">{a.nombre}</span>
                     <span className="block text-xs text-gray-500">
-                      {fechaCorta(a.entrevista!.fecha)} · {a.entrevista!.hora} h · {a.entrevista!.sala}
+                      {fechaCorta(a.entrevista!.fecha)} · {horarioEntrevista(a.entrevista!)} · {a.entrevista!.sala}
                     </span>
                   </span>
                   <span className="flex items-center gap-2">

@@ -7,7 +7,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { usePosgrado } from "@/components/posgrado/PosgradoProvider";
 import { usePublicarEntrevistas } from "@/components/posgrado/usePublicarEntrevistas";
 import { Etiqueta, Regresar, botonPrimario, botonSecundario } from "@/components/posgrado/ui";
-import { TONO_PASO_ENTREVISTA, fechaCorta, lugaresLibres, nombreProfesor, pasoEntrevista, type AspiranteP } from "@/lib/posgrado/datos";
+import { TONO_PASO_ENTREVISTA, fechaCorta, horarioEntrevista, lugaresLibres, nombreProfesor, pasoEntrevista, type AspiranteP } from "@/lib/posgrado/datos";
 
 type Pestana = "sin-horario" | "horarios" | "publicadas" | "dictaminadas";
 
@@ -102,7 +102,7 @@ export default function Entrevistas() {
                       <p className="font-mono text-xs text-gray-500">{a.id}</p>
                     </td>
                     <td className="px-3 py-3 text-gray-700">
-                      {e ? `${fechaCorta(e.fecha)} · ${e.hora} h` : "—"}
+                      {e ? `${fechaCorta(e.fecha)} · ${horarioEntrevista(e)}` : "—"}
                       {e && <span className="block text-xs text-gray-500">{e.modalidad} · {e.sala}</span>}
                     </td>
                     <td className="px-3 py-3 text-xs text-gray-600">

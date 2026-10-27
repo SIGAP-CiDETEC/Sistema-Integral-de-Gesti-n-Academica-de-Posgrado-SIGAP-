@@ -27,6 +27,8 @@ export type DocAspirante = {
 export type Entrevista = {
   fecha: string; // AAAA-MM-DD
   hora: string;
+  /** Duración en minutos que fija Posgrado (sin dato: DURACION_PREDETERMINADA) */
+  duracion?: number;
   modalidad: "Presencial" | "En línea";
   sala: string;
   sinodo: string[]; // ids de profesor
@@ -35,6 +37,29 @@ export type Entrevista = {
   /** Cuándo Posgrado publicó la entrevista al aspirante (vacío = el aspirante aún no la ve) */
   notificadaEl: string;
 };
+
+/** Duraciones que puede elegir Posgrado para la entrevista colegiada (minutos). */
+export const DURACIONES_ENTREVISTA = [30, 45, 60, 90, 120] as const;
+export const DURACION_PREDETERMINADA = 60;
+export const duracionDe = (e: Pick<Entrevista, "duracion">) => e.duracion ?? DURACION_PREDETERMINADA;
+const aMinutos = (hora: string) => {
+  const [h, m] = hora.split(":").map(Number);
+  return h * 60 + (m || 0);
+};
+/** Hora en que termina la entrevista: inicio + duración (p. ej. 10:30 + 45 min → 11:15). */
+export function horaFin(e: Pick<Entrevista, "hora" | "duracion">) {
+  const fin = aMinutos(e.hora) + duracionDe(e);
+  return `${String(Math.floor(fin / 60) % 24).padStart(2, "0")}:${String(fin % 60).padStart(2, "0")}`;
+}
+/** Horario completo de la entrevista: "10:30 a 11:15 h". */
+export const horarioEntrevista = (e: Pick<Entrevista, "hora" | "duracion">) => `${e.hora} a ${horaFin(e)} h`;
+export const textoDuracion = (min: number) => (min < 60 ? `${min} min` : min % 60 ? `${Math.floor(min / 60)} h ${min % 60} min` : `${min / 60} h`);
+/** true si dos entrevistas del mismo día se enciman (una empieza antes de que termine la otra). */
+export function seTraslapan(x: Pick<Entrevista, "fecha" | "hora" | "duracion">, y: Pick<Entrevista, "fecha" | "hora" | "duracion">) {
+  if (x.fecha !== y.fecha) return false;
+  const ix = aMinutos(x.hora), iy = aMinutos(y.hora);
+  return ix < iy + duracionDe(y) && iy < ix + duracionDe(x);
+}
 
 export type Resolucion = "Aprobado" | "Con reservas" | "Rechazado";
 /** La entrevista colegiada no lleva ponderación: solo Aprobado, Con reservas o Rechazado (RF-12). */

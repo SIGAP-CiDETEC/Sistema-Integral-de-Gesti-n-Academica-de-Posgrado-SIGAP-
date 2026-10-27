@@ -7,6 +7,14 @@ import { PrismaService } from '../prisma/prisma.service';
 
 /** Profesores que integran cada entrevista colegiada. */
 export const LUGARES = 3;
+/** Duración más larga que puede elegir Posgrado (minutos); sirve para buscar traslapes. */
+const DURACION_MAXIMA = 120;
+/** "10:30" + 45 → "11:15" */
+const horaFin = (hora: string, min: number) => {
+  const [h, m] = hora.split(':').map(Number);
+  const t = h * 60 + m + min;
+  return `${String(Math.floor(t / 60) % 24).padStart(2, '0')}:${String(t % 60).padStart(2, '0')}`;
+};
 
 const RESOLUCION: Record<ResolucionEntrevista, string> = { APROBADO: 'Aprobado', CON_RESERVAS: 'Con reservas', RECHAZADO: 'Rechazado' };
 const RESOLUCION_DB: Record<string, ResolucionEntrevista> = { Aprobado: 'APROBADO', 'Con reservas': 'CON_RESERVAS', Rechazado: 'RECHAZADO' };
@@ -76,6 +84,7 @@ export class AdmisionService {
       entrevista: e
         ? {
             ...deFechaHora(e.fechaHora),
+            duracion: e.duracionMin,
             modalidad: MODALIDAD[e.modalidad],
             sala: e.sala,
             sinodo: e.sinodo.map((s) => s.profesorId),
@@ -143,26 +152,39 @@ export class AdmisionService {
   // ---------- Posgrado ----------
 
   /** Captura o actualiza el horario de la entrevista (mientras no exista acta). */
-  async guardarHorario(folio: string, d: { fecha: string; hora: string; modalidad: string; sala: string }, u: UsuarioSesion) {
+  /**
+   * ¿Alguno de esos profesores ya tiene otra entrevista que se encima con [inicio, inicio + duración)?
+   * Devuelve el primer choque encontrado.
+   */
+  private async choqueDe(tx: Prisma.TransactionClient | PrismaService, profesores: string[], inicio: Date, duracion: number, excepto: string) {
+    if (!profesores.length) return null;
+    const fin = new Date(+inicio + duracion * 60_000);
+    const cercanas = await tx.integranteSinodo.findMany({
+      where: { profesorId: { in: profesores }, entrevista: { postulacionId: { not: excepto }, fechaHora: { gt: new Date(+inicio - DURACION_MAXIMA * 60_000), lt: fin } } },
+      include: { entrevista: true },
+    });
+    return cercanas.find((c) => +c.entrevista.fechaHora + c.entrevista.duracionMin * 60_000 > +inicio) ?? null;
+  }
+
+  async guardarHorario(folio: string, d: { fecha: string; hora: string; duracion?: number; modalidad: string; sala: string }, u: UsuarioSesion) {
     const p = await this.postulacion(folio);
     if (p.entrevista?.acta?.capturadaPor) throw new ConflictException('La entrevista ya tiene acta; no se puede cambiar el horario');
     const fechaHora = aFechaHora(d.fecha, d.hora);
     if (Number.isNaN(+fechaHora)) throw new BadRequestException('Fecha u hora inválida');
     const modalidad: ModalidadEntrevista = d.modalidad === 'En línea' ? 'EN_LINEA' : 'PRESENCIAL';
-    // Choques: algún profesor del grupo ya tiene otra entrevista a esa hora
+    const duracionMin = d.duracion ?? p.entrevista?.duracionMin ?? 60;
+    // Choques: algún profesor del grupo ya tiene otra entrevista que se encima con el nuevo horario
     const miembros = p.entrevista?.sinodo.map((s) => s.profesorId) ?? [];
-    if (miembros.length) {
-      const choque = await this.prisma.integranteSinodo.findFirst({ where: { profesorId: { in: miembros }, entrevista: { fechaHora, postulacionId: { not: p.id } } } });
-      if (choque) throw new ConflictException('Un profesor entrevistador ya tiene otra entrevista a esa fecha y hora');
-    }
-    const cambio = p.entrevista && (+p.entrevista.fechaHora !== +fechaHora || p.entrevista.sala !== d.sala || p.entrevista.modalidad !== modalidad);
+    if (await this.choqueDe(this.prisma, miembros, fechaHora, duracionMin, p.id)) throw new ConflictException('Un profesor entrevistador ya tiene otra entrevista que se encima con ese horario');
+    const cambio =
+      p.entrevista && (+p.entrevista.fechaHora !== +fechaHora || p.entrevista.duracionMin !== duracionMin || p.entrevista.sala !== d.sala || p.entrevista.modalidad !== modalidad);
     await this.prisma.entrevista.upsert({
       where: { postulacionId: p.id },
-      create: { postulacionId: p.id, fechaHora, modalidad, sala: d.sala },
-      update: { fechaHora, modalidad, sala: d.sala },
+      create: { postulacionId: p.id, fechaHora, duracionMin, modalidad, sala: d.sala },
+      update: { fechaHora, duracionMin, modalidad, sala: d.sala },
     });
     if (p.estado === 'VALIDADA') await this.prisma.postulacion.update({ where: { id: p.id }, data: { estado: 'ENTREVISTA_PROGRAMADA' } });
-    await this.bitacora(folio, u.nombre, `${p.entrevista ? (cambio ? 'Actualizó' : 'Guardó') : 'Programó'} el horario de entrevista: ${d.fecha} ${d.hora} h · ${d.modalidad} · ${d.sala}`);
+    await this.bitacora(folio, u.nombre, `${p.entrevista ? (cambio ? 'Actualizó' : 'Guardó') : 'Programó'} el horario de entrevista: ${d.fecha} de ${d.hora} a ${horaFin(d.hora, duracionMin)} h · ${d.modalidad} · ${d.sala}`);
     return this.aFront(await this.postulacion(folio), 'completa');
   }
 
@@ -172,7 +194,7 @@ export class AdmisionService {
     if (p.entrevista.horarioPublicadoEn) return this.aFront(p, 'completa');
     await this.prisma.entrevista.update({ where: { id: p.entrevista.id }, data: { horarioPublicadoEn: new Date() } });
     const { fecha, hora } = deFechaHora(p.entrevista.fechaHora);
-    await this.bitacora(folio, u.nombre, `Publicó el horario de entrevista ${fecha} ${hora} h para que los profesores lo elijan`);
+    await this.bitacora(folio, u.nombre, `Publicó el horario de entrevista ${fecha} de ${hora} a ${horaFin(hora, p.entrevista.duracionMin)} h para que los profesores lo elijan`);
     return this.aFront(await this.postulacion(folio), 'completa');
   }
 
@@ -185,7 +207,7 @@ export class AdmisionService {
     await this.prisma.entrevista.update({ where: { id: e.id }, data: { publicadaAspiranteEn: new Date() } });
     const nombres = await this.prisma.profesor.findMany({ where: { id: { in: e.sinodo.map((s) => s.profesorId) } } });
     const { fecha, hora } = deFechaHora(e.fechaHora);
-    await this.bitacora(folio, u.nombre, `Publicó la entrevista al aspirante: ${fecha} ${hora} h · ${MODALIDAD[e.modalidad]} · ${e.sala}; profesores entrevistadores: ${nombres.map((n) => n.nombre).join(', ')}`);
+    await this.bitacora(folio, u.nombre, `Publicó la entrevista al aspirante: ${fecha} de ${hora} a ${horaFin(hora, e.duracionMin)} h · ${MODALIDAD[e.modalidad]} · ${e.sala}; profesores entrevistadores: ${nombres.map((n) => n.nombre).join(', ')}`);
     return this.aFront(await this.postulacion(folio), 'completa');
   }
 
@@ -206,12 +228,11 @@ export class AdmisionService {
         if (!e?.horarioPublicadoEn) throw new BadRequestException('Esa entrevista no está disponible');
         if (e.sinodo.some((s) => s.profesorId === prof)) return;
         if (e.sinodo.length >= LUGARES) throw new ConflictException('Ya no hay lugares libres en esa entrevista');
-        const choque = await tx.integranteSinodo.findFirst({ where: { profesorId: prof, entrevista: { fechaHora: e.fechaHora } } });
-        if (choque) throw new ConflictException('Ya tienes otra entrevista a esa hora');
+        if (await this.choqueDe(tx, [prof], e.fechaHora, e.duracionMin, e.postulacionId)) throw new ConflictException('Ya tienes otra entrevista que se encima con ese horario');
         await tx.integranteSinodo.create({ data: { entrevistaId: e.id, profesorId: prof } });
         const { fecha, hora } = deFechaHora(e.fechaHora);
         const n = e.sinodo.length + 1;
-        await tx.eventoBitacora.create({ data: { entidad: 'Postulacion', entidadId: folio, actor: u.nombre, accion: `Eligió la entrevista del ${fecha} a las ${hora} h · profesores entrevistadores ${n} de ${LUGARES}${n === LUGARES ? ' (completo)' : ''}` } });
+        await tx.eventoBitacora.create({ data: { entidad: 'Postulacion', entidadId: folio, actor: u.nombre, accion: `Eligió la entrevista del ${fecha} de ${hora} a ${horaFin(hora, e.duracionMin)} h · profesores entrevistadores ${n} de ${LUGARES}${n === LUGARES ? ' (completo)' : ''}` } });
       },
       { isolationLevel: 'Serializable' },
     );
@@ -227,7 +248,7 @@ export class AdmisionService {
     if (e.publicadaAspiranteEn || e.acta?.capturadaPor) throw new ConflictException('La entrevista ya se publicó al aspirante; pide a Posgrado el cambio');
     await this.prisma.integranteSinodo.delete({ where: { entrevistaId_profesorId: { entrevistaId: e.id, profesorId: prof } } });
     const { fecha, hora } = deFechaHora(e.fechaHora);
-    await this.bitacora(folio, u.nombre, `Dejó su lugar en la entrevista del ${fecha} a las ${hora} h · profesores entrevistadores ${e.sinodo.length - 1} de ${LUGARES}`);
+    await this.bitacora(folio, u.nombre, `Dejó su lugar en la entrevista del ${fecha} de ${hora} a ${horaFin(hora, e.duracionMin)} h · profesores entrevistadores ${e.sinodo.length - 1} de ${LUGARES}`);
     return this.aFront(await this.postulacion(folio), 'anonima');
   }
 

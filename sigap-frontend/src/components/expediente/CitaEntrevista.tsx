@@ -2,6 +2,7 @@
 
 import { CalendarDays, Clock, MapPin, Users } from "lucide-react";
 import { useEstadoAdmision } from "@/lib/posgrado/revision";
+import { duracionDe, horarioEntrevista, textoDuracion } from "@/lib/posgrado/datos";
 
 const fechaLarga = (f: string) =>
   new Date(`${f}T12:00:00`).toLocaleDateString("es-MX", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
@@ -25,7 +26,7 @@ export function CitaEntrevista() {
 
   const datos: [typeof Clock, string, string][] = [
     [CalendarDays, "Fecha", fechaLarga(entrevista.fecha)],
-    [Clock, "Hora", `${entrevista.hora} h`],
+    [Clock, "Horario", `${horarioEntrevista(entrevista)} (${textoDuracion(duracionDe(entrevista))})`],
     [MapPin, entrevista.modalidad === "En línea" ? "Enlace" : "Lugar", `${entrevista.sala} · ${entrevista.modalidad}`],
   ];
   return (

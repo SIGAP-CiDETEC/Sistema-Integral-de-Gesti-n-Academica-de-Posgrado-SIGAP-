@@ -19,6 +19,7 @@ import {
   nombreProfesor,
   resultadoFinal,
   type AspiranteP,
+  horarioEntrevista,
 } from "@/lib/posgrado/datos";
 
 const FORMATOS = [
@@ -322,7 +323,7 @@ export default function RevisionExpediente({ params }: PageProps<"/posgrado/aspi
                 <dd className="text-gray-900">
                   {a.entrevista ? (
                     <>
-                      {fechaCorta(a.entrevista.fecha)} · {a.entrevista.hora} h
+                      {fechaCorta(a.entrevista.fecha)} · {horarioEntrevista(a.entrevista)}
                       <span className="block text-xs text-gray-500">{a.entrevista.sinodo.map(nombreProfesor).join(", ")}</span>
                     </>
                   ) : (

@@ -7,7 +7,7 @@ import { usePosgrado } from "@/components/posgrado/PosgradoProvider";
 import { Aviso, EtiquetaBandeja, Kpi, Tarjeta } from "@/components/posgrado/ui";
 import { convocatoriaActual } from "@/lib/config";
 import { MODO_API } from "@/lib/api";
-import { bandejaDe, diasPara, fechaCorta, nombreProfesor, prioridadDe, prorrogasDe, type Bandeja } from "@/lib/posgrado/datos";
+import { bandejaDe, diasPara, fechaCorta, horarioEntrevista, nombreProfesor, prioridadDe, prorrogasDe, type Bandeja } from "@/lib/posgrado/datos";
 
 /** Con el servidor real solo están conectadas las entrevistas: las demás bandejas aún no se muestran. */
 const CONECTADAS: Bandeja[] = ["Sin cita", "Entrevista programada"];
@@ -107,7 +107,7 @@ export default function PosgradoInicio() {
                       {a.nombre}
                     </Link>
                     <p className="text-xs text-gray-500">
-                      {fechaCorta(a.entrevista!.fecha)} · {a.entrevista!.hora} h · {a.entrevista!.sala}
+                      {fechaCorta(a.entrevista!.fecha)} · {horarioEntrevista(a.entrevista!)} · {a.entrevista!.sala}
                     </p>
                     <p className="text-xs text-gray-500">Profesores entrevistadores: {a.entrevista!.sinodo.map(nombreProfesor).join(", ")}</p>
                   </li>

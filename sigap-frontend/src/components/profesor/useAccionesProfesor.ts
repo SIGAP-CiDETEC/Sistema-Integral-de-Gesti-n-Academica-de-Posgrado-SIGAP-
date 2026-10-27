@@ -5,6 +5,7 @@ import { MODO_API, api } from "@/lib/api";
 import { mensajeDe, notificar } from "@/lib/avisos-ui";
 import {
   fechaCorta,
+  horarioEntrevista,
   integrarResultado,
   evaluacionEnCaptura,
   puedeEditarCaptura,
@@ -130,7 +131,7 @@ export function useAccionesProfesor() {
     actualizar(
       a.id,
       { entrevista: nueva },
-      `${nombreProfesor(profesor)} eligió la entrevista del ${fechaCorta(e.fecha)} a las ${e.hora} h · profesores entrevistadores ${nueva.sinodo.length} de 3${libres ? "" : " (completo)"}`,
+      `${nombreProfesor(profesor)} eligió la entrevista del ${fechaCorta(e.fecha)} de ${horarioEntrevista(e)} · profesores entrevistadores ${nueva.sinodo.length} de 3${libres ? "" : " (completo)"}`,
     );
   };
 
@@ -140,7 +141,7 @@ export function useAccionesProfesor() {
     const e = a.entrevista;
     if (!e || !e.sinodo.includes(profesor) || a.actaEntrevista) return;
     const nueva = { ...e, sinodo: e.sinodo.filter((p) => p !== profesor) };
-    actualizar(a.id, { entrevista: nueva }, `${nombreProfesor(profesor)} dejó su lugar en la entrevista del ${fechaCorta(e.fecha)} a las ${e.hora} h · profesores entrevistadores ${nueva.sinodo.length} de 3`);
+    actualizar(a.id, { entrevista: nueva }, `${nombreProfesor(profesor)} dejó su lugar en la entrevista del ${fechaCorta(e.fecha)} de ${horarioEntrevista(e)} · profesores entrevistadores ${nueva.sinodo.length} de 3`);
   };
 
   return { guardarActa, subirActaFirmada, capturar, elegirEntrevista, dejarLugar };

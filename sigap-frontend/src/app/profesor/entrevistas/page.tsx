@@ -1,12 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { CalendarClock, CalendarPlus, Eye, LogOut, Users } from "lucide-react";
+import { CalendarClock, CalendarPlus, LogOut, Users } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { usePosgrado } from "@/components/posgrado/PosgradoProvider";
 import { Etiqueta, Regresar, Tarjeta } from "@/components/posgrado/ui";
 import { useAccionesProfesor } from "@/components/profesor/useAccionesProfesor";
-import { fechaCorta, lugaresLibres, nombreProfesor } from "@/lib/posgrado/datos";
+import { fechaCorta, horarioEntrevista, lugaresLibres, nombreProfesor } from "@/lib/posgrado/datos";
 import {
   TONO_ENTREVISTA_PROF,
   citaPublicada,
@@ -63,13 +63,13 @@ export default function MisEntrevistas() {
                 <li key={a.id} className="flex flex-wrap items-center justify-between gap-3 py-2.5" data-disponible={a.id}>
                   <span>
                     <span className="font-medium text-gray-900">{diaLargo(a.entrevista!.fecha)}</span>
-                    <span className="ml-2 text-gray-700">{a.entrevista!.hora} h</span>
+                    <span className="ml-2 text-gray-700">{horarioEntrevista(a.entrevista!)}</span>
                     <span className="block text-xs text-gray-500">
                       {libres} {libres === 1 ? "lugar libre" : "lugares libres"} de 3
                     </span>
                   </span>
                   {choque ? (
-                    <span className="text-xs text-amber-700">Ya tienes otra entrevista a esa hora</span>
+                    <span className="text-xs text-amber-700">Se encima con otra de tus entrevistas</span>
                   ) : (
                     <button
                       type="button"
@@ -100,7 +100,7 @@ export default function MisEntrevistas() {
                 <li key={a.id} className="flex flex-wrap items-center justify-between gap-3 py-2.5" data-seleccionada={a.id}>
                   <span>
                     <span className="font-medium text-gray-900">{diaLargo(a.entrevista!.fecha)}</span>
-                    <span className="ml-2 text-gray-700">{a.entrevista!.hora} h</span>
+                    <span className="ml-2 text-gray-700">{horarioEntrevista(a.entrevista!)}</span>
                     <span className="mt-0.5 flex items-center gap-1 text-xs text-gray-500">
                       <Users size={12} /> Profesores entrevistadores: {a.entrevista!.sinodo.length} de 3
                     </span>
@@ -109,14 +109,6 @@ export default function MisEntrevistas() {
                     <Etiqueta tono="bg-gray-100 text-gray-700">{libres ? `Faltan ${libres} profesor(es)` : "Esperando que Posgrado publique la cita"}</Etiqueta>
                     <button type="button" onClick={() => dejarLugar(a, yo)} className="inline-flex items-center gap-1 text-xs text-gray-600 hover:text-red-700 hover:underline">
                       <LogOut size={13} /> Dejar lugar
-                    </button>
-                    <button
-                      type="button"
-                      disabled
-                      title="Disponible cuando Posgrado publique la cita"
-                      className="inline-flex cursor-not-allowed items-center gap-1 rounded-lg border border-gray-200 px-2.5 py-1 text-xs text-gray-400"
-                    >
-                      <Eye size={13} /> Ver
                     </button>
                   </span>
                 </li>
@@ -149,7 +141,7 @@ export default function MisEntrevistas() {
                     <p className="font-mono text-xs text-gray-500">{a.id}</p>
                   </td>
                   <td className="px-3 py-3 text-gray-700">
-                    {fechaCorta(a.entrevista!.fecha)} · {a.entrevista!.hora} h
+                    {fechaCorta(a.entrevista!.fecha)} · {horarioEntrevista(a.entrevista!)}
                     <span className="block text-xs text-gray-500">
                       {a.entrevista!.modalidad} · {a.entrevista!.sala}
                     </span>

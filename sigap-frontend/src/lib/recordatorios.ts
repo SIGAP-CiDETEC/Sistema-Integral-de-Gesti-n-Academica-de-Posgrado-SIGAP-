@@ -1,6 +1,7 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
+import { horarioEntrevista } from "./posgrado/datos";
 
 /**
  * Recordatorios automáticos al aspirante (correo y notificación en SIGAP).
@@ -21,7 +22,7 @@ const iso = (d: Date) => {
 const fechaHora = (fecha: string, hora: string) => new Date(`${fecha}T${hora || "09:00"}:00`);
 const firma = "\n\nAtentamente,\nDepartamento de Posgrado · CIDETEC";
 
-export function recordatoriosEntrevista(e: { fecha: string; hora: string; modalidad: string; sala: string }, nombre: string): Recordatorio[] {
+export function recordatoriosEntrevista(e: { fecha: string; hora: string; duracion?: number; modalidad: string; sala: string }, nombre: string): Recordatorio[] {
   const cita = fechaHora(e.fecha, e.hora);
   const lugar = `${e.sala} (${e.modalidad})`;
   const hola = `Estimado(a) ${nombre}:\n\n`;
@@ -33,14 +34,14 @@ export function recordatoriosEntrevista(e: { fecha: string; hora: string; modali
       cuando: iso(diaAntes),
       tipo: "entrevista",
       asunto: "Recordatorio: mañana es tu entrevista colegiada",
-      mensaje: `${hola}Te recordamos que mañana ${larga(cita)} a las ${e.hora} h es tu entrevista colegiada en ${lugar}. Llega 15 minutos antes con una identificación oficial.${firma}`,
+      mensaje: `${hola}Te recordamos que mañana ${larga(cita)} de ${horarioEntrevista(e)} es tu entrevista colegiada en ${lugar}. Llega 15 minutos antes con una identificación oficial.${firma}`,
     },
     {
       id: `ent-1h-${e.fecha}-${e.hora}`,
       cuando: iso(horaAntes),
       tipo: "entrevista",
       asunto: "Recordatorio: tu entrevista colegiada es en una hora",
-      mensaje: `${hola}Tu entrevista colegiada comienza en una hora (${e.hora} h) en ${lugar}.${firma}`,
+      mensaje: `${hola}Tu entrevista colegiada comienza en una hora (${horarioEntrevista(e)}) en ${lugar}.${firma}`,
     },
   ];
 }

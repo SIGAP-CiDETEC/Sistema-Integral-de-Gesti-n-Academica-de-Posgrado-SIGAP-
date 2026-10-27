@@ -1,11 +1,11 @@
 "use client";
 
 import { usePosgrado } from "./PosgradoProvider";
-import { fechaCorta, nombreProfesor, sinodoCompleto, type AspiranteP, type Entrevista } from "@/lib/posgrado/datos";
+import { fechaCorta, horarioEntrevista, nombreProfesor, sinodoCompleto, type AspiranteP, type Entrevista } from "@/lib/posgrado/datos";
 import { MODO_API, api } from "@/lib/api";
 import { mensajeDe, notificar } from "@/lib/avisos-ui";
 
-export const citaTexto = (e: Pick<Entrevista, "fecha" | "hora" | "modalidad" | "sala">) => `${fechaCorta(e.fecha)} a las ${e.hora} h · ${e.modalidad} · ${e.sala}`;
+export const citaTexto = (e: Pick<Entrevista, "fecha" | "hora" | "duracion" | "modalidad" | "sala">) => `${fechaCorta(e.fecha)} de ${horarioEntrevista(e)} · ${e.modalidad} · ${e.sala}`;
 const FIRMA = "\n\nAtentamente,\nDepartamento de Posgrado · CIDETEC";
 
 /**
@@ -34,7 +34,7 @@ export function usePublicarEntrevistas() {
     actualizar(
       a.id,
       { entrevista: { ...e, horarioPublicadoEl: new Date().toISOString() } },
-      `Publicó el horario de entrevista ${fechaCorta(e.fecha)} ${e.hora} h para que los profesores lo elijan`,
+      `Publicó el horario de entrevista ${fechaCorta(e.fecha)} de ${horarioEntrevista(e)} para que los profesores lo elijan`,
     );
   };
 

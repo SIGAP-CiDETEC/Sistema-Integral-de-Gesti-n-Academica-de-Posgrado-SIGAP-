@@ -21,6 +21,7 @@ import {
   type AspiranteP,
   type Resolucion,
   type Valoracion,
+  horarioEntrevista,
 } from "@/lib/posgrado/datos";
 import { TONO_ENTREVISTA_PROF, citaPublicada, estadoEntrevistaProf, useProfesorActual } from "@/lib/profesor";
 
@@ -63,7 +64,7 @@ export default function EntrevistaProfesor({ params }: PageProps<"/profesor/entr
     return (
       <>
         {migas}
-        <PageHeader titulo="Entrevista colegiada" subtitulo={`${fechaCorta(a.entrevista.fecha)} · ${a.entrevista.hora} h`} />
+        <PageHeader titulo="Entrevista colegiada" subtitulo={`${fechaCorta(a.entrevista.fecha)} · ${horarioEntrevista(a.entrevista)}`} />
         <Aviso tono="info" titulo="Aún no se publica la cita">
           Verás los datos del aspirante y podrás llenar el acta MTC-EC cuando el Departamento de Posgrado publique la cita (profesores entrevistadores:{" "}
           {a.entrevista.sinodo.length} de 3). Mientras tanto puedes dejar tu lugar desde Mis entrevistas.
@@ -93,7 +94,7 @@ export default function EntrevistaProfesor({ params }: PageProps<"/profesor/entr
         <Tarjeta titulo={<span className="flex items-center gap-2"><CalendarCheck size={17} className="text-primary" /> Cita y aspirante</span>}>
           <dl className="grid gap-x-6 gap-y-3 text-sm sm:grid-cols-2">
             {[
-              ["Fecha y hora", `${fechaCorta(a.entrevista.fecha)} · ${a.entrevista.hora} h`],
+              ["Fecha y horario", `${fechaCorta(a.entrevista.fecha)} · ${horarioEntrevista(a.entrevista)}`],
               ["Modalidad / sala", `${a.entrevista.modalidad} · ${a.entrevista.sala}`],
               ["Procedencia", a.procedencia],
               ["Promedio de licenciatura", a.promedio],

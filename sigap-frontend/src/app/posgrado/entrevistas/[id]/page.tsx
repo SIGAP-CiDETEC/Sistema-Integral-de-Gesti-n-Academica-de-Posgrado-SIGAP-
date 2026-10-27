@@ -13,14 +13,21 @@ import { citaTexto, usePublicarEntrevistas } from "@/components/posgrado/usePubl
 import { MODO_API, api } from "@/lib/api";
 import { mensajeDe, notificar } from "@/lib/avisos-ui";
 import {
+  DURACIONES_ENTREVISTA,
+  DURACION_PREDETERMINADA,
   PROFESORES_SINODO,
   TONO_PASO_ENTREVISTA,
+  duracionDe,
   fechaCorta,
+  horaFin,
+  horarioEntrevista,
   lugaresLibres,
   nombramientoDe,
   nombreProfesor,
   pasoEntrevista,
+  seTraslapan,
   sinodoCompleto,
+  textoDuracion,
   type AspiranteP,
   type Entrevista,
 } from "@/lib/posgrado/datos";
@@ -74,7 +81,8 @@ export default function EntrevistaAspirante({ params }: PageProps<"/posgrado/ent
           >
             <dl className="grid gap-4 text-sm sm:grid-cols-4">
               <Dato k="Fecha" v={fechaCorta(e.fecha)} />
-              <Dato k="Hora" v={`${e.hora} h`} />
+              <Dato k="Horario" v={horarioEntrevista(e)} />
+              <Dato k="Duración" v={textoDuracion(duracionDe(e))} />
               <Dato k="Modalidad" v={e.modalidad} />
               <Dato k="Sala / enlace" v={e.sala} />
             </dl>
@@ -149,7 +157,7 @@ function plantillasEntrevista(a: AspiranteP) {
   const firma = "\n\nAtentamente,\nDepartamento de Posgrado · CIDETEC";
   return [
     { id: "fecha", t: "Cambio de fecha u hora", asunto: "Cambio en la fecha de tu entrevista colegiada", mensaje: `${hola}Tu entrevista colegiada cambió. Nueva cita: ${citaTexto(e)}.${firma}` },
-    { id: "sala", t: "Cambio de sala o enlace", asunto: "Cambio de sala de tu entrevista colegiada", mensaje: `${hola}Tu entrevista sigue el ${fechaCorta(e.fecha)} a las ${e.hora} h, pero ahora será en: ${e.sala}.${firma}` },
+    { id: "sala", t: "Cambio de sala o enlace", asunto: "Cambio de sala de tu entrevista colegiada", mensaje: `${hola}Tu entrevista sigue el ${fechaCorta(e.fecha)} de ${horarioEntrevista(e)}, pero ahora será en: ${e.sala}.${firma}` },
     { id: "recordatorio", t: "Recordatorio", asunto: "Recordatorio: entrevista colegiada", mensaje: `${hola}Te recordamos tu entrevista colegiada: ${citaTexto(e)}. Llega 15 minutos antes con una identificación oficial.${firma}` },
     { id: "libre", t: "Otro aviso", asunto: "", mensaje: "" },
   ];
@@ -169,19 +177,24 @@ function Horario({ a, alTerminar }: { a: AspiranteP; alTerminar: () => void }) {
   const { actualizar, aspirantes, enviarAviso, recargar } = usePosgrado();
   const e = a.entrevista;
   const [guardando, setGuardando] = useState(false);
+  // Duración: la de esta entrevista o, si es nueva, la última que usó Posgrado
+  const ultimaDuracion = aspirantes.filter((x) => x.entrevista?.duracion).at(-1)?.entrevista?.duracion;
   const [f, setF] = useState(() => ({
     fecha: e?.fecha ?? new Date(Date.now() + 7 * 86_400_000).toISOString().slice(0, 10),
     hora: e?.hora ?? "10:30",
+    duracion: e ? duracionDe(e) : (ultimaDuracion ?? DURACION_PREDETERMINADA),
     modalidad: e?.modalidad ?? ("Presencial" as Entrevista["modalidad"]),
     sala: e?.sala ?? "Sala de juntas CIDETEC",
   }));
   const sinodo = e?.sinodo ?? [];
 
-  // Choques: algún profesor que ya eligió esta entrevista tiene otra a la nueva fecha y hora
+  // Choques: algún profesor que ya eligió esta entrevista tiene otra que se encima con el nuevo horario
   const choques = aspirantes
-    .filter((x) => x.id !== a.id && x.entrevista && !x.dictamen && !x.concluido && x.entrevista.fecha === f.fecha && x.entrevista.hora === f.hora)
-    .flatMap((x) => x.entrevista!.sinodo.filter((s) => sinodo.includes(s)).map((s) => `${nombreProfesor(s)} ya tiene otra entrevista (${x.nombre}) a esa hora.`));
-  const sinCambio = !!e && e.fecha === f.fecha && e.hora === f.hora && e.modalidad === f.modalidad && e.sala === f.sala;
+    .filter((x) => x.id !== a.id && x.entrevista && !x.dictamen && !x.concluido && seTraslapan(x.entrevista, f))
+    .flatMap((x) =>
+      x.entrevista!.sinodo.filter((s) => sinodo.includes(s)).map((s) => `${nombreProfesor(s)} ya tiene otra entrevista (${x.nombre}) de ${horarioEntrevista(x.entrevista!)}.`),
+    );
+  const sinCambio = !!e && e.fecha === f.fecha && e.hora === f.hora && duracionDe(e) === f.duracion && e.modalidad === f.modalidad && e.sala === f.sala;
   const listo = f.fecha && f.hora && f.sala.trim() && !choques.length && !sinCambio;
 
   const guardar = async () => {
@@ -221,12 +234,21 @@ function Horario({ a, alTerminar }: { a: AspiranteP; alTerminar: () => void }) {
     <div className="space-y-6">
       <Etiqueta tono="bg-emerald-50 text-emerald-700">Expediente aprobado</Etiqueta>
       <Tarjeta titulo="Horario de la entrevista colegiada">
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
           <Campo label="Fecha">
             <input type="date" value={f.fecha} onChange={(ev) => setF({ ...f, fecha: ev.target.value })} className={inputBase} />
           </Campo>
           <Campo label="Hora">
             <input type="time" value={f.hora} onChange={(ev) => setF({ ...f, hora: ev.target.value })} className={inputBase} />
+          </Campo>
+          <Campo label="Duración">
+            <select aria-label="Duración" value={f.duracion} onChange={(ev) => setF({ ...f, duracion: Number(ev.target.value) })} className={inputBase}>
+              {DURACIONES_ENTREVISTA.map((m) => (
+                <option key={m} value={m}>
+                  {textoDuracion(m)}
+                </option>
+              ))}
+            </select>
           </Campo>
           <Campo label="Modalidad">
             <select
@@ -242,7 +264,12 @@ function Horario({ a, alTerminar }: { a: AspiranteP; alTerminar: () => void }) {
             <input value={f.sala} onChange={(ev) => setF({ ...f, sala: ev.target.value })} className={inputBase} />
           </Campo>
         </div>
-        <p className="mt-3 text-sm text-gray-600">
+        {f.hora && (
+          <p className="mt-3 text-sm font-medium text-gray-900" data-horario>
+            Horario: {f.hora} a {horaFin(f)} h
+          </p>
+        )}
+        <p className="mt-1 text-sm text-gray-600">
           {e?.notificadaEl
             ? "El aspirante ya ve esta entrevista: al guardar se le avisa del cambio."
             : e?.horarioPublicadoEl

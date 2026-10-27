@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useSyncExternalStore } from "react";
-import { AREAS_EVAL, PROFESORES_SINODO, evaluacionEnCaptura, sinodoCompleto, type AreaEvalId, type AspiranteP, type ProfesorP } from "./posgrado/datos";
+import { AREAS_EVAL, PROFESORES_SINODO, evaluacionEnCaptura, seTraslapan, sinodoCompleto, type AreaEvalId, type AspiranteP, type ProfesorP } from "./posgrado/datos";
 import { docenteDe, type Materia } from "./evaluacion";
 import { useSesion } from "./sesion";
 import { MODO_API } from "./api";
@@ -102,10 +102,10 @@ export function entrevistasDisponibles(lista: AspiranteP[], prof?: string) {
     .sort((x, y) => `${x.a.entrevista!.fecha}${x.a.entrevista!.hora}`.localeCompare(`${y.a.entrevista!.fecha}${y.a.entrevista!.hora}`));
 }
 
-/** true si el profesor ya está en otra entrevista sin dictamen el mismo día a la misma hora. */
+/** true si el profesor ya tiene otra entrevista sin dictamen que se encima con esta (según hora y duración). */
 export const tieneChoque = (lista: AspiranteP[], prof: string, a: AspiranteP) =>
   lista.some(
-    (x) => x.id !== a.id && !x.dictamen && !x.concluido && x.entrevista?.sinodo.includes(prof) && x.entrevista.fecha === a.entrevista?.fecha && x.entrevista.hora === a.entrevista?.hora,
+    (x) => x.id !== a.id && !x.dictamen && !x.concluido && x.entrevista?.sinodo.includes(prof) && !!a.entrevista && seTraslapan(x.entrevista, a.entrevista),
   );
 
 /** El profesor puede dejar su lugar mientras Posgrado no haya publicado la entrevista al aspirante. */

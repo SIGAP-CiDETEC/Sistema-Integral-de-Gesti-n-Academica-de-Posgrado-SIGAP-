@@ -23,6 +23,7 @@ import {
   type AreaEvalId,
   type ResultadoArea,
   type ResultadoEval,
+  horarioEntrevista,
 } from "@/lib/posgrado/datos";
 import { faseSubdireccion, nombreFase } from "@/lib/subdireccion";
 
@@ -126,7 +127,7 @@ export default function ProcesoAspirante({ params }: PageProps<"/subdireccion/as
           <Paso estado={estadoDe("entrevista")} titulo="3 · Entrevista colegiada">
             {a.entrevista ? (
               <>
-                {fechaCorta(a.entrevista.fecha)}, {a.entrevista.hora} h · {a.entrevista.modalidad} · {a.entrevista.sala}
+                {fechaCorta(a.entrevista.fecha)}, {horarioEntrevista(a.entrevista)} · {a.entrevista.modalidad} · {a.entrevista.sala}
                 <span className="block text-gray-500">Profesores entrevistadores: {a.entrevista.sinodo.map(nombreProfesor).join(" · ")}</span>
                 {a.actaEntrevista && (
                   <span className="block text-gray-500">

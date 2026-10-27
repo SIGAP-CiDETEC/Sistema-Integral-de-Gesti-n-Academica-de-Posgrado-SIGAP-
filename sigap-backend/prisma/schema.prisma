@@ -416,6 +416,8 @@ model Entrevista {
   id                    String                @id @default(cuid())
   postulacionId         String                @unique
   fechaHora             DateTime
+  /// Duración en minutos que fija Posgrado; la hora de término se calcula con ella
+  duracionMin           Int                   @default(60)
   modalidad             ModalidadEntrevista
   sala                  String
   horarioPublicadoEn    DateTime?

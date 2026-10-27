@@ -1,6 +1,6 @@
 import { Body, Controller, Get, HttpCode, NotFoundException, Param, Post, Put, Req, Res, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { IsIn, IsObject, IsString, Matches, MaxLength } from 'class-validator';
+import { IsIn, IsInt, IsObject, IsOptional, IsString, Matches, MaxLength } from 'class-validator';
 import type { Response } from 'express';
 import { AuthGuard, Areas, type UsuarioSesion } from '../auth/auth.guard';
 import { existeArchivo, rutaAlmacen } from '../comun/almacen';
@@ -12,6 +12,7 @@ const FOLIO = /^[A-Z0-9-]{4,20}$/;
 class HorarioDto {
   @Matches(/^\d{4}-\d{2}-\d{2}$/) fecha!: string;
   @Matches(/^\d{2}:\d{2}$/) hora!: string;
+  @IsOptional() @IsInt() @IsIn([30, 45, 60, 90, 120]) duracion?: number;
   @IsIn(['Presencial', 'En línea']) modalidad!: string;
   @IsString() @MaxLength(200) sala!: string;
 }

@@ -4,7 +4,7 @@ import { ETAPAS, indiceEtapa, type Aviso, type SolicitudAdmision } from "@/lib/a
 import { PROGRAMA } from "@/lib/config";
 import { documentosDeFase, esRequerido } from "@/lib/documentos";
 import { useConfigEvaluacion } from "@/lib/evaluacion-config";
-import { areasReprobadas, nombreArea } from "@/lib/posgrado/datos";
+import { areasReprobadas, horarioEntrevista, nombreArea } from "@/lib/posgrado/datos";
 import { useEstadoAdmision, useRevisionDocs } from "@/lib/posgrado/revision";
 import { useAspiranteActivo } from "@/lib/aspirante-activo";
 import { useExpediente } from "./ExpedienteProvider";
@@ -40,7 +40,7 @@ export function MiAdmisionVivo() {
   if (observados.length) avisos.push({ tipo: "alerta", titulo: "Documentos con observaciones", texto: observados.map((d) => `${d.nombre}: ${revision[d.id].observacion ?? "revísalo"}`).join(" · ") });
   prorrogas.forEach((d) => avisos.push({ tipo: "info", titulo: `Prórroga: ${d.nombre}`, texto: `Puedes continuar tu proceso; entrégalo antes del ${fecha(revision[d.id].prorrogaHasta!)}.` }));
   if (v.entrevista && !v.resultadoEntrevista)
-    avisos.push({ tipo: "info", titulo: "Entrevista programada", texto: `${fecha(v.entrevista.fecha)}, ${v.entrevista.hora} h · ${v.entrevista.sala}.` });
+    avisos.push({ tipo: "info", titulo: "Entrevista programada", texto: `${fecha(v.entrevista.fecha)}, ${horarioEntrevista(v.entrevista)} · ${v.entrevista.sala}.` });
   if (v.resultadoEntrevista && v.resultadoEntrevista !== "Rechazado") avisos.push({ tipo: "exito", titulo: "Entrevista aprobada", texto: "Ya puedes elegir tu modalidad de evaluación." });
   if (pro && !pro.acreditado && !exa && !so)
     avisos.push({ tipo: "alerta", titulo: "Resultados del propedéutico publicados", texto: `No acreditaste ${areasReprobadas(pro).map(nombreArea).join(" y ")}. Indica en 5 · Resultados si presentas el examen de ${areasReprobadas(pro).length > 1 ? "esas áreas" : "esa área"} (${modalidades.examen.fechas}).` });

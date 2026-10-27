@@ -1,4 +1,4 @@
-import { AREAS_EVAL, MINIMA_AREA, bandejaDe, nombreProfesor, pasoEntrevista, type AreaEvalId, type AspiranteP, type DocAspirante, type ResolucionColegio } from "./posgrado/datos";
+import { AREAS_EVAL, MINIMA_AREA, bandejaDe, horaFin, nombreProfesor, pasoEntrevista, type AreaEvalId, type AspiranteP, type DocAspirante, type ResolucionColegio } from "./posgrado/datos";
 import { faseSubdireccion, nombreFase } from "./subdireccion";
 import { descargarCsv, fechaArchivo, type CeldaCsv } from "./csv";
 import type { Respuestas } from "./registro-form";
@@ -170,7 +170,7 @@ const ENCABEZADOS = [
   "2. Expediente",
   // 3 · Entrevista colegiada
   "3. Día de entrevista",
-  "3. Hora de entrevista",
+  "3. Horario de entrevista",
   "3. Modalidad de entrevista",
   "3. Sala o enlace de entrevista",
   "3. Estado de la entrevista",
@@ -237,7 +237,7 @@ export function filaReporte(a: AspiranteP, registro: Respuestas = {}): CeldaCsv[
     a.formatos["sip-02"] ? "Entregado firmado" : "Pendiente",
     ...DOCS_REPORTE.map((col) => estadoDocumentoReporte(a.documentos.find((d) => col.ids.includes(d.id)))),
     paso(a, "documentos") ? "Aprobado" : a.etapa === "documentos" ? "En revisión" : "Pendiente",
-    e?.fecha ?? "", e?.hora ?? "", e?.modalidad ?? "", e?.sala ?? "",
+    e?.fecha ?? "", e ? `${e.hora} a ${horaFin(e)}` : "", e?.modalidad ?? "", e?.sala ?? "",
     e ? pasoEntrevista(e) : a.etapa === "entrevista" ? "Sin horario" : "",
     e ? e.sinodo.map(nombreProfesor).join("; ") : "",
     acta?.firmada ? `Firmada y subida por ${nombreProfesor(acta.firmada.subidaPor)}` : acta ? `Llenada por ${nombreProfesor(acta.capturadaPor)} · falta subirla firmada` : a.dictamen ? "Registrada" : "",

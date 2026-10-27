@@ -98,7 +98,7 @@ export type EstadoVivo = {
   hayDatos: boolean;
   etapa: "registro" | "documentos" | "entrevista" | "evaluacion" | "dictamen";
   concluido?: string;
-  entrevista?: { fecha: string; hora: string; modalidad: string; sala: string };
+  entrevista?: { fecha: string; hora: string; duracion?: number; modalidad: string; sala: string };
   /** Solo el resultado de la entrevista (no lleva ponderación) */
   resultadoEntrevista?: "Aprobado" | "Con reservas" | "Rechazado";
   /** Resultados de la evaluación (el aspirante solo ve los ya publicados) */
