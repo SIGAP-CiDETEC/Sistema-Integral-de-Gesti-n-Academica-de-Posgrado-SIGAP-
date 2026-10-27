@@ -1,4 +1,4 @@
-import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf-lib";
+import { PDFArray, PDFDict, PDFDocument, PDFName, PDFRef, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf-lib";
 import type { Valor } from "../formatos";
 import { PROGRAMA_INDIVIDUAL_DEMO } from "../programa-individual";
 import { TABLAS_SIP02, idCantidadSip, idCeldaSip, GRADOS_SIP02 } from "../sip02-secciones";
@@ -20,6 +20,8 @@ export type DatosPdf = {
   hoy: Date;
   /** Conservar solo estas páginas (base 0); el resto no se incluye en el archivo. */
   soloPaginas?: number[];
+  /** Aplanar el formulario: el texto queda impreso en la hoja y el PDF ya no tiene campos editables. */
+  aplanar?: boolean;
 };
 
 const s = (v: Valor | undefined) => (Array.isArray(v) ? v.join(", ") : v ?? "");
@@ -605,6 +607,23 @@ export async function rellenarPdf(clave: string, plantilla: ArrayBuffer | Uint8A
   if (!fn) throw new Error(`No hay rellenador para ${clave}`);
   const doc = await PDFDocument.load(plantilla);
   await fn(doc, datos);
+  if (datos.aplanar) {
+    // El rellenador ya generó la apariencia de cada campo; al aplanar, esa apariencia queda como contenido de la hoja
+    doc.getForm().flatten();
+    // Con esta plantilla, flatten() deja en las hojas referencias a los campos que eliminó: se limpian y se quita
+    // el formulario por completo, para que el PDF quede válido y sin nada editable.
+    for (const pagina of doc.getPages()) {
+      const anotaciones = pagina.node.lookupMaybe(PDFName.of("Annots"), PDFArray);
+      if (!anotaciones) continue;
+      const validas = anotaciones.asArray().filter((r) => {
+        const obj = r instanceof PDFRef ? doc.context.lookup(r) : r;
+        return obj instanceof PDFDict && obj.get(PDFName.of("Subtype")) !== PDFName.of("Widget");
+      });
+      if (validas.length) pagina.node.set(PDFName.of("Annots"), doc.context.obj(validas));
+      else pagina.node.delete(PDFName.of("Annots"));
+    }
+    doc.catalog.delete(PDFName.of("AcroForm"));
+  }
   let salida = doc;
   if (datos.soloPaginas) {
     // Se copian solo esas hojas (ya llenas) a un PDF nuevo: las demás no quedan ni ocultas dentro del archivo.

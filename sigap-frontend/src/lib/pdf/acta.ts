@@ -38,6 +38,7 @@ export async function generarActaMtcEc(a: AspiranteP, acta: ActaEntrevista): Pro
     ...Object.fromEntries((a.entrevista?.sinodo ?? []).map((p, i) => [`prof${i + 1}`, nombreProfesor(p)])),
   };
   const bytes = await (await fetch("/formatos/mtc-ec.pdf")).arrayBuffer();
-  const pdf = await rellenarPdf("mtc-ec", bytes, { valores, hoy: new Date() });
+  // Aplanado: es el documento que se imprime y firma, no debe poder editarse
+  const pdf = await rellenarPdf("mtc-ec", bytes, { valores, hoy: new Date(), aplanar: true });
   return URL.createObjectURL(new Blob([pdf as BlobPart], { type: "application/pdf" }));
 }
