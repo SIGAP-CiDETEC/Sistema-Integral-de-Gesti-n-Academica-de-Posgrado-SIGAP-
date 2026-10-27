@@ -16,8 +16,11 @@ export const TONO_RESOLUCION = {
 /** En el acta oficial la pregunta es "¿Continuar proceso de admisión?" */
 export const TEXTO_CONTINUAR = { Aprobado: "Sí", "Con reservas": "Con reservas", Rechazado: "No" } as const;
 
-/** Botón para descargar el acta MTC-EC llenada (plantilla oficial). */
-export function DescargarActa({ a }: { a: AspiranteP }) {
+/**
+ * Botón para descargar el acta MTC-EC llenada (plantilla oficial). Con `alDescargar` (profesores entrevistadores),
+ * antes de generar el PDF se registra la descarga, que cierra el acta; si no se pudo registrar, no se descarga.
+ */
+export function DescargarActa({ a, alDescargar }: { a: AspiranteP; alDescargar?: () => Promise<boolean> }) {
   const [cargando, setCargando] = useState(false);
   if (!a.actaEntrevista) return null;
   return (
@@ -28,6 +31,7 @@ export function DescargarActa({ a }: { a: AspiranteP }) {
       onClick={async () => {
         setCargando(true);
         try {
+          if (alDescargar && !(await alDescargar())) return;
           const url = await generarActaMtcEc(a, a.actaEntrevista!);
           const el = document.createElement("a");
           el.href = url;

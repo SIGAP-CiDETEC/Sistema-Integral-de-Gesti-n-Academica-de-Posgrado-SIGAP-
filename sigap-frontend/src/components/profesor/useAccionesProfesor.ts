@@ -73,11 +73,25 @@ export function useAccionesProfesor() {
       return enServidor(`/aspirantes/${a.id}/acta`, { metodo: "PUT", cuerpo: { hoja1, criterios, proyeccion, observaciones, resolucion, motivo } }, "Acta guardada");
     }
     const previa = a.actaEntrevista;
-    if (previa?.firmada || (previa && previa.capturadaPor !== profesor)) return false;
+    if (previa?.firmada || previa?.descargada || (previa && previa.capturadaPor !== profesor)) return false;
     actualizar(
       a.id,
       { actaEntrevista: { ...acta, capturadaPor: profesor, firmada: undefined } },
       `${nombreProfesor(profesor)} ${previa ? "corrigió" : "llenó"} el acta de entrevista colegiada (MTC-EC); queda lista para imprimirse, firmarse y subirse`,
+    );
+    return true;
+  };
+
+  /** Registra la primera descarga del acta: desde entonces queda cerrada y ya no se puede corregir. */
+  const cerrarActa = async (a: AspiranteP, profesor: string): Promise<boolean> => {
+    const acta = a.actaEntrevista;
+    if (!acta) return false;
+    if (acta.descargada) return true;
+    if (MODO_API) return enServidor(`/aspirantes/${a.id}/acta/descargada`, { metodo: "POST" });
+    actualizar(
+      a.id,
+      { actaEntrevista: { ...acta, descargada: { por: profesor, el: new Date().toISOString() } } },
+      `${nombreProfesor(profesor)} descargó el acta MTC-EC para imprimirla y firmarla; desde ahora ya no se puede modificar`,
     );
     return true;
   };
@@ -144,5 +158,5 @@ export function useAccionesProfesor() {
     actualizar(a.id, { entrevista: nueva }, `${nombreProfesor(profesor)} dejó su lugar en la entrevista del ${fechaCorta(e.fecha)} de ${horarioEntrevista(e)} · profesores entrevistadores ${nueva.sinodo.length} de 3`);
   };
 
-  return { guardarActa, subirActaFirmada, capturar, elegirEntrevista, dejarLugar };
+  return { guardarActa, cerrarActa, subirActaFirmada, capturar, elegirEntrevista, dejarLugar };
 }

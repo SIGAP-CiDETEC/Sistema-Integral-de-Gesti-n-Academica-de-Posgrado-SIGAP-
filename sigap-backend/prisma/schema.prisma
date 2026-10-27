@@ -455,6 +455,9 @@ model ActaEntrevista {
   motivo                String?
   capturadaPor          String?
   capturadaEn           DateTime?
+  /// Primera descarga del acta para imprimirse y firmarse: desde entonces ya no se puede modificar
+  descargadaEn          DateTime?
+  descargadaPorId       String?
   /** PDF del acta impresa y firmada por los 3 profesores entrevistadores (ruta dentro del almacenamiento) */
   firmadaArchivoNombre  String?
   firmadaArchivoRuta    String?

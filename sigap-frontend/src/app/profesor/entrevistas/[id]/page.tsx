@@ -34,7 +34,7 @@ export default function EntrevistaProfesor({ params }: PageProps<"/profesor/entr
   const { id } = use(params);
   const { porId, cargado } = usePosgrado();
   const { profesor } = useProfesorActual();
-  const { guardarActa, subirActaFirmada } = useAccionesProfesor();
+  const { guardarActa, cerrarActa, subirActaFirmada } = useAccionesProfesor();
   const [llenando, setLlenando] = useState(false);
   const [error, setError] = useState("");
   if (!cargado) return null;
@@ -75,6 +75,8 @@ export default function EntrevistaProfesor({ params }: PageProps<"/profesor/entr
   const estado = estadoEntrevistaProf(a);
   const acta = a.actaEntrevista;
   const yoLaLlene = acta?.capturadaPor === yo;
+  // Desde la primera descarga el acta queda cerrada: lo que se firma es lo que queda en el sistema
+  const cerrada = !!acta?.descargada;
 
   const subir = async (archivo: File | undefined | { name: string; type: string; size: number }) => {
     setError("");
@@ -133,7 +135,7 @@ export default function EntrevistaProfesor({ params }: PageProps<"/profesor/entr
           <Aviso tono="error" titulo="El proceso de este aspirante ya concluyó">
             {a.concluido}
           </Aviso>
-        ) : llenando && (!acta || yoLaLlene) && !acta?.firmada ? (
+        ) : llenando && (!acta || yoLaLlene) && !acta?.firmada && !cerrada ? (
           <FormularioActa
             a={a}
             inicial={acta}
@@ -170,14 +172,21 @@ export default function EntrevistaProfesor({ params }: PageProps<"/profesor/entr
               <Tarjeta titulo="Acta firmada por los 3 profesores entrevistadores">
                 <ol className="list-decimal space-y-1 pl-5 text-sm text-gray-700">
                   <li>
-                    {yoLaLlene ? "Tú llenaste el acta." : `La llenó ${nombreProfesor(acta.capturadaPor)}; ya no se puede llenar de nuevo.`} Descárgala e imprímela.
+                    {yoLaLlene ? "Tú llenaste el acta." : `La llenó ${nombreProfesor(acta.capturadaPor)}; ya no se puede llenar de nuevo.`} Descárgala e imprímela.{" "}
+                    {cerrada ? (
+                      <b>
+                        {nombreProfesor(acta.descargada!.por)} la descargó el {fechaCorta(acta.descargada!.el)}: el acta está cerrada y ya no se puede modificar.
+                      </b>
+                    ) : (
+                      <b>Al descargarla queda cerrada: ya no se podrá corregir{yoLaLlene ? ", así que revísala antes" : ""}.</b>
+                    )}
                   </li>
                   <li>Fírmenla los 3 profesores entrevistadores.</li>
                   <li>Súbela escaneada en PDF: el primero que la suba aplica el dictamen y se bloquea la subida para los demás.</li>
                 </ol>
                 <div className="mt-4 flex flex-wrap items-center gap-2">
-                  <DescargarActa a={a} />
-                  {yoLaLlene && (
+                  <DescargarActa a={a} alDescargar={() => cerrarActa(a, yo)} />
+                  {yoLaLlene && !cerrada && (
                     <button type="button" className={botonSecundario} onClick={() => setLlenando(true)}>
                       <Pencil size={14} /> Corregir acta
                     </button>

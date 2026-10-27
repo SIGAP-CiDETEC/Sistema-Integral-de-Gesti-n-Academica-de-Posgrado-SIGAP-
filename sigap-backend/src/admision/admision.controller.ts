@@ -14,7 +14,7 @@ class HorarioDto {
   @Matches(/^\d{2}:\d{2}$/) hora!: string;
   @IsOptional() @IsInt() @IsIn([20, 25, 30, 40, 45, 60, 90, 120]) duracion?: number;
   @IsIn(['Presencial', 'En línea']) modalidad!: string;
-  @IsString() @MaxLength(200) sala!: string;
+  @IsString() @MaxLength(2000) sala!: string;
 }
 class ActaDto {
   @IsObject() hoja1!: object;
@@ -92,6 +92,13 @@ export class AdmisionController {
   @Areas('PROFESORES')
   acta(@Param('folio') f: string, @Body() d: ActaDto, @Req() r: Req_) {
     return this.s.guardarActa(this.folio(f), d, r.usuario);
+  }
+
+  @Post('aspirantes/:folio/acta/descargada')
+  @HttpCode(200)
+  @Areas('PROFESORES')
+  descargada(@Param('folio') f: string, @Req() r: Req_) {
+    return this.s.marcarDescargada(this.folio(f), r.usuario);
   }
 
   @Post('aspirantes/:folio/acta/firmada')

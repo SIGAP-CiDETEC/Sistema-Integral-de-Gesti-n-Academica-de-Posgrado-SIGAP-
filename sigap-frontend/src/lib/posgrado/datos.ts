@@ -107,6 +107,8 @@ export type ActaEntrevista = {
   motivo: string;
   capturadaPor: string;
   capturadaEl: string;
+  /** Primera descarga para imprimirse y firmarse: desde entonces ya no se puede corregir */
+  descargada?: { por: string; el: string };
   /** Acta impresa y firmada por los 3 profesores entrevistadores que subió uno de ellos (con esto se aplica el dictamen) */
   firmada?: { archivo: string; subidaPor: string; el: string };
   /** Firmas en el sistema de versiones anteriores del cascarón (ya no se usan) */

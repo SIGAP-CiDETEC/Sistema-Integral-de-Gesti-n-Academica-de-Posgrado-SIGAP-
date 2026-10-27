@@ -103,6 +103,7 @@ export class AdmisionService {
               motivo: acta.motivo ?? '',
               capturadaPor: acta.capturadaPor,
               capturadaEl: acta.capturadaEn?.toISOString() ?? '',
+              descargada: acta.descargadaEn ? { por: acta.descargadaPorId ?? '', el: acta.descargadaEn.toISOString() } : undefined,
               firmada: firmada ? { archivo: acta.firmadaArchivoNombre!, subidaPor: acta.firmadaSubidaPorId ?? '', el: acta.firmadaSubidaEn!.toISOString() } : undefined,
             }
           : undefined,
@@ -265,6 +266,7 @@ export class AdmisionService {
     if (!e.publicadaAspiranteEn) throw new BadRequestException('Podrás llenar el acta cuando Posgrado publique la entrevista al aspirante');
     const previa = e.acta;
     if (previa?.firmadaSubidaEn) throw new ConflictException('El acta ya se subió firmada');
+    if (previa?.descargadaEn) throw new ConflictException('El acta ya se descargó para firmarse; ya no se puede modificar');
     if (previa?.capturadaPor && previa.capturadaPor !== prof) throw new ConflictException('Otro profesor entrevistador ya llenó el acta');
     const resolucion = RESOLUCION_DB[d.resolucion];
     if (!resolucion) throw new BadRequestException('Resolución inválida');
@@ -272,6 +274,20 @@ export class AdmisionService {
     const data = { hoja1: d.hoja1 as Prisma.InputJsonValue, criterios: d.criterios as Prisma.InputJsonValue, proyeccion: d.proyeccion, observaciones: d.observaciones, resolucion, motivo: d.motivo, capturadaPor: prof, capturadaEn: new Date() };
     await this.prisma.actaEntrevista.upsert({ where: { entrevistaId: e.id }, create: { entrevistaId: e.id, ...data }, update: data });
     await this.bitacora(folio, u.nombre, `${previa?.capturadaPor ? 'Corrigió' : 'Llenó'} el acta de entrevista colegiada (MTC-EC); queda lista para imprimirse, firmarse y subirse`);
+    return this.aFront(await this.postulacion(folio), 'profesor');
+  }
+
+  /**
+   * Un profesor entrevistador descarga el acta para imprimirla y firmarla: desde la primera descarga queda cerrada
+   * (ya no se puede corregir), para que lo que firman los 3 sea lo que queda en el sistema.
+   */
+  async marcarDescargada(folio: string, u: UsuarioSesion) {
+    const prof = this.profesorDe(u);
+    const p = await this.postulacion(folio);
+    const e = this.exigirIntegrante(p, prof);
+    if (!e.acta?.capturadaPor) throw new BadRequestException('El acta aún no se llena');
+    const marcada = await this.prisma.actaEntrevista.updateMany({ where: { id: e.acta.id, descargadaEn: null }, data: { descargadaEn: new Date(), descargadaPorId: prof } });
+    if (marcada.count) await this.bitacora(folio, u.nombre, 'Descargó el acta MTC-EC para imprimirla y firmarla; desde ahora ya no se puede modificar');
     return this.aFront(await this.postulacion(folio), 'profesor');
   }
 
