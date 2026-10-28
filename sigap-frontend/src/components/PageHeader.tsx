@@ -1,5 +1,5 @@
 import { Bell } from "lucide-react";
-import { PERIODO_ESCOLAR } from "@/lib/config";
+import { PeriodoEscolar } from "@/components/PeriodoEscolar";
 
 export function PageHeader({ titulo, subtitulo }: { titulo: string; subtitulo?: string }) {
   return (
@@ -10,7 +10,7 @@ export function PageHeader({ titulo, subtitulo }: { titulo: string; subtitulo?: 
       </div>
       <div className="flex items-center gap-3">
         <span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-medium text-navy-800">
-          Periodo escolar {PERIODO_ESCOLAR}
+          Periodo escolar <PeriodoEscolar />
         </span>
         <button aria-label="Notificaciones" className="rounded-full p-1.5 text-gray-500 hover:bg-gray-200">
           <Bell size={18} />

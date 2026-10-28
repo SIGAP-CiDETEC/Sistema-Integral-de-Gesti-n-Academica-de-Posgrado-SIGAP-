@@ -4,7 +4,20 @@
  * (p. ej. GET /convocatorias/activa).
  */
 
-export const PERIODO_ESCOLAR = "2025-A";
+/**
+ * Periodo escolar vigente, calculado con la fecha (hora de la Ciudad de México):
+ * A = enero – junio, B = julio – diciembre. Ej.: 28 oct 2026 → "2026-B".
+ */
+export function periodoEscolar(fecha: Date = new Date()): string {
+  const [anio, mes] = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Mexico_City", year: "numeric", month: "2-digit" })
+    .format(fecha)
+    .split("-")
+    .map(Number);
+  return `${anio}-${mes <= 6 ? "A" : "B"}`;
+}
+
+/** Valor al momento de generar la página; en pantalla se usa <PeriodoEscolar />, que se recalcula en el navegador. */
+export const PERIODO_ESCOLAR = periodoEscolar();
 
 /** Programa único ofertado en la convocatoria de admisión. */
 export const PROGRAMA = "Maestría en Tecnología de Cómputo";

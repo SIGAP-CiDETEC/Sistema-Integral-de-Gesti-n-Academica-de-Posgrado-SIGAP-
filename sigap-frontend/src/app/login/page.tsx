@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { use, useState } from "react";
 import { ArrowLeft, AtSign, Eye, EyeOff, Lock, LogIn, ShieldCheck } from "lucide-react";
 import { Logos } from "@/components/Logos";
-import { PERIODO_ESCOLAR } from "@/lib/config";
+import { PeriodoEscolar } from "@/components/PeriodoEscolar";
 import { guardarCuenta, leerCuenta } from "@/lib/cuenta-alumno";
 import { ID_EN_VIVO, fijarAspiranteActivo } from "@/lib/aspirante-activo";
 import { ID_EJEMPLO_OBSERVACION } from "@/lib/posgrado/datos";
@@ -100,7 +100,7 @@ export default function LoginPage({ searchParams }: PageProps<"/login">) {
     <div className="flex min-h-screen flex-col items-center justify-center px-4 py-10">
       <span className="mb-4 inline-flex items-center gap-2 rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold tracking-wide text-navy-800">
         <span className="h-1.5 w-1.5 rounded-full bg-guinda" />
-        SIGAP · PERIODO ESCOLAR {PERIODO_ESCOLAR}
+        SIGAP · PERIODO ESCOLAR <PeriodoEscolar />
       </span>
 
       <div className="w-full max-w-md rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">

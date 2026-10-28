@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { Logos } from "@/components/Logos";
 import { RegistroWizard } from "@/components/registro/RegistroWizard";
-import { PERIODO_ESCOLAR } from "@/lib/config";
+import { PeriodoEscolar } from "@/components/PeriodoEscolar";
 import { NombreConvocatoria, RegistroSiActiva } from "@/components/registro/RegistroSiActiva";
 
 /**
@@ -32,7 +32,7 @@ export default async function RegistroPage({ searchParams }: PageProps<"/registr
             </p>
           </div>
           <span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-medium text-navy-800">
-            Periodo escolar {PERIODO_ESCOLAR}
+            Periodo escolar <PeriodoEscolar />
           </span>
         </div>
 

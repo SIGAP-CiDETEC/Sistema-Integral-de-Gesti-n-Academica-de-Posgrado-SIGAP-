@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { ArrowRight, CheckCircle2, LogIn, Lock } from "lucide-react";
 import { Logos } from "@/components/Logos";
-import { PERIODO_ESCOLAR, convocatoriaActual } from "@/lib/config";
+import { convocatoriaActual } from "@/lib/config";
+import { PeriodoEscolar } from "@/components/PeriodoEscolar";
 import { enlaceTarjeta, esExterno, useContenido } from "@/lib/contenido";
 import { MenuCentrosIngles } from "@/components/MenuCentrosIngles";
 import { useConvocatorias } from "@/lib/convocatoria";
@@ -47,7 +48,7 @@ export function InicioPublico({ forzarCerrada }: { forzarCerrada: boolean }) {
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-medium tracking-wide">
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-            SIGAP · PERIODO ESCOLAR {PERIODO_ESCOLAR}
+            SIGAP · PERIODO ESCOLAR <PeriodoEscolar />
           </span>
           <h1 className="mt-4 max-w-2xl text-3xl font-semibold leading-tight sm:text-4xl">
             Sistema Integral de Gestión Académica de Posgrado
