@@ -1,5 +1,6 @@
 "use client";
 
+import { subirAlmacen } from "./almacen-remoto";
 import { useMemo, useSyncExternalStore } from "react";
 import { MATERIAS, MODALIDADES, type Materia, type ModalidadId } from "./evaluacion";
 
@@ -82,6 +83,8 @@ export function guardarConfigEvaluacion(c: ConfigEvaluacion | null) {
     /* ignorar */
   }
   window.dispatchEvent(new Event(EVENTO));
+  // Con el servidor real se guarda para todos
+  subirAlmacen("evaluacion", c);
 }
 
 /** Configuración vigente de la evaluación (la editada por Posgrado o la de la convocatoria). */
@@ -96,14 +99,21 @@ export function useConfigEvaluacion() {
         const materias = (g.materias ?? MATERIAS).map((m) => {
           const base = MATERIAS.find((x) => x.id === m.id);
           return {
+            ...base,
             ...m,
-            grupos: m.grupos.map((gr) => {
+            grupos: (m.grupos ?? base?.grupos ?? []).map((gr) => {
               const bg = base?.grupos.find((x) => x.id === gr.id) ?? base?.grupos[0];
-              return { ...gr, lugar: gr.lugar ?? bg?.lugar, docente: gr.docente ?? bg?.docente };
+              return { ...bg, ...gr, lugar: gr.lugar ?? bg?.lugar, docente: gr.docente ?? bg?.docente };
             }),
-          };
+          } as Materia;
         });
-        config = { ...CONFIG_EVALUACION_DEFECTO, ...g, materias };
+        config = {
+          ...CONFIG_EVALUACION_DEFECTO,
+          ...g,
+          propedeutico: { ...CONFIG_EVALUACION_DEFECTO.propedeutico, ...g.propedeutico },
+          examen: { ...CONFIG_EVALUACION_DEFECTO.examen, ...g.examen },
+          materias,
+        };
       }
     } catch {
       /* usar la de la convocatoria */

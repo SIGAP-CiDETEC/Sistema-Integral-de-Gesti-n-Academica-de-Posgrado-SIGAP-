@@ -7,7 +7,6 @@ import { usePosgrado } from "@/components/posgrado/PosgradoProvider";
 import { Etiqueta, Kpi, Tarjeta } from "@/components/posgrado/ui";
 import { fechaCorta, horarioEntrevista, nombreArea } from "@/lib/posgrado/datos";
 import { useConfigEvaluacion } from "@/lib/evaluacion-config";
-import { MODO_API } from "@/lib/api";
 import { describirGrupo, docenteDe, lugarDe } from "@/lib/evaluacion";
 import { TONO_ENTREVISTA_PROF, capturasPendientes, entrevistasDe, entrevistasDisponibles, estadoEntrevistaProf, useProfesorActual } from "@/lib/profesor";
 
@@ -30,7 +29,7 @@ export default function ProfesorInicio() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Kpi valor={estados.filter((x) => x.e === "Por llenar acta").length} etiqueta="Actas MTC-EC por llenar" color="text-primary" href="/profesor/entrevistas" />
         <Kpi valor={estados.filter((x) => x.e === "Por subir firmada").length} etiqueta="Actas por subir firmadas" color="text-amber-700" href="/profesor/entrevistas" />
-        {!MODO_API && <Kpi valor={calif.length} etiqueta="Calificaciones por capturar" color="text-violet-700" href="/profesor/evaluacion" />}
+        <Kpi valor={calif.length} etiqueta="Calificaciones por capturar" color="text-violet-700" href="/profesor/evaluacion" />
         <Kpi valor={entrevistasDisponibles(aspirantes, yo).filter((d) => !d.choque).length} etiqueta="Entrevistas disponibles para elegir" color="text-emerald-700" href="/profesor/entrevistas" />
       </div>
 
@@ -60,7 +59,7 @@ export default function ProfesorInicio() {
           )}
         </Tarjeta>
 
-        {!MODO_API && <Tarjeta titulo={<span className="flex items-center gap-2"><ClipboardPenLine size={17} className="text-primary" /> Calificaciones por capturar</span>}>
+        <Tarjeta titulo={<span className="flex items-center gap-2"><ClipboardPenLine size={17} className="text-primary" /> Calificaciones por capturar</span>}>
           {calif.length ? (
             <ul className="divide-y divide-gray-100 text-sm">
               {calif.map((c) => (
@@ -80,7 +79,7 @@ export default function ProfesorInicio() {
           ) : (
             <p className="text-sm text-gray-500">No tienes calificaciones pendientes.</p>
           )}
-        </Tarjeta>}
+        </Tarjeta>
       </div>
 
       <Tarjeta className="mt-6" titulo={<span className="flex items-center gap-2"><CalendarDays size={17} className="text-primary" /> Horario de los cursos propedéuticos</span>}>

@@ -1,10 +1,14 @@
 import 'dotenv/config';
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import type { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  // Hasta 8 MB por petición: el contenido del inicio incluye las imágenes de los calendarios
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, { bodyParser: false });
+  app.useBodyParser('json', { limit: '8mb' });
+  app.useBodyParser('urlencoded', { limit: '1mb', extended: true });
   app.setGlobalPrefix('api');
   // Detrás de Nginx: la IP real del cliente (para el freno de intentos de acceso y la bitácora)
   app.getHttpAdapter().getInstance().set('trust proxy', 'loopback');

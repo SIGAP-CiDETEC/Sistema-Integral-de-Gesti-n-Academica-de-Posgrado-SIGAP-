@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { REGISTRO_DEMO, nombreCompleto } from "@/lib/aspirante-datos";
 import { DOCUMENTOS } from "@/lib/documentos";
 import type { ModalidadId } from "@/lib/evaluacion";
@@ -21,6 +21,7 @@ import { useSesion } from "@/lib/sesion";
 import { useProfesorActual } from "@/lib/profesor";
 import type { ActaSip12 } from "@/lib/actas-sip12";
 import { MODO_API, api } from "@/lib/api";
+import { mensajeDe, notificar } from "@/lib/avisos-ui";
 import { registroSintetico } from "@/lib/registro-aspirante";
 
 /**
@@ -76,6 +77,11 @@ type Estado = {
 
 const CLAVE = "sigap-posgrado";
 const VACIO: Estado = { cambios: {}, docs: {}, bitacora: [], comunicados: [], avisos: [] };
+
+/** Con el servidor real: lo que Posgrado comparte (se guarda en el almacén "posgrado" del servidor). */
+const compartidoDe = (e: Estado) => ({ comunicados: e.comunicados, avisos: e.avisos, acta: e.acta, actasSip12: e.actasSip12 });
+/** Campos del avance del aspirante que el servidor acepta de Posgrado (los demás tienen sus propias acciones). */
+const CAMPOS_PROCESO = ["etapa", "concluido", "promedioValidado", "evaluacion", "resolucion", "motivoReservas", "turnadoUteycv", "formatos", "dedicacion", "uteycv"];
 
 type Api = {
   cargado: boolean;
@@ -148,8 +154,17 @@ export function PosgradoProvider({ children }: { children: React.ReactNode }) {
     try {
       const [aspirantes, profesores] = await Promise.all([api<AspiranteP[]>("/aspirantes"), api<ProfesorP[]>("/profesores")]);
       fijarProfesores(profesores);
-      const bitacora = sesion?.rol === "profesor" ? [] : await api<EntradaBitacora[]>("/bitacora").catch(() => []);
+      const personal = sesion?.rol === "posgrado" || sesion?.rol === "subdireccion";
+      const [bitacora, compartido] = await Promise.all([
+        sesion?.rol === "profesor" ? Promise.resolve([] as EntradaBitacora[]) : api<EntradaBitacora[]>("/bitacora").catch(() => []),
+        personal ? api<{ valor: Partial<Estado> | null }>("/almacen/posgrado").catch(() => ({ valor: null })) : Promise.resolve({ valor: null }),
+      ]);
       setRemoto({ aspirantes, bitacora });
+      if (personal) {
+        const e = { ...VACIO, ...(compartido.valor ?? {}) };
+        estadoRef.current = e;
+        setEstado(e);
+      }
     } catch (e) {
       setRemoto((r) => ({ ...r, error: e instanceof Error ? e.message : "No se pudo conectar con el servidor" }));
     }
@@ -158,12 +173,12 @@ export function PosgradoProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (MODO_API) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- carga inicial desde el servidor
+       
       void recargar();
       return;
     }
     // Carga única desde el navegador (no existe en el servidor)
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+     
     setEstado({ ...VACIO, ...(leerLocal<Estado>(CLAVE) ?? {}) });
     setVivo({
       registro: leerLocal<Respuestas>("sigap-aspirante-registro") ?? REGISTRO_DEMO,
@@ -173,7 +188,33 @@ export function PosgradoProvider({ children }: { children: React.ReactNode }) {
     setCargado(true);
   }, [recargar]);
 
+  // Con el servidor real: lo que se registra en bitácora durante una acción se manda al servidor
+  const estadoRef = useRef<Estado>(VACIO);
+  const pendientes = useRef<{ accion: string; aspirante?: string }[]>([]);
+  const refrescarBitacora = useCallback(async () => {
+    const bitacora = await api<EntradaBitacora[]>("/bitacora").catch(() => null);
+    if (bitacora) setRemoto((r) => ({ ...r, bitacora }));
+  }, []);
+
   const guardar = useCallback((fn: (e: Estado) => Estado) => {
+    if (MODO_API) {
+      const previo = estadoRef.current;
+      const nuevo = fn(previo);
+      const acciones = pendientes.current.splice(0);
+      estadoRef.current = nuevo;
+      setEstado(nuevo);
+      const cambio = JSON.stringify(compartidoDe(previo)) !== JSON.stringify(compartidoDe(nuevo));
+      void (async () => {
+        try {
+          if (cambio) await api("/almacen/posgrado", { metodo: "PUT", cuerpo: { valor: compartidoDe(nuevo) } });
+          for (const a of acciones) await api("/bitacora", { cuerpo: { accion: a.accion.slice(0, 1000), ...(a.aspirante ? { aspirante: a.aspirante } : {}) } });
+        } catch (e) {
+          notificar(`No se guardó en el servidor: ${mensajeDe(e)}`);
+        }
+        await refrescarBitacora();
+      })();
+      return;
+    }
     setEstado((prev) => {
       const nuevo = fn(prev);
       try {
@@ -183,7 +224,7 @@ export function PosgradoProvider({ children }: { children: React.ReactNode }) {
       }
       return nuevo;
     });
-  }, []);
+  }, [refrescarBitacora]);
 
   const valor = useMemo<Api>(() => {
     const locales = () => ASPIRANTES_BASE.map((base) => {
@@ -261,10 +302,43 @@ export function PosgradoProvider({ children }: { children: React.ReactNode }) {
     });
     const aspirantes = MODO_API ? remoto.aspirantes : locales();
 
-    const registrar = (e: Estado, accion: string, aspirante?: string): Estado => ({
-      ...e,
-      bitacora: [{ fecha: new Date().toISOString(), usuario, aspirante, accion }, ...e.bitacora].slice(0, 300),
-    });
+    const registrar = (e: Estado, accion: string, aspirante?: string): Estado => {
+      // Con el servidor real la bitácora la guarda el servidor
+      if (MODO_API) {
+        pendientes.current.push({ accion, aspirante });
+        return e;
+      }
+      return { ...e, bitacora: [{ fecha: new Date().toISOString(), usuario, aspirante, accion }, ...e.bitacora].slice(0, 300) };
+    };
+
+    /** Con el servidor real: aplica en pantalla, lo manda a la API y deja lo que responda el servidor. */
+    const reemplazar = (a: AspiranteP) => setRemoto((r) => ({ ...r, aspirantes: r.aspirantes.map((x) => (x.id === a.id ? a : x)) }));
+    const enServidor = async (id: string, local: Partial<AspiranteP>, peticion: () => Promise<AspiranteP>) => {
+      setRemoto((r) => ({ ...r, aspirantes: r.aspirantes.map((x) => (x.id === id ? { ...x, ...local, ultimoMovimiento: new Date().toISOString() } : x)) }));
+      try {
+        reemplazar(await peticion());
+        if (sesion?.rol !== "profesor") void refrescarBitacora();
+      } catch (e) {
+        notificar(mensajeDe(e));
+        await recargar();
+      }
+    };
+    const actualizarRemoto = (id: string, patch: Partial<AspiranteP>, accion: string) => {
+      const a = aspirantes.find((x) => x.id === id);
+      const limpio = Object.fromEntries(Object.entries(patch).filter(([k]) => CAMPOS_PROCESO.includes(k))) as Partial<AspiranteP>;
+      if (Object.keys(limpio).length < Object.keys(patch).length) console.warn("Campos que no se guardan desde aquí:", Object.keys(patch).filter((k) => !CAMPOS_PROCESO.includes(k)));
+      if (limpio.evaluacion) limpio.evaluacion = { ...(a?.evaluacion ?? { grupos: {} }), ...limpio.evaluacion };
+      if (limpio.uteycv) limpio.uteycv = { ...(a?.uteycv ?? {}), ...limpio.uteycv };
+      if (!Object.keys(limpio).length) {
+        // Solo deja constancia (p. ej. "devolvió el expediente con observaciones")
+        if (accion) void api("/bitacora", { cuerpo: { accion: accion.slice(0, 1000), aspirante: id } }).then(refrescarBitacora).catch((e) => notificar(mensajeDe(e)));
+        return;
+      }
+      // El profesor solo captura calificaciones del propedéutico de sus grupos
+      if (sesion?.rol === "profesor")
+        return void enServidor(id, limpio, () => api<AspiranteP>(`/aspirantes/${id}/calificaciones`, { cuerpo: { evaluacion: limpio.evaluacion ?? a?.evaluacion, accion } }));
+      return void enServidor(id, limpio, () => api<AspiranteP>(`/aspirantes/${id}/proceso`, { metodo: "PATCH", cuerpo: { patch: limpio, accion } }));
+    };
 
     return {
       cargado,
@@ -279,8 +353,7 @@ export function PosgradoProvider({ children }: { children: React.ReactNode }) {
       },
       capturasDe: (id) => (aspirantes.find((x) => x.id === id)?.enVivo ? (vivo.exp.capturas ?? {}) : {}),
       actualizar: (id, patch, accion) =>
-        // Con el servidor real, los cambios se hacen con las acciones de la API (no en el navegador)
-        MODO_API ? console.warn("Acción no disponible con el servidor real:", accion) :
+        MODO_API ? actualizarRemoto(id, patch, accion) :
         guardar((e) =>
           registrar(
             {
@@ -301,6 +374,17 @@ export function PosgradoProvider({ children }: { children: React.ReactNode }) {
         ),
       marcarDoc: (id, docId, estadoDoc, observacion, prorrogaHasta) => {
         const doc = aspirantes.find((a) => a.id === id)?.documentos.find((d) => d.id === docId);
+        if (MODO_API) {
+          if (estadoDoc === "falta") return;
+          const a = aspirantes.find((x) => x.id === id);
+          const textoProrroga = prorrogaHasta ? new Date(`${prorrogaHasta}T12:00:00`).toLocaleDateString("es-MX", { day: "numeric", month: "long", year: "numeric" }) : "";
+          const verboApi: Record<string, string> = { aprobado: "Aprobó:", observado: "Observó:", pendiente: "Regresó a revisión:", prorroga: `Dio prórroga hasta el ${textoProrroga} para entregar` };
+          const accion = `${verboApi[estadoDoc]} ${doc?.nombre ?? docId}${observacion ? ` — “${observacion}”` : ""}`;
+          const documentos = a?.documentos.map((d) => (d.id === docId ? { ...d, estado: estadoDoc, observacion, prorrogaHasta } : d));
+          return void enServidor(id, documentos ? { documentos } : {}, () =>
+            api<AspiranteP>(`/aspirantes/${id}/documentos/${docId}/revision`, { metodo: "PUT", cuerpo: { estado: estadoDoc, observacion, prorrogaHasta, accion } }),
+          );
+        }
         const verbo: Record<EstadoDoc, string> = {
           aprobado: "Aprobó",
           observado: "Observó",
@@ -326,6 +410,14 @@ export function PosgradoProvider({ children }: { children: React.ReactNode }) {
       },
       cambiarEleccion: (id, modalidad, grupos, motivo) => {
         const a = aspirantes.find((x) => x.id === id);
+        if (MODO_API)
+          return actualizarRemoto(
+            id,
+            { evaluacion: { ...(a?.evaluacion ?? { grupos: {} }), modalidad, grupos } },
+            `Cambió la elección de evaluación a ${modalidad === "examen" ? "solo examen" : "propedéutico"}${
+              modalidad === "propedeutico" ? ` (${Object.entries(grupos).map(([m, g]) => `${m}: ${g}`).join(", ")})` : ""
+            } — motivo: ${motivo}`,
+          );
         if (a?.enVivo) {
           // También se refleja en la sesión del aspirante de este navegador
           const exp = leerLocal<Record<string, unknown>>("sigap-expediente") ?? {};
@@ -375,6 +467,7 @@ export function PosgradoProvider({ children }: { children: React.ReactNode }) {
         }),
       actualizarUteycv: (id, patch, accion) => {
         const a = aspirantes.find((x) => x.id === id);
+        if (MODO_API) return actualizarRemoto(id, { uteycv: patch }, accion);
         if (a?.enVivo) {
           // Se refleja en la sesión del aspirante de este navegador
           const exp = leerLocal<Record<string, unknown> & ExpedienteLocal>("sigap-expediente") ?? {};
@@ -447,7 +540,7 @@ export function PosgradoProvider({ children }: { children: React.ReactNode }) {
       acta: estado.acta,
       reiniciar: () => guardar(() => VACIO),
     };
-  }, [estado, vivo, cargado, usuario, guardar, remoto, recargar]);
+  }, [estado, vivo, cargado, usuario, guardar, remoto, recargar, refrescarBitacora, sesion?.rol]);
 
   return <Ctx.Provider value={valor}>{children}</Ctx.Provider>;
 }

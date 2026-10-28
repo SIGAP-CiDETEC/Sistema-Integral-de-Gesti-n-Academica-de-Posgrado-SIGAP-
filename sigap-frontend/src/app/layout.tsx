@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "@fontsource-variable/inter";
 import "./globals.css";
+import { SincronizarServidor } from "@/components/SincronizarServidor";
 
 export const metadata: Metadata = {
   title: "SIGAP · CIDETEC IPN",
@@ -10,7 +11,10 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="es" className="h-full antialiased">
-      <body className="min-h-full font-sans">{children}</body>
+      <body className="min-h-full font-sans">
+        <SincronizarServidor />
+        {children}
+      </body>
     </html>
   );
 }

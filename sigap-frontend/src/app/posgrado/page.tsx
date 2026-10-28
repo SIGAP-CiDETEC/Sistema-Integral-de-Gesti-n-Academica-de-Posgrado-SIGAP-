@@ -6,11 +6,9 @@ import { PageHeader } from "@/components/PageHeader";
 import { usePosgrado } from "@/components/posgrado/PosgradoProvider";
 import { Aviso, EtiquetaBandeja, Kpi, Tarjeta } from "@/components/posgrado/ui";
 import { convocatoriaActual } from "@/lib/config";
-import { MODO_API } from "@/lib/api";
 import { bandejaDe, diasPara, fechaCorta, horarioEntrevista, nombreProfesor, prioridadDe, prorrogasDe, type Bandeja } from "@/lib/posgrado/datos";
 
 /** Con el servidor real solo están conectadas las entrevistas: las demás bandejas aún no se muestran. */
-const CONECTADAS: Bandeja[] = ["Sin cita", "Entrevista programada"];
 
 const BANDEJAS_TODAS: { b: Bandeja; accion: string; href: string }[] = [
   { b: "Por revisar", accion: "Revisar", href: "/posgrado/aspirantes?bandeja=Por revisar" },
@@ -22,7 +20,7 @@ const BANDEJAS_TODAS: { b: Bandeja; accion: string; href: string }[] = [
   { b: "Esperando resolución del Colegio", accion: "Registrar resolución", href: "/posgrado/comision" },
   { b: "Admitido", accion: "Ver", href: "/posgrado/aspirantes?bandeja=Admitido" },
 ];
-const BANDEJAS = MODO_API ? BANDEJAS_TODAS.filter((x) => CONECTADAS.includes(x.b)) : BANDEJAS_TODAS;
+const BANDEJAS = BANDEJAS_TODAS;
 
 /** Operación de admisión: vista general de la convocatoria (mockup "Operación de admisión"). */
 export default function PosgradoInicio() {
@@ -43,14 +41,6 @@ export default function PosgradoInicio() {
     <>
       <PageHeader titulo="Operación de admisión" subtitulo={`${convocatoriaActual.nombre} · Hola, ${usuario}`} />
 
-      {MODO_API ? (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Kpi valor={aspirantes.length} etiqueta="Aspirantes" color="text-guinda" />
-          <Kpi valor={cuenta("Sin cita")} etiqueta="Sin horario de entrevista" color="text-amber-600" href="/posgrado/entrevistas" />
-          <Kpi valor={cuenta("Entrevista programada")} etiqueta="Con entrevista en curso" color="text-primary" href="/posgrado/entrevistas" />
-          <Kpi valor={aspirantes.filter((a) => a.dictamen).length} etiqueta="Con dictamen de entrevista" color="text-emerald-700" href="/posgrado/entrevistas" />
-        </div>
-      ) : (
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Kpi valor={aspirantes.length} etiqueta="Solicitudes" color="text-guinda" href="/posgrado/aspirantes" />
         <Kpi valor={cuenta("Por revisar")} etiqueta="Expedientes por revisar" color="text-amber-600" href="/posgrado/aspirantes?bandeja=Por revisar" />
@@ -62,7 +52,6 @@ export default function PosgradoInicio() {
           href="/posgrado/comision"
         />
       </div>
-      )}
 
       <div className="mt-6 grid gap-6 xl:grid-cols-[1fr_340px]">
         <Tarjeta titulo="Bandejas por estado">

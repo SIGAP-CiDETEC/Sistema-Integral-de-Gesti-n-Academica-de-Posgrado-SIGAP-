@@ -20,7 +20,7 @@ import { RAIZ_ALMACEN } from '../comun/almacen';
 type DocJson = { archivo: string; nombreOriginal: string };
 type AspiranteJson = {
   folio: string; nombres: string; apellidoPaterno: string; apellidoMaterno: string; curp: string; correo: string; telefono: string;
-  procedencia: string; carrera: string; documentos: Record<string, DocJson>;
+  procedencia: string; carrera: string; promedio?: string; documentos: Record<string, DocJson>;
 };
 type CuentaJson = { nombre: string; correo: string; area: AreaPersonal; rol: string; profesor?: boolean };
 type ProfesorJson = { nombre: string; curp: string; correo: string; tipo: 'COLEGIADO' | 'ASIGNATURA'; vigenteHasta?: string; nombramiento?: string };
@@ -35,7 +35,12 @@ const CATALOGO: Record<string, { nombre: string; obligatorio: boolean }> = {
   acta: { nombre: 'Acta de nacimiento', obligatorio: true },
   identificacion: { nombre: 'Identificación oficial', obligatorio: true },
   'sip-02': { nombre: 'Currículum vitae (SIP-02)', obligatorio: true },
+  // Respuestas del aspirante al cuestionario de la entrevista colegiada (Microsoft Forms, en PDF)
+  cuestionario: { nombre: 'Cuestionario de entrevista colegiada', obligatorio: false },
 };
+
+/** Formatos en PDF (no se revisan como documentos del expediente). */
+const FORMATOS = ['sip-02', 'cuestionario'];
 
 const contrasenaTemporal = () => randomBytes(9).toString('base64url');
 
@@ -67,8 +72,8 @@ async function main() {
     });
     const postulacion = await prisma.postulacion.upsert({
       where: { folio: a.folio },
-      create: { folio: a.folio, aspiranteId: aspirante.id, convocatoriaId: convocatoria.id, programaId: programa.id, estado: 'VALIDADA', enviadaEn: new Date(), respuestasRegistro: { procedencia: a.procedencia, carrera: a.carrera } },
-      update: { respuestasRegistro: { procedencia: a.procedencia, carrera: a.carrera } },
+      create: { folio: a.folio, aspiranteId: aspirante.id, convocatoriaId: convocatoria.id, programaId: programa.id, estado: 'VALIDADA', enviadaEn: new Date(), respuestasRegistro: { procedencia: a.procedencia, carrera: a.carrera, ...(a.promedio ? { promedio: a.promedio } : {}) } },
+      update: { respuestasRegistro: { procedencia: a.procedencia, carrera: a.carrera, ...(a.promedio ? { promedio: a.promedio } : {}) } },
     });
     for (const [clave, doc] of Object.entries(a.documentos)) {
       const origen = join(dir, doc.archivo);
@@ -76,14 +81,28 @@ async function main() {
       const destino = join(RAIZ_ALMACEN, doc.archivo);
       mkdirSync(dirname(destino), { recursive: true });
       copyFileSync(origen, destino);
-      const datosDoc = { nombreArchivo: doc.nombreOriginal, urlArchivo: doc.archivo, tipoMime: 'application/pdf', tamanoBytes: statSync(origen).size, estado: 'APROBADO' as const };
+      const datosDoc = { nombreArchivo: doc.nombreOriginal, urlArchivo: doc.archivo, tipoMime: 'application/pdf', tamanoBytes: statSync(origen).size };
+      const previo = await prisma.documentoPostulacion.findUnique({ where: { postulacionId_catalogoId: { postulacionId: postulacion.id, catalogoId: catalogo.get(clave)! } } });
+      // Al volver a cargar solo se actualiza el archivo: la revisión que ya hizo Posgrado (aprobado, observado…) se respeta
       await prisma.documentoPostulacion.upsert({
         where: { postulacionId_catalogoId: { postulacionId: postulacion.id, catalogoId: catalogo.get(clave)! } },
-        create: { postulacionId: postulacion.id, catalogoId: catalogo.get(clave)!, ...datosDoc },
-        update: datosDoc,
+        create: { postulacionId: postulacion.id, catalogoId: catalogo.get(clave)!, ...datosDoc, estado: 'APROBADO' },
+        // Un documento que faltaba y ya llegó queda "Por revisar" (PENDIENTE) para que Posgrado lo valide
+        update: previo && !previo.nombreArchivo ? { ...datosDoc, estado: 'PENDIENTE', observacion: null } : datosDoc,
       });
     }
-    console.log(`Aspirante ${a.folio}: ${Object.keys(a.documentos).length} documentos`);
+    // Documentos obligatorios que aún no entrega (p. ej. los subió mal y los mandará después): se registran sin archivo
+    // para que Posgrado los vea como "Falta". Al volver a cargar con el archivo, quedan "Por revisar".
+    const faltan = Object.entries(CATALOGO)
+      .filter(([clave, c]) => c.obligatorio && !FORMATOS.includes(clave) && !a.documentos[clave])
+      .map(([clave]) => clave);
+    for (const clave of faltan)
+      await prisma.documentoPostulacion.upsert({
+        where: { postulacionId_catalogoId: { postulacionId: postulacion.id, catalogoId: catalogo.get(clave)! } },
+        create: { postulacionId: postulacion.id, catalogoId: catalogo.get(clave)!, estado: 'PENDIENTE' },
+        update: {},
+      });
+    console.log(`Aspirante ${a.folio}: ${Object.keys(a.documentos).length} documentos${faltan.length ? ` · faltan: ${faltan.join(', ')}` : ''}`);
   }
 
   // Cuentas (personal, profesores y equipo)

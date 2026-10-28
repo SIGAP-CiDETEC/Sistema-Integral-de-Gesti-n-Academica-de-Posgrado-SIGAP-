@@ -7,6 +7,7 @@ import { Etiqueta } from "@/components/posgrado/ui";
 import { CLAVE_CURSO, TONO_SIP12, estadoSip12, nombreDocente, type GrupoSip12 } from "@/lib/actas-sip12";
 import { descargarSip12 } from "@/lib/pdf/sip12";
 import { useConvocatoria } from "@/lib/convocatoria";
+import { MODO_API } from "@/lib/api";
 import { fechaCorta } from "@/lib/posgrado/datos";
 
 /**
@@ -36,7 +37,8 @@ function FilaActa({ g, modo, docente }: { g: GrupoSip12; modo: "docente" | "coor
   const curso = `${g.nombreCurso} · grupo ${g.grupo}`;
   const capturadas = g.filas.filter((f) => f.calificacion !== undefined).length;
 
-  const puedeSubir = modo === "docente" ? g.completa && !acta?.docente : modo === "coordinador" && !!acta?.docente && !acta.coordinador;
+  // Con el servidor real, por ahora solo se descarga el acta; la entrega firmada sigue con Posgrado
+  const puedeSubir = !MODO_API && (modo === "docente" ? g.completa && !acta?.docente : modo === "coordinador" && !!acta?.docente && !acta.coordinador);
   const subir = (file?: File) => {
     if (!file) return;
     setError("");
@@ -82,6 +84,9 @@ function FilaActa({ g, modo, docente }: { g: GrupoSip12; modo: "docente" | "coor
         )}
         {modo === "docente" && !g.completa && <p className="mt-1 text-xs text-gray-500">Podrás descargar el acta cuando captures la calificación de todo el grupo.</p>}
         {modo === "coordinador" && !acta?.docente && <p className="mt-1 text-xs text-gray-500">Se habilita cuando el docente suba el acta firmada.</p>}
+        {MODO_API && modo === "docente" && g.completa && (
+          <p className="mt-1 text-xs text-gray-500">Descárgala, fírmala y entrégala al Departamento de Posgrado.</p>
+        )}
         {error && (
           <p role="alert" className="mt-1 text-xs text-red-600">
             {error}

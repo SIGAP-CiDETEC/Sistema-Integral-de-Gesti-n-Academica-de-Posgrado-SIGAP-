@@ -1,5 +1,6 @@
 "use client";
 
+import { subirAlmacen } from "./almacen-remoto";
 import { useMemo, useSyncExternalStore } from "react";
 import { CONVOCATORIAS_INFO, convocatoriaActual, type Convocatoria, type IdConvocatoria } from "./config";
 
@@ -90,6 +91,8 @@ export function guardarConvocatorias(c: ConfigConvocatorias | null) {
     /* ignorar */
   }
   window.dispatchEvent(new Event(EVENTO));
+  // Con el servidor real se guarda para todos
+  subirAlmacen("convocatorias", c);
 }
 
 function interpretar(raw: string | null): ConfigConvocatorias {

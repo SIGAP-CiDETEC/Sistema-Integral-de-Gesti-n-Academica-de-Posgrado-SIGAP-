@@ -4,6 +4,8 @@ import Link from "next/link";
 import { use, useState } from "react";
 import { CalendarClock, CheckCircle2, Circle, FileText, History, Mail, ShieldAlert, Wand2, XCircle } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
+import { ArchivoServidor } from "@/components/ArchivoServidor";
+import { MODO_API } from "@/lib/api";
 import { usePosgrado } from "@/components/posgrado/PosgradoProvider";
 import { Aviso, EtiquetaBandeja, EtiquetaDoc, Migas, Tarjeta, botonPeligro, botonPrimario, botonSecundario, inputBase } from "@/components/posgrado/ui";
 import { ETAPAS } from "@/lib/admision";
@@ -24,6 +26,7 @@ import {
 
 const FORMATOS = [
   { id: "sip-02", t: "SIP-02 · Currículum" },
+  { id: "cuestionario", t: "Cuestionario de entrevista colegiada" },
 ];
 
 /** Solo el inglés y el título pueden tener prórroga (el resto se entrega completo). */
@@ -140,9 +143,15 @@ export default function RevisionExpediente({ params }: PageProps<"/posgrado/aspi
                     <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs text-primary">
                       <FileText size={12} /> {doc.archivo ?? doc.nombre}
                     </span>
-                    <div className="mt-3 flex h-40 items-center justify-center rounded-lg border border-dashed border-gray-300 bg-gray-50 text-sm text-gray-400">
-                      {doc.archivo ? "Vista previa del documento PDF" : "Aún no hay archivo"}
-                    </div>
+                    {MODO_API ? (
+                      <div className="mt-3 flex h-24 items-center justify-center rounded-lg border border-dashed border-gray-300 bg-gray-50 text-sm text-gray-500">
+                        {doc.archivo ? <ArchivoServidor ruta={`/aspirantes/${a.id}/documentos/${doc.id}`} texto="Abrir PDF" /> : "Aún no hay archivo"}
+                      </div>
+                    ) : (
+                      <div className="mt-3 flex h-40 items-center justify-center rounded-lg border border-dashed border-gray-300 bg-gray-50 text-sm text-gray-400">
+                        {doc.archivo ? "Vista previa del documento PDF" : "Aún no hay archivo"}
+                      </div>
+                    )}
                     <div className="mt-2">
                       <EtiquetaDoc e={doc.estado} hasta={doc.prorrogaHasta} />
                     </div>
@@ -210,7 +219,7 @@ export default function RevisionExpediente({ params }: PageProps<"/posgrado/aspi
                           </div>
                         </div>
                         )}
-                        {doc.estado === "prorroga" && !a.enVivo && (
+                        {doc.estado === "prorroga" && !a.enVivo && !MODO_API && (
                           <button type="button" className="mt-3 inline-flex items-center gap-1 text-xs text-gray-500 underline" onClick={() => marcarDoc(a.id, doc.id, "pendiente", "Entregado dentro de la prórroga")}>
                             <Wand2 size={12} /> Solo cascarón: simular que ya lo entregó
                           </button>
@@ -308,9 +317,18 @@ export default function RevisionExpediente({ params }: PageProps<"/posgrado/aspi
 
           <Tarjeta titulo="Formatos firmados recibidos">
             <ul className="space-y-2 text-sm">
-              {FORMATOS.map((f) => (
-                <li key={f.id} className={`flex items-center gap-2 ${a.formatos[f.id] ? "text-emerald-700" : "text-gray-500"}`}>
-                  {a.formatos[f.id] ? <CheckCircle2 size={15} /> : <Circle size={15} />} {f.t}
+              {FORMATOS.filter((f) => f.id !== "cuestionario" || a.formatos[f.id] || !MODO_API).map((f) => (
+                <li key={f.id} className={`flex flex-wrap items-center justify-between gap-2 ${a.formatos[f.id] ? "text-emerald-700" : "text-gray-500"}`}>
+                  <span className="flex items-center gap-2">
+                    {a.formatos[f.id] ? <CheckCircle2 size={15} /> : <Circle size={15} />} {f.t}
+                  </span>
+                  {MODO_API && a.formatos[f.id] && (
+                    <ArchivoServidor
+                      ruta={`/aspirantes/${a.id}/documentos/${f.id}`}
+                      texto="Ver PDF"
+                      className="inline-flex items-center gap-1 rounded-md border border-gray-300 bg-white px-2 py-1 text-xs text-gray-800 hover:bg-gray-50"
+                    />
+                  )}
                 </li>
               ))}
             </ul>

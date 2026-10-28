@@ -16,25 +16,33 @@ export function DocumentosAspirante({ a }: { a: AspiranteP }) {
 }
 
 /**
- * Con el servidor real: el profesor entrevistador solo recibe el currículum del aspirante (SIP-02), equivalente al
- * registro de admisión; el resto del expediente (acta de nacimiento, identificación, CURP…) lo revisa solo Posgrado.
+ * Con el servidor real: el profesor entrevistador recibe el currículum del aspirante (SIP-02) y su cuestionario de la
+ * entrevista colegiada; el resto del expediente (acta de nacimiento, identificación, CURP…) lo revisa solo Posgrado.
  */
 function DocumentosServidor({ a }: { a: AspiranteP }) {
+  const docs = [
+    { id: "sip-02", nombre: "Currículum vitae (SIP-02)", detalle: "Formación, experiencia e intereses del aspirante, para preparar la entrevista." },
+    { id: "cuestionario", nombre: "Cuestionario de entrevista colegiada", detalle: "Lo que respondió el aspirante en el formulario de la entrevista (datos, formación, experiencia, personalidad)." },
+  ].filter((d) => a.formatos[d.id]);
   return (
     <Tarjeta titulo="Documentos del aspirante">
-      {a.formatos["sip-02"] ? (
-        <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
-          <span className="flex items-start gap-2">
-            <FileText size={18} className="mt-0.5 shrink-0 text-primary" />
-            <span>
-              <span className="block font-medium text-gray-900">Currículum vitae (SIP-02)</span>
-              <span className="text-xs text-gray-500">Formación, experiencia e intereses del aspirante, para preparar la entrevista.</span>
-            </span>
-          </span>
-          <ArchivoServidor ruta={`/aspirantes/${a.id}/documentos/sip-02`} texto="Ver PDF" />
-        </div>
+      {docs.length ? (
+        <ul className="divide-y divide-gray-100 text-sm">
+          {docs.map((d) => (
+            <li key={d.id} className="flex flex-wrap items-center justify-between gap-3 py-2.5">
+              <span className="flex items-start gap-2">
+                <FileText size={18} className="mt-0.5 shrink-0 text-primary" />
+                <span>
+                  <span className="block font-medium text-gray-900">{d.nombre}</span>
+                  <span className="text-xs text-gray-500">{d.detalle}</span>
+                </span>
+              </span>
+              <ArchivoServidor ruta={`/aspirantes/${a.id}/documentos/${d.id}`} texto="Ver PDF" />
+            </li>
+          ))}
+        </ul>
       ) : (
-        <p className="text-sm text-gray-500">El aspirante aún no tiene su currículum (SIP-02) en el sistema.</p>
+        <p className="text-sm text-gray-500">El aspirante aún no tiene su currículum (SIP-02) ni su cuestionario en el sistema.</p>
       )}
     </Tarjeta>
   );

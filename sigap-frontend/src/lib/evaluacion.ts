@@ -1,3 +1,5 @@
+import { MODO_API } from "./api";
+
 /**
  * Modalidades de evaluación y horarios del curso propedéutico.
  * CAMBIAN CADA CONVOCATORIA: con backend se capturarán en
@@ -34,7 +36,7 @@ export const MODALIDADES: Record<
   },
 };
 
-export const MATERIAS: Materia[] = [
+const MATERIAS_EJEMPLO: Materia[] = [
   {
     id: "matematicas",
     nombre: "Matemáticas Discretas y Continuas",
@@ -57,6 +59,14 @@ export const MATERIAS: Materia[] = [
     grupos: [{ id: "Único", sesiones: [{ dia: "viernes", inicio: "11:00", fin: "13:00" }], lugar: "Sala de juntas CIDETEC", docente: "lh" }],
   },
 ];
+
+/**
+ * Materias y grupos de la convocatoria. Los docentes de ejemplo solo existen en la demostración: con el servidor
+ * real los grupos empiezan sin docente y Posgrado los asigna en Evaluación → Editar fechas y horarios.
+ */
+export const MATERIAS: Materia[] = MODO_API
+  ? MATERIAS_EJEMPLO.map((m) => ({ ...m, grupos: m.grupos.map((g) => ({ ...g, docente: undefined })) }))
+  : MATERIAS_EJEMPLO;
 
 export const DIAS: Dia[] = ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
 

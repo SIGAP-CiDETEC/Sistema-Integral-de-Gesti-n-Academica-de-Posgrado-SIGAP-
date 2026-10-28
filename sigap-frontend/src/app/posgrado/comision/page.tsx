@@ -11,6 +11,7 @@ import { descargarCsv } from "@/lib/csv";
 import { convocatoriaActual } from "@/lib/config";
 import { fechaResultados, guardarConvocatorias, hoyISO, useConvocatorias } from "@/lib/convocatoria";
 import { fechaCorta, prorrogasDe, resultadoFinal, type AspiranteP, type ResolucionColegio } from "@/lib/posgrado/datos";
+import { MODO_API } from "@/lib/api";
 import { DICTAMEN_FINAL, TONO_DICTAMEN } from "@/lib/reporte-aspirantes";
 
 const TONO: Record<ResolucionColegio, string> = {
@@ -261,9 +262,11 @@ function DictamenFinal() {
           Registrar la resolución <b>no la publica</b>: el aspirante la verá cuando Posgrado publique los resultados (paso 3).
         </p>
         <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
-          <button type="button" className="text-xs text-gray-500 underline" onClick={() => setArchivo("acta_colegio_ejemplo.pdf")}>
-            Solo cascarón: usar un acta de ejemplo
-          </button>
+          {MODO_API ? <span /> : (
+            <button type="button" className="text-xs text-gray-500 underline" onClick={() => setArchivo("acta_colegio_ejemplo.pdf")}>
+              Solo cascarón: usar un acta de ejemplo
+            </button>
+          )}
           <button type="button" className={botonPrimario} disabled={!puedeRegistrar} onClick={registrar}>
             <CheckCircle2 size={15} /> Registrar resolución ({sinRegistrar.length})
           </button>
@@ -301,7 +304,7 @@ function DictamenFinal() {
                 <button type="button" className={botonPrimario} disabled={!llegoLaFecha} onClick={publicar}>
                   <Send size={15} /> Publicar resultados ({porPublicar.length})
                 </button>
-                {!llegoLaFecha && (
+                {!llegoLaFecha && !MODO_API && (
                   <button
                     type="button"
                     onClick={publicar}

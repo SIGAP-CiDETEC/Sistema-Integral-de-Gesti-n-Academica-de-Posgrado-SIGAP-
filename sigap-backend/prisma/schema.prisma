@@ -220,6 +220,8 @@ model Postulacion {
   programaId            String
   estado                EstadoPostulacion         @default(BORRADOR)
   respuestasRegistro    Json                      @default("{}")
+  /// Avance del proceso que registra Posgrado (etapa, evaluación, resolución del Colegio…) en el formato del front
+  estadoProceso         Json                      @default("{}")
   enviadaEn             DateTime?
   aspirante             Aspirante                 @relation(fields: [aspiranteId], references: [id])
   convocatoria          Convocatoria              @relation(fields: [convocatoriaId], references: [id])
@@ -730,4 +732,13 @@ model EventoBitacora {
   creadoEn        DateTime @default(now())
 
   @@index([entidad, entidadId, creadoEn])
+}
+
+/// Datos compartidos del proceso que edita Posgrado: configuración de la evaluación, convocatorias y calendario,
+/// contenido del inicio, comunicados, avisos y acta del Colegio. `valor` guarda el JSON tal como lo usa el front.
+model Almacen {
+  clave                 String    @id
+  valor                 Json
+  actualizadoPor        String?
+  actualizadoEn         DateTime  @updatedAt
 }

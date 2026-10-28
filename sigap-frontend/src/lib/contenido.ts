@@ -1,5 +1,6 @@
 "use client";
 
+import { subirAlmacen } from "./almacen-remoto";
 import { useMemo, useSyncExternalStore } from "react";
 import type { IdConvocatoria } from "./config";
 
@@ -103,12 +104,15 @@ const interpretar = (raw: string | null): Contenido => {
 /** Guarda un cambio. Devuelve false si el navegador no tuvo espacio (p. ej. imagen muy pesada). */
 export function actualizarContenido(fn: (c: Contenido) => Contenido): boolean {
   let ok = true;
+  const nuevo = fn(interpretar(leerRaw()));
   try {
-    localStorage.setItem(CLAVE, JSON.stringify(fn(interpretar(leerRaw()))));
+    localStorage.setItem(CLAVE, JSON.stringify(nuevo));
   } catch {
     ok = false;
   }
   window.dispatchEvent(new Event(EVENTO));
+  // Con el servidor real se guarda para todos (y se muestra aunque el navegador no tenga espacio)
+  subirAlmacen("contenido", nuevo);
   return ok;
 }
 

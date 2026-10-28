@@ -110,20 +110,12 @@ export const NAV: Record<Rol, NavItem[]> = {
 };
 
 /**
- * Menú con el servidor real (prueba de la entrevista colegiada): solo las pantallas ya conectadas a la API.
- * El resto del sistema sigue disponible con los datos de ejemplo cuando no hay servidor.
+ * Menú con el servidor real: solo las pantallas ya conectadas a la API (módulo completo de Posgrado, profesores y
+ * consulta de Subdirección). El resto del sistema sigue disponible con los datos de ejemplo cuando no hay servidor.
  */
 export const NAV_SERVIDOR: Partial<Record<Rol, NavItem[]>> = {
-  posgrado: [
-    { label: "Inicio", href: "/posgrado", icon: "home" },
-    { label: "Entrevistas", href: "/posgrado/entrevistas", icon: "entrevistas" },
-    { label: "Dictamen de entrevista colegiada", href: "/posgrado/dictamen-entrevista", icon: "dictamen" },
-    { label: "Bitácora", href: "/posgrado/bitacora", icon: "bitacora" },
-  ],
-  profesor: [
-    { label: "Inicio", href: "/profesor", icon: "home" },
-    { label: "Mis entrevistas", href: "/profesor/entrevistas", icon: "entrevistas" },
-  ],
+  posgrado: NAV.posgrado,
+  profesor: NAV.profesor,
   subdireccion: [
     { label: "Inicio", href: "/subdireccion", icon: "panorama" },
     { label: "Aspirantes", href: "/subdireccion/aspirantes", icon: "expedientes" },
