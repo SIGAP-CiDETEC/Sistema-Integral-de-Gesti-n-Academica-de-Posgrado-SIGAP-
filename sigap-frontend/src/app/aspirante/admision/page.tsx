@@ -9,6 +9,6 @@ import { SOLICITUDES_DEMO, esEtapa } from "@/lib/admision";
  */
 export default async function MiAdmision({ searchParams }: PageProps<"/aspirante/admision">) {
   const { etapa } = await searchParams;
-  if (esEtapa(etapa)) return <VistaAdmision solicitud={SOLICITUDES_DEMO[etapa]} demo />;
+  if (esEtapa(etapa)) return <VistaAdmision solicitud={SOLICITUDES_DEMO[etapa]} />;
   return <MiAdmisionVivo />;
 }

@@ -14,12 +14,10 @@ export function VistaAdmision({
   solicitud,
   estado = ETAPAS[indiceEtapa(solicitud.etapa)].estado,
   tipoAlumno = "Aspirante",
-  demo = false,
 }: {
   solicitud: SolicitudAdmision;
   estado?: string;
   tipoAlumno?: string;
-  demo?: boolean;
 }) {
   const actual = indiceEtapa(solicitud.etapa);
 
@@ -109,32 +107,6 @@ export function VistaAdmision({
         </section>
       )}
 
-      {/* Solo para el cascarón: ver cada etapa */}
-      <div className="mt-10 border-t border-dashed border-gray-300 pt-4">
-        <p className="text-xs text-gray-500">
-          Vista de prueba (solo cascarón) — {demo ? "estás viendo un ejemplo; " : "muestra lo que ha hecho el personal con tu solicitud; "}ver ejemplos de cada etapa:{" "}
-          {demo && (
-            <Link href="/aspirante/admision" className="text-primary underline">
-              volver a mi solicitud real
-            </Link>
-          )}
-        </p>
-        <div className="mt-2 flex flex-wrap gap-2">
-          {ETAPAS.map((e) => (
-            <Link
-              key={e.id}
-              href={`/aspirante/admision?etapa=${e.id}`}
-              className={`rounded-full border px-3 py-1 text-xs ${
-                demo && e.id === solicitud.etapa
-                  ? "border-primary bg-primary text-white"
-                  : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
-              }`}
-            >
-              {e.label}
-            </Link>
-          ))}
-        </div>
-      </div>
     </>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CheckCircle2, Clock, Download, Eye, FileCheck2, Loader2, Mail, RotateCcw, Wand2 } from "lucide-react";
+import { CheckCircle2, Clock, Download, Eye, FileCheck2, Loader2, Mail } from "lucide-react";
 import { correoDeArea } from "@/lib/config";
 import { resolver, type Formato } from "@/lib/formatos";
 import { generarPdfFormato } from "@/lib/pdf/cliente";
@@ -19,7 +19,7 @@ const fechaCorta = (iso: string) =>
  * Con backend: UTEyCV lo elabora en su sesión y el sistema notifica al aspirante.
  */
 export function DocumentoAsesor({ formato: f }: { formato: Formato }) {
-  const { ctx, recibidos, firmados, recibir, subirFirmado, registro } = useExpediente();
+  const { ctx, recibidos, firmados, registro } = useExpediente();
   const recibido = recibidos[f.clave];
   const firmado = firmados[f.clave];
   const [pdf, setPdf] = useState<string | null>(null);
@@ -211,45 +211,6 @@ export function DocumentoAsesor({ formato: f }: { formato: Formato }) {
         </section>
       )}
 
-      {/* Solo cascarón */}
-      <div className="border-t border-dashed border-gray-300 pt-4">
-        <p className="text-xs text-gray-500">Vista de prueba (solo cascarón) — simula lo que hacen Control Escolar y tú:</p>
-        <div className="mt-2 flex flex-wrap gap-2">
-          {!recibido && (
-            <button
-              type="button"
-              onClick={() => recibir(f.clave, { nombre: `${f.codigo}_programa.pdf`, bytes: 210_000, fecha: new Date().toISOString() })}
-              className="inline-flex items-center gap-1.5 rounded-full border border-gray-300 bg-white px-3 py-1 text-xs text-gray-700 hover:bg-gray-50"
-            >
-              <Wand2 size={12} /> Simular que Control Escolar ya lo publicó
-            </button>
-          )}
-          {recibido && !firmado && (
-            <button
-              type="button"
-              onClick={() =>
-                subirFirmado(f.clave, { nombre: `${f.codigo}_firmado_${String(registro.apellidoPaterno ?? "aspirante")}.pdf`, bytes: 356_000, fecha: new Date().toISOString() })
-              }
-              className="inline-flex items-center gap-1.5 rounded-full border border-gray-300 bg-white px-3 py-1 text-xs text-gray-700 hover:bg-gray-50"
-            >
-              <Wand2 size={12} /> Simular que ya lo firmé y lo subí
-            </button>
-          )}
-          {recibido && (
-            <button
-              type="button"
-              onClick={() => {
-                subirFirmado(f.clave, null);
-                recibir(f.clave, null);
-                setPdf(null);
-              }}
-              className="inline-flex items-center gap-1.5 rounded-full border border-gray-300 bg-white px-3 py-1 text-xs text-gray-700 hover:bg-gray-50"
-            >
-              <RotateCcw size={12} /> Reiniciar
-            </button>
-          )}
-        </div>
-      </div>
     </div>
   );
 }

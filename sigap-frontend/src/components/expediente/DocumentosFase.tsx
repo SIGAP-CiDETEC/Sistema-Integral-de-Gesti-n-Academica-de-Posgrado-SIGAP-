@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { AlertTriangle, CheckCircle2, FileUp, Info, Lock, Paperclip, RotateCcw, Send, Trash2, Upload, Wand2 } from "lucide-react";
+import { AlertTriangle, CheckCircle2, FileUp, Info, Lock, Paperclip, RotateCcw, Send, Trash2, Upload } from "lucide-react";
 import { documentosDeFase, esRequerido, type Documento } from "@/lib/documentos";
 import type { FaseId } from "@/lib/fases";
 import { useRevisionDocs } from "@/lib/posgrado/revision";
@@ -30,7 +30,7 @@ function reducirImagen(file: File): Promise<string> {
 }
 
 export function DocumentosFase({ fase, conEnvio = false }: { fase: FaseId; conEnvio?: boolean }) {
-  const { registro, documentos, enviadoRevision, enviarRevision, guardarDocumento } = useExpediente();
+  const { registro, documentos, enviadoRevision, enviarRevision } = useExpediente();
   const activo = useAspiranteActivo();
   const lista = documentosDeFase(fase, registro);
   // Límite por archivo configurado por el Administrador en la convocatoria (RF-81)
@@ -98,22 +98,6 @@ export function DocumentosFase({ fase, conEnvio = false }: { fase: FaseId; conEn
             {enviadoRevision ? "Enviado a revisión" : "Enviar expediente a revisión"}
           </button>
         </footer>
-      )}
-      {conEnvio && listos < requeridos.length && (
-        <div className="border-t border-dashed border-gray-300 px-5 py-3">
-          <p className="text-xs text-gray-500">Vista de prueba (solo cascarón):</p>
-          <button
-            type="button"
-            onClick={() =>
-              requeridos
-                .filter((d) => !documentos[d.id])
-                .forEach((d) => guardarDocumento(d.id, { nombre: `${d.id}_ejemplo.pdf`, bytes: 250_000, fecha: new Date().toISOString() }))
-            }
-            className="mt-1.5 inline-flex items-center gap-1.5 rounded-full border border-gray-300 bg-white px-3 py-1 text-xs text-gray-700 hover:bg-gray-50"
-          >
-            <Wand2 size={12} /> Simular que ya subí mis documentos
-          </button>
-        </div>
       )}
       {conEnvio && activo !== ID_EN_VIVO && (
         <div className="border-t border-dashed border-gray-300 px-5 py-3 text-xs text-gray-500">

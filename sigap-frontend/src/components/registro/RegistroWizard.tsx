@@ -3,8 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { AlertTriangle, ArrowLeft, ArrowRight, Check, ChevronDown, CloudCheck, Pencil, RotateCcw, ShieldCheck, Wand2 } from "lucide-react";
-import { CAPTURAS_DEMO, REGISTRO_DEMO } from "@/lib/aspirante-datos";
+import { AlertTriangle, ArrowLeft, ArrowRight, Check, ChevronDown, CloudCheck, Pencil, ShieldCheck } from "lucide-react";
 import type { IdConvocatoria } from "@/lib/config";
 import { useConvocatorias } from "@/lib/convocatoria";
 import { Campo } from "./Campo";
@@ -168,23 +167,6 @@ export function RegistroWizard({ convocatoria }: { convocatoria?: IdConvocatoria
       return;
     }
     router.push(`/registro/exito?id=${id}&correo=${encodeURIComponent(String(respuestas.correo ?? ""))}`);
-  };
-
-  // Solo cascarón: llena todo con datos de ejemplo válidos y salta a la revisión
-  const simularLlenado = () => {
-    setRespuestas({ ...CAPTURAS_DEMO, ...REGISTRO_DEMO, ...VALORES_FIJOS, nacionalidad: "Mexicana", lugarNacimiento: "Ciudad de México, México", estadoCivil: "Soltero(a)", pais: "México", licPais: "México", experiencia: String(REGISTRO_DEMO.empleos).slice(0, 160), empleoVigente: "Sí", genero: "Femenino", tieneExperienciaProfesional: "Sí", semestre: semestreElegido ?? semestresAbiertos[0] ?? String(REGISTRO_DEMO.semestre) });
-    setCompletados(SECCIONES.map((_, i) => i));
-    setAceptaPrivacidad(true);
-    setErrorPrivacidad(false);
-    irA(SECCIONES.length);
-  };
-
-  const limpiarFormulario = () => {
-    setRespuestas(semestreElegido ? { ...VALORES_FIJOS, semestre: semestreElegido } : VALORES_FIJOS);
-    setCompletados([]);
-    setAceptaPrivacidad(false);
-    setErrorPrivacidad(false);
-    irA(0);
   };
 
   const esRevision = paso === SECCIONES.length;
@@ -373,30 +355,6 @@ export function RegistroWizard({ convocatoria }: { convocatoria?: IdConvocatoria
           )}
         </div>
 
-        {/* Solo cascarón */}
-        <div className="mt-6 border-t border-dashed border-gray-300 pt-4">
-          <p className="text-xs text-gray-500">Vista de prueba (solo cascarón):</p>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {!esRevision && (
-              <button
-                type="button"
-                onClick={simularLlenado}
-                className="inline-flex items-center gap-1.5 rounded-full border border-gray-300 bg-white px-3 py-1 text-xs text-gray-700 hover:bg-gray-50"
-              >
-                <Wand2 size={12} /> Llenar con datos de ejemplo e ir a la revisión
-              </button>
-            )}
-            {completados.length > 0 && (
-              <button
-                type="button"
-                onClick={limpiarFormulario}
-                className="inline-flex items-center gap-1.5 rounded-full border border-gray-300 bg-white px-3 py-1 text-xs text-gray-700 hover:bg-gray-50"
-              >
-                <RotateCcw size={12} /> Vaciar formulario
-              </button>
-            )}
-          </div>
-        </div>
       </div>
     </div>
   );

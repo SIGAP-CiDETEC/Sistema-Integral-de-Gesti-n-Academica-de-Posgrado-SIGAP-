@@ -2,14 +2,13 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { ArrowRight, BookOpen, CheckCircle2, Clock, FileQuestion, Info, RotateCcw, Wand2, XCircle } from "lucide-react";
+import { ArrowRight, BookOpen, CheckCircle2, Clock, FileQuestion, Info, XCircle } from "lucide-react";
 import { useConfigEvaluacion, fechaLargaIso } from "@/lib/evaluacion-config";
 import { AREAS_EVAL, areasReprobadas, nombreArea, type AreaEvalId, type ResultadoArea, type ResultadoEval } from "@/lib/posgrado/datos";
-import { simularCambioPosgrado, useEstadoAdmision } from "@/lib/posgrado/revision";
+import { useEstadoAdmision } from "@/lib/posgrado/revision";
 import { useExpediente } from "./ExpedienteProvider";
 import { RecordatoriosExamen } from "./Recordatorios";
 
-const ID = "ASP-2026-001";
 const fecha = (iso: string) => new Date(iso).toLocaleDateString("es-MX", { day: "numeric", month: "long", year: "numeric" });
 
 /**
@@ -93,7 +92,6 @@ export function ResultadosAspirante() {
       )}
       {conExamen && !exa && <RecordatoriosExamen />}
 
-      {modalidad && <Simular pro={v.evaluacion.propedeutico} exa={v.evaluacion.examen} modalidad={modalidad} areasExamen={so?.decision === "examen" ? so.areas : undefined} reiniciar={() => guardarEvaluacion({ segundaOportunidad: undefined })} />}
     </div>
   );
 }
@@ -194,77 +192,6 @@ function DecidirExamen({ areas, fechaExamen, onDecidir }: { areas: AreaEvalId[];
           </div>
         </div>
       )}
-    </div>
-  );
-}
-
-/** Solo cascarón: simula lo que publica el Departamento de Posgrado. */
-function Simular({
-  pro,
-  exa,
-  modalidad,
-  areasExamen,
-  reiniciar,
-}: {
-  pro?: ResultadoEval;
-  exa?: ResultadoEval;
-  modalidad: "propedeutico" | "examen";
-  areasExamen?: AreaEvalId[];
-  reiniciar: () => void;
-}) {
-  const hoy = () => new Date().toISOString();
-  const resultado = (cal: Partial<Record<AreaEvalId, number>>): ResultadoEval => {
-    const areas = Object.fromEntries(Object.entries(cal).map(([k, n]) => [k, { calificacion: n!, acreditado: n! >= 8 }])) as ResultadoEval["areas"];
-    const ns = Object.values(cal) as number[];
-    return { calificacion: Math.round((ns.reduce((t, n) => t + n, 0) / ns.length) * 10) / 10, acreditado: ns.every((n) => n >= 8), registradoEl: hoy(), publicadoEl: hoy(), areas };
-  };
-  const publicar = (tipo: "propedeutico" | "examen", r: ResultadoEval) =>
-    simularCambioPosgrado(ID, { evaluacion: { [tipo]: r }, ...(r.acreditado ? { etapa: "dictamen" } : tipo === "examen" ? { concluido: "No acreditó la evaluación" } : {}) }, {
-      asunto: tipo === "propedeutico" ? "Resultados del curso propedéutico" : "Resultados del examen de admisión",
-      mensaje: `Ya se publicaron tus resultados en SIGAP (5 · Resultados).`,
-    });
-  const btn = "inline-flex items-center gap-1.5 rounded-full border border-gray-300 bg-white px-3 py-1 text-xs text-gray-700 hover:bg-gray-50";
-  const areasEx = areasExamen ?? AREAS_EVAL.map((a) => a.id);
-  return (
-    <div className="border-t border-dashed border-gray-300 pt-4">
-      <p className="text-xs text-gray-500">Vista de prueba (solo cascarón) — simula lo que publica el Departamento de Posgrado:</p>
-      <div className="mt-2 flex flex-wrap gap-2">
-        {modalidad === "propedeutico" && !pro && (
-          <>
-            <button type="button" className={btn} onClick={() => publicar("propedeutico", resultado({ matematicas: 9, programacion: 8.6 }))}>
-              <Wand2 size={12} /> Propedéutico: acreditó todo
-            </button>
-            <button type="button" className={btn} onClick={() => publicar("propedeutico", resultado({ matematicas: 8.8, programacion: 6.5 }))}>
-              <Wand2 size={12} /> Propedéutico: no acreditó Programación
-            </button>
-            <button type="button" className={btn} onClick={() => publicar("propedeutico", resultado({ matematicas: 6.9, programacion: 7.1 }))}>
-              <Wand2 size={12} /> Propedéutico: no acreditó ninguna
-            </button>
-          </>
-        )}
-        {(modalidad === "examen" || areasExamen) && !exa && (
-          <>
-            <button type="button" className={btn} onClick={() => publicar("examen", resultado(Object.fromEntries(areasEx.map((a) => [a, 8.7]))))}>
-              <Wand2 size={12} /> Examen: acreditado
-            </button>
-            <button type="button" className={btn} onClick={() => publicar("examen", resultado(Object.fromEntries(areasEx.map((a) => [a, 6.8]))))}>
-              <Wand2 size={12} /> Examen: no acreditado
-            </button>
-          </>
-        )}
-        {(pro || exa) && (
-          <button
-            type="button"
-            className={btn}
-            onClick={() => {
-              simularCambioPosgrado(ID, { evaluacion: { propedeutico: undefined, examen: undefined, segundaOportunidad: undefined }, etapa: "evaluacion", concluido: undefined });
-              reiniciar();
-            }}
-          >
-            <RotateCcw size={12} /> Reiniciar resultados
-          </button>
-        )}
-      </div>
     </div>
   );
 }

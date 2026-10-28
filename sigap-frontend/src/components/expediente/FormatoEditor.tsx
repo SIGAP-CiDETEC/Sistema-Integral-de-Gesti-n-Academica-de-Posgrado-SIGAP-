@@ -10,19 +10,15 @@ import {
   Eye,
   Loader2,
   Lock,
-  RotateCcw,
   Send,
-  Wand2,
   Sparkles,
   TriangleAlert,
   Plus,
   Trash2,
 } from "lucide-react";
-import { CAPTURAS_DEMO, REGISTRO_DEMO } from "@/lib/aspirante-datos";
 import {
   camposVisibles,
   esVacio,
-  faltantes,
   formatoPorClave,
   resolver,
   type CampoFormato,
@@ -35,7 +31,7 @@ import { useDocumentosValidados } from "@/lib/bloqueo-documentos";
 import { FirmasOtros } from "./FirmasOtros";
 import { DocumentoAsesor } from "./DocumentoAsesor";
 import { SubirFirmado } from "./SubirFirmado";
-import { useBloqueoFormato, useDocumentosFaltantes } from "./bloqueos";
+import { useBloqueoFormato } from "./bloqueos";
 import { TONOS, estadoFormato } from "./estadoFormato";
 
 /**
@@ -234,7 +230,6 @@ export function FormatoEditor({ clave }: { clave: string }) {
         </div>
       )}
 
-      {editable && !bloqueo && !validado && <DemoFormato clave={f.clave} />}
 
       {pdfUrl && (
         <section className="mt-6 overflow-hidden rounded-xl border border-gray-200 bg-white">
@@ -248,8 +243,6 @@ export function FormatoEditor({ clave }: { clave: string }) {
 
 /** Formato que todavía no se puede llenar (RN-11 o RF-22). */
 function FormatoBloqueado({ motivo }: { motivo: string }) {
-  const faltan = useDocumentosFaltantes();
-  const { guardarDocumento } = useExpediente();
   const porDocumentos = motivo.includes("documentos obligatorios");
   return (
     <section className="rounded-xl border border-gray-200 bg-white p-5 text-sm">
@@ -262,92 +255,7 @@ function FormatoBloqueado({ motivo }: { motivo: string }) {
           Ir a subir mis documentos
         </Link>
       )}
-      {porDocumentos && faltan.length > 0 && (
-        <div className="mt-6 border-t border-dashed border-gray-300 pt-3">
-          <p className="text-xs text-gray-500">Vista de prueba (solo cascarón):</p>
-          <button
-            type="button"
-            onClick={() =>
-              faltan.forEach((d) => guardarDocumento(d.id, { nombre: `${d.id}_ejemplo.pdf`, bytes: 250_000, fecha: new Date().toISOString() }))
-            }
-            className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-gray-300 bg-white px-3 py-1 text-xs text-gray-700 hover:bg-gray-50"
-          >
-            <Wand2 size={12} /> Simular que ya subí mis documentos
-          </button>
-        </div>
-      )}
     </section>
-  );
-}
-
-/** Foto de ejemplo dibujada en el navegador (solo cascarón). */
-function fotoDeEjemplo(): string {
-  const c = document.createElement("canvas");
-  c.width = 240;
-  c.height = 300;
-  const g = c.getContext("2d")!;
-  g.fillStyle = "#e5eaf2";
-  g.fillRect(0, 0, 240, 300);
-  g.fillStyle = "#9aa8bd";
-  g.beginPath();
-  g.arc(120, 115, 55, 0, Math.PI * 2);
-  g.fill();
-  g.beginPath();
-  g.ellipse(120, 300, 105, 95, 0, Math.PI, 0);
-  g.fill();
-  g.fillStyle = "#4b5a72";
-  g.font = "bold 16px sans-serif";
-  g.textAlign = "center";
-  g.fillText("FOTO DE EJEMPLO", 120, 28);
-  return c.toDataURL("image/jpeg", 0.85);
-}
-
-/** Solo cascarón: llena lo que falta con datos de ejemplo o lo borra para volver a probar. */
-function DemoFormato({ clave }: { clave: string }) {
-  const f = formatoPorClave(clave)!;
-  const { ctx, documentos, capturarVarios, guardarDocumento } = useExpediente();
-  const faltan = new Set(faltantes(f, ctx).map((c) => c.id));
-  // Lo obligatorio que falta + lo opcional vacío que tenga dato de ejemplo
-  const pendientes = camposVisibles(f, ctx).filter(
-    (c) => !c.sistema && (faltan.has(c.id) || (esVacio(resolver(c, ctx)) && CAPTURAS_DEMO[c.id] !== undefined)),
-  );
-  const necesitaFoto = f.clave === "sip-01" && !documentos.foto;
-
-  const llenar = () => {
-    const demoCtx = { r: REGISTRO_DEMO, c: {}, hoy: ctx.hoy };
-    const valores = Object.fromEntries(
-      pendientes.map((c) => [c.id, CAPTURAS_DEMO[c.id] ?? c.auto?.(demoCtx) ?? "Dato de ejemplo"]),
-    );
-    capturarVarios(valores);
-    if (necesitaFoto) {
-      guardarDocumento("foto", { nombre: "foto-ejemplo.jpg", bytes: 18_000, fecha: new Date().toISOString(), dataUrl: fotoDeEjemplo() });
-    }
-  };
-
-  const borrar = () =>
-    capturarVarios(Object.fromEntries(f.campos.filter((c) => !c.sistema).map((c) => [c.id, undefined])));
-
-  return (
-    <div className="mt-10 border-t border-dashed border-gray-300 pt-4">
-      <p className="text-xs text-gray-500">Vista de prueba (solo cascarón):</p>
-      <div className="mt-2 flex flex-wrap gap-2">
-        <button
-          type="button"
-          onClick={llenar}
-          disabled={!pendientes.length && !necesitaFoto}
-          className="inline-flex items-center gap-1.5 rounded-full border border-gray-300 bg-white px-3 py-1 text-xs text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          <Wand2 size={12} /> Llenar lo que falta con datos de ejemplo{necesitaFoto ? " (incluye foto)" : ""}
-        </button>
-        <button
-          type="button"
-          onClick={borrar}
-          className="inline-flex items-center gap-1.5 rounded-full border border-gray-300 bg-white px-3 py-1 text-xs text-gray-700 hover:bg-gray-50"
-        >
-          <RotateCcw size={12} /> Borrar lo capturado en este formato
-        </button>
-      </div>
-    </div>
   );
 }
 

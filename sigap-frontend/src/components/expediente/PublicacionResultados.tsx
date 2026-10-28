@@ -1,14 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, BellRing, CalendarDays, CheckCircle2, Clock, Globe, RotateCcw, Wand2 } from "lucide-react";
+import { ArrowRight, BellRing, CalendarDays, CheckCircle2, Clock, Globe } from "lucide-react";
 import { useContenido } from "@/lib/contenido";
 import type { IdConvocatoria } from "@/lib/config";
 import { fechaResultados, useConvocatorias } from "@/lib/convocatoria";
-import { simularCambioPosgrado, useEstadoAdmision, useSesionColegio } from "@/lib/posgrado/revision";
+import { useEstadoAdmision, useSesionColegio } from "@/lib/posgrado/revision";
 import { useExpediente } from "./ExpedienteProvider";
 
-const ID = "ASP-2026-001";
 const fechaLarga = (iso?: string) =>
   iso ? new Date(`${iso}T12:00:00`).toLocaleDateString("es-MX", { day: "numeric", month: "long", year: "numeric" }) : "";
 
@@ -105,62 +104,6 @@ export function PublicacionResultados() {
         )}
       </section>
 
-      {(enComision || admitido) && <SimularPublicacion admitido={admitido} />}
-    </div>
-  );
-}
-
-/** Solo cascarón: simula que Posgrado publica la resolución del Colegio. */
-function SimularPublicacion({ admitido }: { admitido: boolean }) {
-  const btn = "inline-flex items-center gap-1.5 rounded-full border border-gray-300 bg-white px-3 py-1 text-xs text-gray-700 hover:bg-gray-50";
-  const publicar = (resolucion: "Aceptado" | "Con reservas" | "No aceptado") => {
-    // Si Posgrado aún no registró el acta del Colegio en este navegador, se usa una de ejemplo
-    try {
-      const e = JSON.parse(localStorage.getItem("sigap-posgrado") ?? "{}");
-      if (!e.acta?.registradaEl) {
-        const d = new Date();
-        const fecha = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-        localStorage.setItem("sigap-posgrado", JSON.stringify({ ...e, acta: { numero: "04/2026", fecha, hora: "12:00", resoluciones: {}, registradaEl: d.toISOString() } }));
-      }
-    } catch {
-      /* ignorar */
-    }
-    simularCambioPosgrado(
-      ID,
-      resolucion === "No aceptado"
-        ? { resolucion, concluido: "No aceptado por el Colegio de Profesores" }
-        : { resolucion, turnadoUteycv: new Date().toISOString() },
-      {
-        asunto: resolucion === "No aceptado" ? "Resultado de tu proceso de admisión" : "¡Fuiste admitido(a)!",
-        mensaje:
-          resolucion === "No aceptado"
-            ? "Agradecemos tu interés en la Maestría en Tecnología de Cómputo. Te informamos que tu proceso de admisión en esta convocatoria ha concluido."
-            : "Ya se publicó tu resultado en SIGAP (6 · Dictamen final). Continúa con tu inscripción.",
-      },
-    );
-  };
-  return (
-    <div className="border-t border-dashed border-gray-300 pt-4">
-      <p className="text-xs text-gray-500">Vista de prueba (solo cascarón) — simula que Posgrado publica la resolución del Colegio:</p>
-      <div className="mt-2 flex flex-wrap gap-2">
-        {admitido ? (
-          <button type="button" className={btn} onClick={() => simularCambioPosgrado(ID, { resolucion: undefined, turnadoUteycv: undefined })}>
-            <RotateCcw size={12} /> Quitar el resultado publicado
-          </button>
-        ) : (
-          <>
-            <button type="button" className={btn} onClick={() => publicar("Aceptado")}>
-              <Wand2 size={12} /> Publicar: Aceptado
-            </button>
-            <button type="button" className={btn} onClick={() => publicar("Con reservas")}>
-              <Wand2 size={12} /> Publicar: Con reservas
-            </button>
-            <button type="button" className={btn} onClick={() => publicar("No aceptado")}>
-              <Wand2 size={12} /> Publicar: No aceptado
-            </button>
-          </>
-        )}
-      </div>
     </div>
   );
 }

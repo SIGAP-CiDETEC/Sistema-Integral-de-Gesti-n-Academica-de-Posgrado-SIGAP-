@@ -1,6 +1,6 @@
 import { CalendarClock, CalendarDays, ClipboardCheck, ListChecks } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
-import { DatosAlumno, ReiniciarSimulacion } from "@/components/alumno/DatosAlumno";
+import { DatosAlumno } from "@/components/alumno/DatosAlumno";
 import { REINSCRIPCION } from "@/lib/alumno";
 
 /** Inicio del alumno: información de reinscripción (RF-70, SIP-10). Datos de ejemplo. */
@@ -76,7 +76,6 @@ export default function AlumnoInicio() {
       </div>
 
       <p className="mt-6 text-xs text-gray-400">Fechas y requisitos de ejemplo</p>
-      <ReiniciarSimulacion />
     </>
   );
 }

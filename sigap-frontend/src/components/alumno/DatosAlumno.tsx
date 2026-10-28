@@ -1,11 +1,11 @@
 "use client";
 
-import { CheckCircle2, RotateCcw } from "lucide-react";
+import { CheckCircle2 } from "lucide-react";
 import { REGISTRO_DEMO, nombreCompleto } from "@/lib/aspirante-datos";
 import { ALUMNO_DEMO } from "@/lib/alumno";
 import { PROGRAMA } from "@/lib/config";
 import { PROGRAMA_INDIVIDUAL_DEMO, nombreAsesor } from "@/lib/programa-individual";
-import { reiniciarDemo, useCuentaAlumno } from "@/lib/cuenta-alumno";
+import { useCuentaAlumno } from "@/lib/cuenta-alumno";
 
 /** Tarjeta con los datos escolares del alumno (usa la boleta asignada en la simulación). */
 export function DatosAlumno() {
@@ -36,21 +36,5 @@ export function DatosAlumno() {
         </p>
       )}
     </section>
-  );
-}
-
-/** Solo cascarón: borra todo y regresa al primer inicio de sesión. */
-export function ReiniciarSimulacion() {
-  return (
-    <div className="mt-10 border-t border-dashed border-gray-300 pt-4">
-      <p className="text-xs text-gray-500">Vista de prueba (solo cascarón):</p>
-      <button
-        type="button"
-        onClick={() => reiniciarDemo()}
-        className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-gray-300 bg-white px-3 py-1 text-xs text-gray-700 hover:bg-gray-50"
-      >
-        <RotateCcw size={12} /> Reiniciar demostración (borra todo y regresa al inicio de sesión)
-      </button>
-    </div>
   );
 }

@@ -1,10 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { Bell, CheckCircle2, Circle, IdCard, LogIn, RotateCcw, Wand2 } from "lucide-react";
+import { Bell, CheckCircle2, Circle, IdCard, LogIn } from "lucide-react";
 import { useExpediente } from "@/components/expediente/ExpedienteProvider";
-import { PROGRAMA_INDIVIDUAL_DEMO } from "@/lib/programa-individual";
-import { ID_TEMPORAL_DEMO, guardarCuenta, useCuentaAlumno } from "@/lib/cuenta-alumno";
+import { useCuentaAlumno } from "@/lib/cuenta-alumno";
 
 /**
  * Cierre del proceso (RF-29 a RF-31, RN-12): UTEyCV registra el número SICEP,
@@ -57,11 +56,6 @@ export function BoletaSicep() {
             <Bell size={15} /> Ver notificación
           </Link>
         </div>
-        <Demo>
-          <button type="button" onClick={() => guardarCuenta(null)} className={botonDemo}>
-            <RotateCcw size={12} /> Deshacer (volver a ser aspirante)
-          </button>
-        </Demo>
       </section>
     );
   }
@@ -85,33 +79,6 @@ export function BoletaSicep() {
           </ul>
         </div>
       </div>
-      <Demo>
-        <button
-          type="button"
-          onClick={() =>
-            guardarCuenta({
-              numeroRegistro: PROGRAMA_INDIVIDUAL_DEMO.noRegistro,
-              idTemporal: ID_TEMPORAL_DEMO,
-              asignadoEl: new Date().toISOString(),
-            })
-          }
-          className={botonDemo}
-        >
-          <Wand2 size={12} /> Simular que UTEyCV registra tu número SICEP
-        </button>
-      </Demo>
     </section>
-  );
-}
-
-const botonDemo =
-  "inline-flex items-center gap-1.5 rounded-full border border-gray-300 bg-white px-3 py-1 text-xs text-gray-700 hover:bg-gray-50";
-
-function Demo({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="mt-4 border-t border-dashed border-gray-300 pt-3">
-      <p className="mb-2 text-xs text-gray-500">Vista de prueba (solo cascarón):</p>
-      {children}
-    </div>
   );
 }

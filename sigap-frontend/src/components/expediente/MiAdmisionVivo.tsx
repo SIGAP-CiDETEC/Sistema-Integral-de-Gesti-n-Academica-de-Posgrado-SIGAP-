@@ -8,7 +8,6 @@ import { areasReprobadas, horarioEntrevista, nombreArea } from "@/lib/posgrado/d
 import { useEstadoAdmision, useRevisionDocs } from "@/lib/posgrado/revision";
 import { useAspiranteActivo } from "@/lib/aspirante-activo";
 import { useExpediente } from "./ExpedienteProvider";
-import { DeshacerConclusion } from "./BloqueoProceso";
 import { VistaAdmision } from "./VistaAdmision";
 
 const fecha = (f: string) => new Date(`${f}T12:00:00`).toLocaleDateString("es-MX", { day: "numeric", month: "short" });
@@ -94,7 +93,6 @@ export function MiAdmisionVivo() {
       <VistaAdmision solicitud={solicitud} estado={concluido ? "Proceso concluido" : dictamenPublicado ? "Proceso de admisión concluido" : ETAPAS[indiceEtapa(etapa)].estado} tipoAlumno={tipo} />
       {concluido && (
         <div className="mt-6 rounded-xl border border-gray-200 bg-white px-5 pb-4">
-          <DeshacerConclusion />
         </div>
       )}
     </>

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { AlertTriangle, BookOpen, CalendarDays, CheckCircle2, FileQuestion, Info, Lock, Mail, RotateCcw } from "lucide-react";
+import { AlertTriangle, BookOpen, CalendarDays, CheckCircle2, FileQuestion, Info, Lock, Mail } from "lucide-react";
 import { CORREO_POSGRADO } from "@/lib/config";
 import { DIAS, choques, describirGrupo, lugarDe, type Grupo, type Materia, type ModalidadId } from "@/lib/evaluacion";
 import { useConfigEvaluacion } from "@/lib/evaluacion-config";
@@ -36,13 +36,11 @@ export function ModalidadEvaluacion() {
   const faltanGrupos = modalidad === "propedeutico" && elegidos.length < MATERIAS.length;
   const puedeConfirmar = !!modalidad && !faltanGrupos && cruces.length === 0;
 
-  const reiniciarDemo = () => guardarEvaluacion({ modalidad: undefined, grupos: {}, confirmadaEl: undefined, segundaOportunidad: undefined });
 
   if (confirmada && modalidad) {
     return (
       <>
         <Resumen modalidad={modalidad} elegidos={elegidos} correo={String(registro.correo ?? "")} />
-        <ReiniciarDemo onClick={reiniciarDemo} />
       </>
     );
   }
@@ -162,23 +160,6 @@ export function ModalidadEvaluacion() {
           </button>
         </section>
       )}
-      {(modalidad || Object.keys(grupos).length > 0) && <ReiniciarDemo onClick={reiniciarDemo} />}
-    </div>
-  );
-}
-
-/** Solo para el cascarón: borra la elección para volver a mostrar las opciones. */
-function ReiniciarDemo({ onClick }: { onClick: () => void }) {
-  return (
-    <div className="mt-10 border-t border-dashed border-gray-300 pt-4">
-      <p className="text-xs text-gray-500">Vista de prueba (solo cascarón) — en el sistema real el aspirante no puede hacer esto.</p>
-      <button
-        type="button"
-        onClick={onClick}
-        className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-gray-300 bg-white px-3 py-1 text-xs text-gray-700 hover:bg-gray-50"
-      >
-        <RotateCcw size={12} /> Reiniciar elección
-      </button>
     </div>
   );
 }

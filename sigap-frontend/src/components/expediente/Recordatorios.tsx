@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { BellRing, CheckCircle2, Clock, Mail, Wand2 } from "lucide-react";
+import { BellRing, CheckCircle2, Clock, Mail } from "lucide-react";
 import { useConfigEvaluacion } from "@/lib/evaluacion-config";
 import { nombreArea } from "@/lib/posgrado/datos";
 import { useEstadoAdmision } from "@/lib/posgrado/revision";
@@ -9,7 +9,6 @@ import {
   fechaRecordatorio,
   recordatoriosEntrevista,
   recordatoriosExamen,
-  simularEnvioRecordatorios,
   useEnviado,
   type Recordatorio,
 } from "@/lib/recordatorios";
@@ -34,7 +33,7 @@ export function useRecordatoriosAspirante() {
 
 /** Lista de recordatorios programados con su estado (enviado / programado). */
 export function RecordatoriosProgramados({ lista, titulo }: { lista: Recordatorio[]; titulo: string }) {
-  const { enviado, simulado } = useEnviado();
+  const { enviado } = useEnviado();
   const [todos, setTodos] = useState(false);
   if (!lista.length) return null;
   const visibles = todos ? lista : lista.slice(0, 4);
@@ -61,16 +60,6 @@ export function RecordatoriosProgramados({ lista, titulo }: { lista: Recordatori
           {todos ? "Ver menos" : `Ver los ${lista.length} recordatorios`}
         </button>
       )}
-      <div className="mt-4 border-t border-dashed border-gray-300 pt-3">
-        <p className="text-xs text-gray-500">Vista de prueba (solo cascarón):</p>
-        <button
-          type="button"
-          onClick={() => simularEnvioRecordatorios(!simulado)}
-          className="mt-1.5 inline-flex items-center gap-1.5 rounded-full border border-gray-300 bg-white px-3 py-1 text-xs text-gray-700 hover:bg-gray-50"
-        >
-          <Wand2 size={12} /> {simulado ? "Volver al día de hoy" : "Simular que ya llegaron los recordatorios"}
-        </button>
-      </div>
     </section>
   );
 }
