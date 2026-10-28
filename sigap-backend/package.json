@@ -19,6 +19,7 @@
     "migrar": "node scripts/migrar.js",
     "cargar-datos": "node dist/carga/cargar-datos.js",
     "aspirante-demo": "node dist/carga/aspirante-demo.js",
+    "reiniciar-entrevista": "node dist/carga/reiniciar-entrevista.js",
     "cargar-profesores": "node dist/carga/cargar-profesores.js"
   },
   "dependencies": {
