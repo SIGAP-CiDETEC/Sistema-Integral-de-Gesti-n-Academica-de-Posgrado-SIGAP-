@@ -11,6 +11,9 @@
  *   npm run reiniciar-entrevista -- DEMO2701 --conservar-profesores --reemplazar profesor1.prueba@sigap.local maldape@ipn.mx
  *       Además cambia a un profesor entrevistador por otro (por correo institucional).
  *
+ *   npm run reiniciar-entrevista -- DEMO2701 --asignar correo1 correo2 correo3
+ *       Deja como profesores entrevistadores exactamente a esos 3 (por correo) y el horario publicado a los profesores.
+ *
  * Siempre conserva el horario capturado (fecha, hora, duración, modalidad y sala), regresa la postulación a la
  * etapa de entrevista, borra lo que dependía del dictamen y deja constancia en la bitácora.
  * No borra documentos del expediente.
@@ -28,6 +31,10 @@ async function main() {
   const reemplazo = iR >= 0 ? { de: args[iR + 1]?.toLowerCase(), a: args[iR + 2]?.toLowerCase() } : null;
   if (reemplazo && (!reemplazo.de || !reemplazo.a)) throw new Error('Uso: --reemplazar <correo del que sale> <correo del que entra>');
   if (reemplazo && !conservar) throw new Error('--reemplazar solo tiene sentido con --conservar-profesores');
+  const iA = args.indexOf('--asignar');
+  const asignar = iA >= 0 ? args.slice(iA + 1).filter((x) => !x.startsWith('--')).map((x) => x.toLowerCase()) : null;
+  if (asignar && asignar.length !== 3) throw new Error('--asignar necesita exactamente 3 correos de profesores');
+  if (asignar && (conservar || reemplazo)) throw new Error('--asignar no se combina con --conservar-profesores ni --reemplazar');
 
   const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL ?? '' }) });
   const p = await prisma.postulacion.findUnique({
@@ -50,9 +57,25 @@ async function main() {
     cambio = { sale, entra };
   }
 
+  let asignados: { id: string; nombre: string }[] = [];
+  if (asignar) {
+    asignados = await Promise.all(
+      asignar.map(async (c) => {
+        const prof = await prisma.profesor.findFirst({ where: { correo: { equals: c, mode: 'insensitive' } } });
+        if (!prof) throw new Error(`No hay ningún profesor con el correo ${c}`);
+        return prof;
+      }),
+    );
+    if (new Set(asignados.map((x) => x.id)).size !== 3) throw new Error('Los 3 profesores deben ser distintos');
+  }
+
   await prisma.$transaction(async (tx) => {
     if (e.acta) await tx.actaEntrevista.delete({ where: { id: e.acta.id } });
-    if (conservar) {
+    if (asignar) {
+      await tx.integranteSinodo.deleteMany({ where: { entrevistaId: e.id } });
+      await tx.integranteSinodo.createMany({ data: asignados.map((x) => ({ entrevistaId: e.id, profesorId: x.id })) });
+      await tx.entrevista.update({ where: { id: e.id }, data: { horarioPublicadoEn: e.horarioPublicadoEn ?? new Date(), publicadaAspiranteEn: null } });
+    } else if (conservar) {
       await tx.integranteSinodo.updateMany({ where: { entrevistaId: e.id }, data: { firmadoEn: null } });
       if (cambio) await tx.integranteSinodo.update({ where: { id: cambio.sale.id }, data: { profesorId: cambio.entra.id, elegidoEn: new Date() } });
       await tx.entrevista.update({ where: { id: e.id }, data: { publicadaAspiranteEn: null } });
@@ -65,7 +88,11 @@ async function main() {
     const proc = { ...((p.estadoProceso ?? {}) as Record<string, unknown>) };
     for (const k of ['etapa', 'concluido', 'evaluacion', 'resolucion', 'motivoReservas', 'turnadoUteycv', 'dedicacion', 'uteycv']) delete proc[k];
     await tx.postulacion.update({ where: { id: p.id }, data: { estado: 'ENTREVISTA_PROGRAMADA', estadoProceso: proc as object } });
-    const extra = cambio ? `; ${cambio.entra.nombre} sustituye a ${cambio.sale.profesor.nombre} como profesor entrevistador` : '';
+    const extra = cambio
+      ? `; ${cambio.entra.nombre} sustituye a ${cambio.sale.profesor.nombre} como profesor entrevistador`
+      : asignar
+        ? `; profesores entrevistadores: ${asignados.map((x) => x.nombre).join(', ')}`
+        : '';
     await tx.eventoBitacora.create({
       data: { entidad: 'Postulacion', entidadId: folio, actor: 'Administración del sistema', accion: `Reinició la entrevista de ${nombre}: vuelve a "Horarios por publicar"${extra}` },
     });
