@@ -1,8 +1,12 @@
 /**
  * Aspirante FICTICIO para demostrar la entrevista colegiada en el servidor, junto a los aspirantes reales.
  *
- *   npm run aspirante-demo            crea (o deja como nuevo) el aspirante DEMO2701 con sus 8 documentos
- *   npm run aspirante-demo -- borrar  lo elimina por completo (postulación, entrevista, acta, bitácora y archivos)
+ *   npm run aspirante-demo              crea (o deja como nuevo) el aspirante DEMO2701 con sus 8 documentos
+ *   npm run aspirante-demo -- 2         lo mismo con un segundo aspirante ficticio, DEMO2702 (y así 3, 4…)
+ *   npm run aspirante-demo -- borrar    elimina DEMO2701 por completo (postulación, entrevista, acta, bitácora y archivos)
+ *   npm run aspirante-demo -- 2 borrar  elimina DEMO2702
+ *
+ * OJO: crear un aspirante que ya existe lo deja como nuevo (borra su entrevista y su acta).
  *
  * Todo en él es inventado: nombre, procedencia y documentos (PDF que dicen "DOCUMENTO DE DEMOSTRACIÓN").
  * No tiene cuenta para iniciar sesión; Posgrado y los profesores lo ven en sus bandejas como a cualquier aspirante.
@@ -14,8 +18,9 @@ import { PrismaClient } from '../generated/prisma/client';
 import { guardarArchivo, rutaAlmacen } from '../comun/almacen';
 
 export const FOLIO_DEMO = 'DEMO2701';
+const folioDemo = (n: number) => `DEMO27${String(n).padStart(2, '0')}`;
 const CONVOCATORIA = { clave: 'A27', nombre: 'Convocatoria de admisión A-27' };
-const ASPIRANTE = {
+const ASPIRANTE_1 = {
   nombres: 'Aspirante',
   apellidoPaterno: 'Demostración',
   apellidoMaterno: 'Ficticio',
@@ -64,7 +69,7 @@ export function pdfDemo(lineas: string[]): Buffer {
   return Buffer.concat(partes);
 }
 
-async function borrar(prisma: PrismaClient) {
+async function borrar(prisma: PrismaClient, FOLIO_DEMO: string) {
   const p = await prisma.postulacion.findUnique({ where: { folio: FOLIO_DEMO } });
   if (p) await prisma.postulacion.delete({ where: { id: p.id } }); // entrevista, sínodo, acta y documentos se borran en cascada
   await prisma.aspirante.deleteMany({ where: { idTemporal: FOLIO_DEMO } });
@@ -73,10 +78,15 @@ async function borrar(prisma: PrismaClient) {
 }
 
 async function main() {
+  const args = process.argv.slice(2);
+  const n = Number(args.find((a) => /^\d+$/.test(a)) ?? 1);
+  if (!(n >= 1 && n <= 99)) throw new Error('El número de aspirante de demostración va de 1 a 99');
+  const FOLIO_DEMO = folioDemo(n);
+  const ASPIRANTE = n === 1 ? ASPIRANTE_1 : { ...ASPIRANTE_1, apellidoMaterno: `Ficticio ${n}`, correo: `aspirante.demo${n}@sigap.local` };
   const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL ?? '' }) });
   // Siempre se parte de cero: así el aspirante demo queda "como nuevo" para repetir la demostración
-  await borrar(prisma);
-  if (process.argv[2] === 'borrar') {
+  await borrar(prisma, FOLIO_DEMO);
+  if (args.includes('borrar')) {
     console.log(`Aspirante de demostración ${FOLIO_DEMO} eliminado.`);
     return prisma.$disconnect();
   }
