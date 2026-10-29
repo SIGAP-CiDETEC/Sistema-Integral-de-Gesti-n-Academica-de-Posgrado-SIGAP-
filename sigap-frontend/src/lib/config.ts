@@ -5,15 +5,16 @@
  */
 
 /**
- * Periodo escolar vigente, calculado con la fecha (hora de la Ciudad de México):
- * A = enero – junio, B = julio – diciembre. Ej.: 28 oct 2026 → "2026-B".
+ * Periodo escolar al que corresponde el proceso de admisión en curso (hora de la Ciudad de México).
+ * El ingreso es al semestre siguiente: de julio a diciembre se admite para A (enero – junio del año próximo)
+ * y de enero a junio para B (agosto – diciembre del mismo año). Ej.: 28 oct 2026 → "A-27"; 10 mar 2027 → "B-27".
  */
 export function periodoEscolar(fecha: Date = new Date()): string {
   const [anio, mes] = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Mexico_City", year: "numeric", month: "2-digit" })
     .format(fecha)
     .split("-")
     .map(Number);
-  return `${anio}-${mes <= 6 ? "A" : "B"}`;
+  return mes <= 6 ? `B-${String(anio % 100).padStart(2, "0")}` : `A-${String((anio + 1) % 100).padStart(2, "0")}`;
 }
 
 /** Valor al momento de generar la página; en pantalla se usa <PeriodoEscolar />, que se recalcula en el navegador. */

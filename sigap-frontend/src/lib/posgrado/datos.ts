@@ -303,7 +303,7 @@ export type AspiranteP = {
 
 // ---------- Profesores entrevistadores (RN-07: 3 profesores, colegiados vigentes o de asignatura) ----------
 
-export type ProfesorP = { id: string; nombre: string; correo: string; colegiado: boolean; vigencia: string; linea: string };
+export type ProfesorP = { id: string; nombre: string; correo: string; colegiado: boolean; vigencia: string; linea: string; baja?: boolean };
 
 export const PROFESORES_SINODO: ProfesorP[] = [
   { id: "lh", nombre: "Dra. Laura Hernández Ruiz", correo: "lhernandez@ipn.mx", colegiado: true, vigencia: "2027", linea: "Computación inteligente" },
@@ -317,7 +317,7 @@ export const PROFESORES_SINODO: ProfesorP[] = [
 
 const colegiadoVigente = (p: ProfesorP) => p.colegiado && /^\d{4}$/.test(p.vigencia) && Number(p.vigencia) >= 2026;
 /** Pueden participar como profesores entrevistadores los profesores colegiados con nombramiento vigente y los profesores de asignatura (RN-07). */
-export const profesorValido = (p: ProfesorP) => colegiadoVigente(p) || p.vigencia === "Asignatura";
+export const profesorValido = (p: ProfesorP) => !p.baja && (colegiadoVigente(p) || p.vigencia === "Asignatura");
 export const nombramientoDe = (p: ProfesorP) =>
   colegiadoVigente(p) ? `Colegiado · vigente a ${p.vigencia}` : p.vigencia === "Asignatura" ? "De asignatura" : "Nombramiento vencido";
 /** Con el servidor real, la lista de profesores viene de la API (reemplaza a la de ejemplo). */

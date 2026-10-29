@@ -273,7 +273,7 @@ export class AdmisionService {
   }
 
   async profesores() {
-    const ps = await this.prisma.profesor.findMany({ orderBy: { nombre: 'asc' } });
+    const ps = await this.prisma.profesor.findMany({ orderBy: { nombre: 'asc' }, include: { usuario: { select: { activo: true } } } });
     return ps.map((p) => ({
       id: p.id,
       nombre: p.nombre,
@@ -281,6 +281,8 @@ export class AdmisionService {
       colegiado: p.tipoNombramiento === 'COLEGIADO',
       vigencia: p.tipoNombramiento === 'ASIGNATURA' ? 'Asignatura' : p.vigenteHasta ? String(p.vigenteHasta.getFullYear()) : 'Vencida',
       linea: p.lineaInvestigacion ?? '',
+      // Dados de baja con historial: se conservan sus nombres en entrevistas pasadas, pero ya no se pueden elegir
+      ...(p.usuario && !p.usuario.activo ? { baja: true } : {}),
     }));
   }
 

@@ -54,7 +54,7 @@ export function Sidebar({ rol }: { rol: Rol }) {
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col bg-navy-900 px-4 py-6 text-white transition-transform lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col overflow-y-auto overscroll-contain bg-navy-900 px-4 py-6 text-white transition-transform [scrollbar-width:thin] lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 ${
           abierto ? "translate-x-0" : "-translate-x-full"
         }`}
       >
@@ -66,7 +66,7 @@ export function Sidebar({ rol }: { rol: Rol }) {
           <X size={20} />
         </button>
 
-        <Logos size={44} onDark className="self-start" />
+        <Logos size={44} onDark className="shrink-0 self-start" />
 
         <div className="mt-4">
           <p className="text-lg font-semibold leading-tight">SIGAP</p>
@@ -77,7 +77,7 @@ export function Sidebar({ rol }: { rol: Rol }) {
           {ROL_LABEL[rol]}
         </span>
 
-        <nav className="mt-6 flex flex-col gap-1">
+        <nav className="mt-6 mb-4 flex shrink-0 flex-col gap-1">
           {items.map((item) => {
             const activo = esActivo(item.href);
             return (
@@ -98,7 +98,7 @@ export function Sidebar({ rol }: { rol: Rol }) {
           })}
         </nav>
 
-        <div className="mt-auto border-t border-white/10 pt-4">
+        <div className="mt-auto shrink-0 border-t border-white/10 pt-4">
           <p className="text-sm">{personal?.nombre ?? aspiranteEjemplo?.nombre ?? USUARIO_DEMO[rol]}</p>
           {aspiranteEjemplo && <p className="truncate text-[11px] text-white/60">{aspiranteEjemplo.id} · perfil de ejemplo</p>}
           {personal && <p className="truncate text-[11px] text-white/60">{personal.puesto}</p>}
