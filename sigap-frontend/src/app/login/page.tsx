@@ -174,9 +174,9 @@ export default function LoginPage({ searchParams }: PageProps<"/login">) {
               <input type="checkbox" className="h-4 w-4 rounded border-gray-300" />
               Recordar sesión
             </label>
-            <a href="#" className="text-primary hover:underline">
+            <Link href="/recuperar-contrasena" className="text-primary hover:underline">
               ¿Olvidaste tu contraseña?
-            </a>
+            </Link>
           </div>
 
           {error && (

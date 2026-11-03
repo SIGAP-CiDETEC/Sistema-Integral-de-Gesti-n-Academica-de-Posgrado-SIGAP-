@@ -140,6 +140,22 @@ Cada profesor entra con su **correo institucional** (o con su CURP/RFC) y la con
 Se puede volver a correr cuando cambie el Excel: actualiza correos, nombres y vigencias sin tocar contraseñas
 (salvo con `REGENERAR=1`, y solo a quien no la ha cambiado).
 
+## Cuentas y contraseñas olvidadas
+
+Mientras SIGAP no envía correos, las contraseñas se restablecen con ayuda (en el login, "¿Olvidaste tu contraseña?" explica a quién acudir):
+
+- **Administrador** (Usuarios): ve todas las cuentas del personal, restablece contraseñas, activa o desactiva cuentas y crea cuentas de Posgrado, Subdirección o UTEyCV.
+- **Departamento de Posgrado** (Cuentas de profesores): restablece la contraseña de los profesores.
+
+Restablecer genera una contraseña temporal de 12 caracteres que **se muestra una sola vez**; al entrar con ella el sistema pide crear una nueva y las sesiones abiertas de esa cuenta se cierran. Todo queda en la bitácora de accesos. Antes de restablecer, confirma que es esa persona quien lo pide.
+
+La primera cuenta de Administrador (o una temporal nueva para ella) se crea en el servidor; la temporal se guarda en `datos-reales/credenciales-cuentas-<fecha>.csv`, no en pantalla:
+
+```bash
+cd /opt/sigap/app/sigap-backend
+SIGAP_DATOS=/opt/sigap/datos-reales npm run crear-cuenta -- --correo nombre@ipn.mx --nombre "Nombre Apellido" --area ADMINISTRADOR
+```
+
 ## Certificado HTTPS
 
 TI del CIDETEC entrega el certificado de Let's Encrypt (carpeta `virtual.cidetec.ipn.mx_ecc`). Solo se usan

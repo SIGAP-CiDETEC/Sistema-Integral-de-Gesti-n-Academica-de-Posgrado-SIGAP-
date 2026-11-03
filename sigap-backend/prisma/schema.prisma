@@ -573,6 +573,8 @@ model Usuario {
   /** Cuenta creada con contraseña temporal: debe cambiarla al primer acceso */
   debeCambiarContrasena Boolean                    @default(false)
   ultimoAccesoEn        DateTime?
+  /** Las sesiones iniciadas antes de esta fecha ya no valen (p. ej. al restablecer la contraseña) */
+  sesionesDesde         DateTime?
   area                  AreaPersonal
   activo                Boolean                    @default(true)
   aspiranteId           String?                    @unique

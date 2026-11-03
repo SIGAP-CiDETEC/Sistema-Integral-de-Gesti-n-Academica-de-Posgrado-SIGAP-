@@ -1,5 +1,9 @@
 "use client";
 
+import { MODO_API } from "@/lib/api";
+import { Aviso } from "@/components/posgrado/ui";
+import { CuentasServidor } from "@/components/CuentasServidor";
+
 import Link from "next/link";
 import { CalendarCog, ShieldCheck, UserPlus, Users } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
@@ -9,7 +13,7 @@ import { useConvocatoria } from "@/lib/convocatoria";
 import { USUARIOS_DEMO } from "@/lib/sesion";
 
 /** Inicio del Administrador: convocatoria, usuarios y actividad reciente. */
-export default function AdminInicio() {
+function AdminInicio() {
   const acc = useAccesos();
   const { cargada, hayActiva, nombres } = useConvocatoria();
   if (!cargada) return null;
@@ -72,4 +76,23 @@ export default function AdminInicio() {
       </div>
     </>
   );
+}
+
+/** Con el servidor real: cuentas y accesos guardados en la base de datos. */
+function Servidor() {
+  return (
+    <>
+      <PageHeader titulo="Administración" subtitulo="Cuentas del personal y accesos a SIGAP" />
+      <Aviso tono="info" titulo="Restablecer contraseñas">
+        Si alguien del personal olvidó su contraseña, confirma que es esa persona quien lo pide y usa “Restablecer contraseña”: se le genera una temporal que se muestra una sola vez y debe cambiarla al entrar. Los profesores también los puede atender el Departamento de Posgrado.
+      </Aviso>
+      <div className="mt-5">
+        <CuentasServidor alcance="admin" />
+      </div>
+    </>
+  );
+}
+
+export default function Pagina() {
+  return MODO_API ? <Servidor /> : <AdminInicio />;
 }

@@ -30,13 +30,18 @@ export class AuthGuard implements CanActivate {
     const token = h.startsWith('Bearer ') ? h.slice(7) : undefined;
     if (!token) throw new UnauthorizedException('Inicia sesión');
     let id: string;
+    let emitido = 0;
     try {
-      id = (verify(token, secretoJwt()) as { sub: string }).sub;
+      const datos = verify(token, secretoJwt()) as { sub: string; iat?: number };
+      id = datos.sub;
+      emitido = (datos.iat ?? 0) * 1000;
     } catch {
       throw new UnauthorizedException('Tu sesión expiró; vuelve a iniciar sesión');
     }
     const u = await this.prisma.usuario.findUnique({ where: { id } });
     if (!u || !u.activo) throw new UnauthorizedException('Cuenta inactiva');
+    // Sesión abierta antes de que se restableciera la contraseña: ya no vale
+    if (u.sesionesDesde && emitido < u.sesionesDesde.getTime() - 1000) throw new UnauthorizedException('Tu sesión ya no es válida; vuelve a iniciar sesión');
     req.usuario = { id: u.id, nombre: u.nombre, correo: u.correo, area: u.area, profesorId: u.profesorId } satisfies UsuarioSesion;
     const areas = this.reflector.getAllAndOverride<AreaPersonal[] | undefined>(AREAS, [ctx.getHandler(), ctx.getClass()]);
     if (areas?.length && !areas.includes(u.area)) throw new ForbiddenException('Tu cuenta no tiene acceso a esta sección');

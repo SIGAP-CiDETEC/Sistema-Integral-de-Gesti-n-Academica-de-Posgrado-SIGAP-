@@ -1,5 +1,8 @@
 "use client";
 
+import { MODO_API } from "@/lib/api";
+import { ActividadServidor } from "@/components/CuentasServidor";
+
 import { useMemo, useState, useSyncExternalStore } from "react";
 import { Download } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
@@ -39,7 +42,7 @@ const aEventos = (raw: string | null): Evento[] => {
 const fh = (iso: string) => new Date(iso).toLocaleString("es-MX", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
 
 /** Bitácora de auditoría y seguridad: administración + proceso de admisión (RF-82, RNF-11). */
-export default function BitacoraAdmin() {
+function BitacoraAdmin() {
   const acc = useAccesos();
   const [usuario, setUsuario] = useState("");
   const [modulo, setModulo] = useState("");
@@ -147,4 +150,18 @@ export default function BitacoraAdmin() {
       </Tarjeta>
     </>
   );
+}
+
+/** Con el servidor real: cuentas y accesos guardados en la base de datos. */
+function Servidor() {
+  return (
+    <>
+      <PageHeader titulo="Bitácora de accesos" subtitulo="Inicios de sesión, intentos fallidos y cambios de cuentas" />
+      <ActividadServidor />
+    </>
+  );
+}
+
+export default function Pagina() {
+  return MODO_API ? <Servidor /> : <BitacoraAdmin />;
 }

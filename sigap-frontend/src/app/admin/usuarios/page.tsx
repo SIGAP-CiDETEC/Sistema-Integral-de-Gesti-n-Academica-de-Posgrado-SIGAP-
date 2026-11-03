@@ -1,5 +1,8 @@
 "use client";
 
+import { MODO_API } from "@/lib/api";
+import { CuentasServidor } from "@/components/CuentasServidor";
+
 import { useState } from "react";
 import { CheckCircle2, KeyRound, TriangleAlert, UserPlus } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
@@ -19,7 +22,7 @@ import { USUARIOS_DEMO, useSesion } from "@/lib/sesion";
 const temporal = () => `Sigap#${Math.floor(1000 + Math.random() * 9000)}`;
 
 /** Alta de secretarias y analistas y asignación de su rol (RF-80, US-AD-02). */
-export default function Usuarios() {
+function Usuarios() {
   const acc = useAccesos();
   const { sesion } = useSesion();
   const quien = sesion?.correo ?? "admin";
@@ -247,4 +250,18 @@ export default function Usuarios() {
       </Tarjeta>
     </>
   );
+}
+
+/** Con el servidor real: cuentas y accesos guardados en la base de datos. */
+function Servidor() {
+  return (
+    <>
+      <PageHeader titulo="Usuarios" subtitulo="Cuentas del personal: contraseñas, altas y bajas" />
+      <CuentasServidor alcance="admin" />
+    </>
+  );
+}
+
+export default function Pagina() {
+  return MODO_API ? <Servidor /> : <Usuarios />;
 }
