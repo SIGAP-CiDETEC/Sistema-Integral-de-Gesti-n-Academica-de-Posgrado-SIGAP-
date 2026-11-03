@@ -11,6 +11,9 @@
  *   npm run reiniciar-entrevista -- DEMO2701 --conservar-profesores --reemplazar profesor1.prueba@sigap.local maldape@ipn.mx
  *       Además cambia a un profesor entrevistador por otro (por correo institucional).
  *
+ *   npm run reiniciar-entrevista -- MTCA2707 --sin-horario
+ *       Borra la entrevista por completo (horario, profesores, acta y dictamen): el aspirante vuelve a "Sin horario".
+ *
  *   npm run reiniciar-entrevista -- DEMO2701 --asignar correo1 correo2 correo3
  *       Deja como profesores entrevistadores exactamente a esos 3 (por correo) y el horario publicado a los profesores.
  *
@@ -31,6 +34,8 @@ async function main() {
   const reemplazo = iR >= 0 ? { de: args[iR + 1]?.toLowerCase(), a: args[iR + 2]?.toLowerCase() } : null;
   if (reemplazo && (!reemplazo.de || !reemplazo.a)) throw new Error('Uso: --reemplazar <correo del que sale> <correo del que entra>');
   if (reemplazo && !conservar) throw new Error('--reemplazar solo tiene sentido con --conservar-profesores');
+  const sinHorario = args.includes('--sin-horario');
+  if (sinHorario && args.some((x) => ['--conservar-profesores', '--reemplazar', '--asignar'].includes(x))) throw new Error('--sin-horario no se combina con otras opciones');
   const iA = args.indexOf('--asignar');
   const asignar = iA >= 0 ? args.slice(iA + 1).filter((x) => !x.startsWith('--')).map((x) => x.toLowerCase()) : null;
   if (asignar && asignar.length !== 3) throw new Error('--asignar necesita exactamente 3 correos de profesores');
@@ -45,6 +50,24 @@ async function main() {
   if (!p.entrevista) throw new Error(`${folio} aún no tiene horario de entrevista: no hay nada que reiniciar`);
   const e = p.entrevista;
   const nombre = [p.aspirante.nombres, p.aspirante.apellidoPaterno, p.aspirante.apellidoMaterno].filter(Boolean).join(' ');
+
+  if (sinHorario) {
+    const proc = { ...((p.estadoProceso ?? {}) as Record<string, unknown>) };
+    for (const k of ['etapa', 'concluido', 'evaluacion', 'resolucion', 'motivoReservas', 'turnadoUteycv', 'dedicacion', 'uteycv']) delete proc[k];
+    await prisma.$transaction(async (tx) => {
+      // La entrevista arrastra en cascada a sus profesores entrevistadores y al acta
+      await tx.entrevista.delete({ where: { id: e.id } });
+      if (p.resolucionColegio) await tx.registroResolucionColegio.delete({ where: { id: p.resolucionColegio.id } });
+      await tx.postulacion.update({ where: { id: p.id }, data: { estado: 'VALIDADA', estadoProceso: proc as object } });
+      await tx.eventoBitacora.create({
+        data: { entidad: 'Postulacion', entidadId: folio, actor: 'Administración del sistema', accion: `Quitó la entrevista de ${nombre} (horario, profesores entrevistadores y acta): vuelve a "Sin horario"` },
+      });
+    });
+    console.log(`${folio} · ${nombre}`);
+    console.log(`  Se borró la entrevista del ${e.fechaHora.toLocaleString('es-MX', { timeZone: 'America/Mexico_City' })} (${e.sala})${e.sinodo.length ? ` y se desasignó a ${e.sinodo.map((s) => s.profesor.nombre).join(', ')}` : ''}${e.acta ? '; también el acta MTC-EC y el dictamen' : ''}.`);
+    console.log('  Ahora está en Entrevistas → "Sin horario".');
+    return prisma.$disconnect();
+  }
 
   // Validar el reemplazo antes de cambiar nada
   let cambio: { sale: (typeof e.sinodo)[number]; entra: { id: string; nombre: string } } | null = null;
