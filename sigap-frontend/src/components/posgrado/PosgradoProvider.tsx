@@ -90,6 +90,8 @@ type Api = {
   porId: (id: string) => AspiranteP | undefined;
   actualizar: (id: string, patch: Partial<AspiranteP>, accion: string) => void;
   marcarDoc: (id: string, docId: string, estado: EstadoDoc, observacion?: string, prorrogaHasta?: string) => void;
+  /** Con el servidor real: Posgrado registra un documento (PDF) que el aspirante entregó después; queda por revisar. */
+  subirDocumento: (id: string, docId: string, archivo: File) => Promise<boolean>;
   cambiarEleccion: (id: string, modalidad: ModalidadId, grupos: Record<string, string>, motivo: string) => void;
   enviarComunicado: (c: Omit<Comunicado, "id" | "fecha" | "usuario">) => void;
   guardarActa: (acta: Omit<ActaColegio, "registradaEl">, accion: string) => void;
@@ -372,6 +374,19 @@ export function PosgradoProvider({ children }: { children: React.ReactNode }) {
             id,
           ),
         ),
+      subirDocumento: async (id, docId, archivo) => {
+        if (!MODO_API) return false;
+        const formulario = new FormData();
+        formulario.append("archivo", archivo);
+        try {
+          reemplazar(await api<AspiranteP>(`/aspirantes/${id}/documentos/${docId}/archivo`, { formulario }));
+          void refrescarBitacora();
+          return true;
+        } catch (e) {
+          notificar(mensajeDe(e));
+          return false;
+        }
+      },
       marcarDoc: (id, docId, estadoDoc, observacion, prorrogaHasta) => {
         const doc = aspirantes.find((a) => a.id === id)?.documentos.find((d) => d.id === docId);
         if (MODO_API) {

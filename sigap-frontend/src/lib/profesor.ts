@@ -68,12 +68,13 @@ export function useProfesorActual(): { profesor: ProfesorP | null; propio: Profe
 
 // ---------- Pendientes del profesor ----------
 
-export type EstadoEntrevistaProf = "Profesores entrevistadores incompletos" | "Esperando publicación" | "Por llenar acta" | "Por subir firmada" | "Dictaminada" | "Concluida";
+export type EstadoEntrevistaProf = "Profesores entrevistadores incompletos" | "Esperando publicación" | "Por llenar acta" | "Por subir firmada" | "Acta por validar" | "Dictaminada" | "Concluida";
 export const TONO_ENTREVISTA_PROF: Record<EstadoEntrevistaProf, string> = {
   "Profesores entrevistadores incompletos": "bg-gray-100 text-gray-700",
   "Esperando publicación": "bg-gray-100 text-gray-700",
   "Por llenar acta": "bg-indigo-50 text-primary",
   "Por subir firmada": "bg-amber-50 text-amber-800",
+  "Acta por validar": "bg-sky-50 text-sky-800",
   Dictaminada: "bg-emerald-50 text-emerald-700",
   Concluida: "bg-gray-100 text-gray-600",
 };
@@ -83,6 +84,9 @@ export const TONO_ENTREVISTA_PROF: Record<EstadoEntrevistaProf, string> = {
  * profesor no ve los datos del aspirante y todavía puede dejar su lugar.
  */
 export const citaPublicada = (a: AspiranteP) => !!a.entrevista?.notificadaEl || !!a.actaEntrevista || !!a.dictamen;
+
+/** Posgrado le liberó los documentos del aspirante (SIP-02 y cuestionario) antes de publicar la cita. */
+export const documentosLiberados = (a: AspiranteP) => !!a.entrevista?.documentosLiberadosEl;
 
 /** Entrevistas donde el profesor forma parte de los profesores entrevistadores. */
 export const entrevistasDe = (lista: AspiranteP[], prof?: string) => lista.filter((a) => !!prof && !!a.entrevista?.sinodo.includes(prof));
@@ -117,6 +121,7 @@ export function estadoEntrevistaProf(a: AspiranteP): EstadoEntrevistaProf {
   if (!a.actaEntrevista && !sinodoCompleto(a.entrevista)) return "Profesores entrevistadores incompletos";
   if (!a.actaEntrevista && !a.entrevista?.notificadaEl) return "Esperando publicación";
   if (!a.actaEntrevista) return "Por llenar acta";
+  if (a.actaEntrevista.firmada) return "Acta por validar";
   return "Por subir firmada";
 }
 

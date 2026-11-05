@@ -1,3 +1,4 @@
+import { MODO_API } from "@/lib/api";
 import type { EtapaId } from "../admision";
 import type { ModalidadId } from "../evaluacion";
 
@@ -36,6 +37,8 @@ export type Entrevista = {
   horarioPublicadoEl?: string;
   /** Cuándo Posgrado publicó la entrevista al aspirante (vacío = el aspirante aún no la ve) */
   notificadaEl: string;
+  /** Posgrado liberó a los profesores entrevistadores (mínimo 2) el SIP-02 y el cuestionario antes de publicar la cita */
+  documentosLiberadosEl?: string;
 };
 
 /** Duraciones que puede elegir Posgrado para la entrevista colegiada (minutos). */
@@ -109,8 +112,13 @@ export type ActaEntrevista = {
   capturadaEl: string;
   /** Primera descarga para imprimirse y firmarse: desde entonces ya no se puede corregir */
   descargada?: { por: string; el: string };
-  /** Acta impresa y firmada por los 3 profesores entrevistadores que subió uno de ellos (con esto se aplica el dictamen) */
-  firmada?: { archivo: string; subidaPor: string; el: string };
+  /**
+   * Acta impresa y firmada por los 3 profesores entrevistadores que subió uno de ellos. Posgrado la valida (que traiga
+   * las 3 firmas) y entonces se aplica el dictamen.
+   */
+  firmada?: { archivo: string; subidaPor: string; el: string; validada?: { por: string; el: string } };
+  /** Último rechazo del acta firmada por parte de Posgrado (los profesores deben volver a subirla) */
+  rechazoFirmada?: { motivo: string; por: string; el: string; archivo: string };
   /** Firmas en el sistema de versiones anteriores del cascarón (ya no se usan) */
   firmas?: Record<string, string>;
 };
@@ -121,17 +129,25 @@ export const sinodoCompleto = (e?: Entrevista) => !!e && e.sinodo.length >= LUGA
 /** Paso en que va la entrevista: Posgrado publica el horario → los profesores lo eligen → Posgrado la publica al aspirante. */
 export type PasoEntrevista = "Horario sin publicar" | "Esperando profesores" | "Lista para publicar" | "Publicada al aspirante";
 export const pasoEntrevista = (e: Entrevista): PasoEntrevista =>
-  e.notificadaEl ? "Publicada al aspirante" : !e.horarioPublicadoEl ? "Horario sin publicar" : sinodoCompleto(e) ? "Lista para publicar" : "Esperando profesores";
+  // Si Posgrado asignó a los 3 profesores, ya se puede publicar aunque el horario no se haya publicado a los profesores
+  e.notificadaEl ? "Publicada al aspirante" : sinodoCompleto(e) ? "Lista para publicar" : !e.horarioPublicadoEl ? "Horario sin publicar" : "Esperando profesores";
 export const TONO_PASO_ENTREVISTA: Record<PasoEntrevista, string> = {
   "Horario sin publicar": "bg-gray-100 text-gray-700",
   "Esperando profesores": "bg-amber-50 text-amber-800",
   "Lista para publicar": "bg-sky-50 text-sky-800",
   "Publicada al aspirante": "bg-emerald-50 text-emerald-700",
 };
-/** Estado del acta MTC-EC: sin llenar → llenada (por subir firmada) → firmada (dictamen aplicado). */
-export type EstadoActa = "Sin llenar" | "Por subir firmada" | "Firmada";
-export const estadoActa = (a: { actaEntrevista?: ActaEntrevista }): EstadoActa =>
-  !a.actaEntrevista ? "Sin llenar" : a.actaEntrevista.firmada ? "Firmada" : "Por subir firmada";
+/** Estado del acta MTC-EC: sin llenar → llenada (por subir firmada) → firmada, por validar → validada (dictamen aplicado). */
+export type EstadoActa = "Sin llenar" | "Por subir firmada" | "Por validar" | "Firmada";
+export const estadoActa = (a: { actaEntrevista?: ActaEntrevista; dictamen?: unknown }): EstadoActa =>
+  !a.actaEntrevista ? "Sin llenar" : !a.actaEntrevista.firmada ? "Por subir firmada" : actaPorValidar(a) ? "Por validar" : "Firmada";
+/**
+ * El acta firmada ya se subió pero Posgrado aún no revisa que traiga las firmas de los 3 profesores entrevistadores.
+ * Con el servidor también cuentan las que se subieron antes de que existiera la validación (ya con dictamen aplicado),
+ * para que Posgrado las revise; en la demostración, las de ejemplo con dictamen se toman como validadas.
+ */
+export const actaPorValidar = (a: { actaEntrevista?: ActaEntrevista; dictamen?: unknown }) =>
+  !!a.actaEntrevista?.firmada && !a.actaEntrevista.firmada.validada && (MODO_API || !a.dictamen);
 
 /** Áreas que se califican en el propedéutico y en el examen de admisión. */
 export type AreaEvalId = "matematicas" | "programacion";
@@ -701,6 +717,12 @@ export const diasPara = (fecha: string) => {
   return Math.round((new Date(`${fecha}T00:00:00`).getTime() - hoy.getTime()) / 86_400_000);
 };
 
+/**
+ * Documentos obligatorios que aún no están aprobados (faltan, en prórroga, observados o por revisar). El proceso puede
+ * continuar hasta el dictamen final aunque haya pendientes; Posgrado los sigue viendo y revisando.
+ */
+export const documentosPendientes = (a: AspiranteP) => a.documentos.filter((d) => !d.opcional && d.estado !== "aprobado");
+
 /** Documentos con prórroga que todavía no se entregan. */
 export const prorrogasDe = (a: AspiranteP) => a.documentos.filter((d) => d.estado === "prorroga" && d.prorrogaHasta);
 
@@ -709,6 +731,8 @@ export function leTocaAPosgrado(a: AspiranteP): boolean {
   const b = bandejaDe(a);
   // Entregó un documento (p. ej. dentro de su prórroga) que falta revisar
   if (!a.concluido && !a.turnadoUteycv && a.documentos.some((d) => d.estado === "pendiente")) return true;
+  // Un profesor subió el acta firmada: Posgrado revisa que traiga las 3 firmas
+  if (actaPorValidar(a)) return true;
   if (b === "Registro incompleto" || b === "Con observaciones" || b === "Admitido" || b === "No admitido") return false;
   if (b === "En evaluación" && !a.evaluacion.modalidad) return false;
   // Las calificaciones las capturan los profesores; a Posgrado le toca cuando hay que publicarlas

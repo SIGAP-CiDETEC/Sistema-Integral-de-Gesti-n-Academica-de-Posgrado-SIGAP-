@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { use, useState } from "react";
-import { BellRing, CalendarCheck, CheckCircle2, Pencil, Send } from "lucide-react";
+import { BellRing, CalendarCheck, CheckCircle2, FileCheck, Pencil, Send, UserPlus } from "lucide-react";
 import { ActaVista, SinodoActa, TONO_RESOLUCION } from "@/components/profesor/ActaVista";
 import { PageHeader } from "@/components/PageHeader";
 import { fechaRecordatorio, recordatoriosEntrevista } from "@/lib/recordatorios";
 import { usePosgrado } from "@/components/posgrado/PosgradoProvider";
 import { Aviso, Etiqueta, Migas, Tarjeta, botonPrimario, botonSecundario, inputBase } from "@/components/posgrado/ui";
 import { AvisoAspirante } from "@/components/posgrado/AvisoAspirante";
+import { ValidarActaFirmada } from "@/components/posgrado/ValidarActaFirmada";
 import { citaTexto, usePublicarEntrevistas } from "@/components/posgrado/usePublicarEntrevistas";
 import { MODO_API, api } from "@/lib/api";
 import { mensajeDe, notificar } from "@/lib/avisos-ui";
@@ -25,6 +26,7 @@ import {
   nombramientoDe,
   nombreProfesor,
   pasoEntrevista,
+  profesorValido,
   seTraslapan,
   sinodoCompleto,
   textoDuracion,
@@ -87,26 +89,7 @@ export default function EntrevistaAspirante({ params }: PageProps<"/posgrado/ent
               <Dato k="Sala / enlace" v={e.sala} />
             </dl>
 
-            <div className="mt-4 rounded-lg border border-gray-100 p-3">
-              <p className="text-sm font-medium text-gray-900">
-                Profesores entrevistadores · {e.sinodo.length} de 3 profesores
-              </p>
-              <ol className="mt-2 grid gap-2 sm:grid-cols-3">
-                {[0, 1, 2].map((i) => (
-                  <li key={i} className={`rounded-md px-3 py-2 text-sm ${e.sinodo[i] ? "bg-indigo-50 text-gray-900" : "border border-dashed border-gray-300 text-gray-400"}`}>
-                    {e.sinodo[i] ? (
-                      <>
-                        {nombreProfesor(e.sinodo[i])}
-                        <span className="block text-xs text-gray-500">{nombramientoDe(PROFESORES_SINODO.find((p) => p.id === e.sinodo[i])!)}</span>
-                      </>
-                    ) : (
-                      `Lugar ${i + 1} libre`
-                    )}
-                  </li>
-                ))}
-              </ol>
-              <p className="mt-2 text-xs text-gray-500">Los profesores eligen la entrevista desde su sesión; ven solo el día y la hora hasta que se integran a los profesores entrevistadores.</p>
-            </div>
+            <ProfesoresEntrevista a={a} />
 
             {paso === "Horario sin publicar" && (
               <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-lg bg-gray-50 px-3 py-2.5 text-sm">
@@ -315,20 +298,28 @@ function EsperandoActa({ a }: { a: AspiranteP }) {
     <>
       <Tarjeta titulo="Acta de los profesores entrevistadores (MTC-EC)">
         <p className="text-sm text-gray-600">
-          Un profesor entrevistador llena el acta en su sesión; los tres la imprimen y la firman, y el primero que sube el PDF firmado aplica el dictamen (se avisa
-          al aspirante).
+          Un profesor entrevistador llena el acta en su sesión; los tres la imprimen y la firman, y uno sube el PDF firmado. Posgrado valida que traiga las 3 firmas
+          y entonces se aplica el dictamen (se avisa al aspirante).
         </p>
         <p className="mt-3 text-sm">
           Estado:{" "}
           <Etiqueta tono={a.actaEntrevista ? "bg-sky-50 text-sky-800" : "bg-gray-100 text-gray-700"}>
-            {a.actaEntrevista ? "Acta llenada · por subir firmada" : sinodoCompleto(a.entrevista) ? "Los profesores entrevistadores aún no llenan el acta" : `Profesores entrevistadores ${a.entrevista?.sinodo.length ?? 0} de 3`}
+            {a.actaEntrevista?.firmada ? "Acta firmada · por validar" : a.actaEntrevista ? "Acta llenada · por subir firmada" : sinodoCompleto(a.entrevista) ? "Los profesores entrevistadores aún no llenan el acta" : `Profesores entrevistadores ${a.entrevista?.sinodo.length ?? 0} de 3`}
           </Etiqueta>
         </p>
         <div className="mt-3">
           <SinodoActa a={a} />
         </div>
+        <div className="mt-3">
+          <ValidarActaFirmada a={a} />
+        </div>
+        {a.actaEntrevista?.rechazoFirmada && !a.actaEntrevista.firmada && (
+          <p className="mt-3 text-xs text-red-700">
+            Rechazaste el acta firmada anterior el {fechaCorta(a.actaEntrevista.rechazoFirmada.el)}: {a.actaEntrevista.rechazoFirmada.motivo}
+          </p>
+        )}
       </Tarjeta>
-      {a.actaEntrevista && <ActaVista a={a} titulo="Acta llenada (pendiente de subir firmada)" />}
+      {a.actaEntrevista && <ActaVista a={a} titulo={a.actaEntrevista.firmada ? "Acta llenada (firmada, por validar)" : "Acta llenada (pendiente de subir firmada)"} />}
     </>
   );
 }
@@ -346,5 +337,130 @@ function DictamenRegistrado({ a }: { a: AspiranteP }) {
       </Tarjeta>
       {a.actaEntrevista && <ActaVista a={a} />}
     </>
+  );
+}
+
+/**
+ * Profesores entrevistadores de la entrevista. Lo habitual es que cada profesor elija la entrevista desde su sesión;
+ * como opción, Posgrado puede asignarlos o quitarlos aquí, y liberarles los documentos del aspirante (mínimo 2
+ * profesores) antes de publicar la cita.
+ */
+function ProfesoresEntrevista({ a }: { a: AspiranteP }) {
+  const { actualizar, aspirantes, recargar } = usePosgrado();
+  const [elegido, setElegido] = useState("");
+  const [trabajando, setTrabajando] = useState(false);
+  const e = a.entrevista!;
+  const editable = !a.actaEntrevista && !a.dictamen && !a.concluido;
+  // Profesores que se pueden asignar: vigentes, que no estén ya y sin otra entrevista que se encime
+  const opciones = PROFESORES_SINODO.filter((p) => profesorValido(p) && !e.sinodo.includes(p.id)).map((p) => ({
+    p,
+    choque: aspirantes.some((x) => x.id !== a.id && !x.dictamen && !x.concluido && x.entrevista?.sinodo.includes(p.id) && seTraslapan(x.entrevista, e)),
+  }));
+
+  const enServidor = async (ruta: string, cuerpo: object, exito: string) => {
+    setTrabajando(true);
+    try {
+      await api(ruta, { cuerpo });
+      notificar(exito, "exito");
+    } catch (err) {
+      notificar(mensajeDe(err));
+    }
+    await recargar();
+    setTrabajando(false);
+  };
+  const asignar = () => {
+    const prof = PROFESORES_SINODO.find((p) => p.id === elegido);
+    if (!prof) return;
+    setElegido("");
+    if (MODO_API) return void enServidor(`/aspirantes/${a.id}/entrevista/asignar`, { profesorId: prof.id }, `${prof.nombre} asignado a la entrevista`);
+    actualizar(a.id, { entrevista: { ...e, sinodo: [...e.sinodo, prof.id] } }, `Asignó a ${prof.nombre} como profesor entrevistador (${e.sinodo.length + 1} de 3)`);
+  };
+  const quitar = (id: string) => {
+    if (MODO_API) return void enServidor(`/aspirantes/${a.id}/entrevista/quitar`, { profesorId: id }, `${nombreProfesor(id)} ya no está en la entrevista`);
+    actualizar(a.id, { entrevista: { ...e, sinodo: e.sinodo.filter((x) => x !== id) } }, `Quitó a ${nombreProfesor(id)} de los profesores entrevistadores (${e.sinodo.length - 1} de 3)`);
+  };
+  const liberar = (si: boolean) => {
+    if (MODO_API) return void enServidor(`/aspirantes/${a.id}/entrevista/documentos`, { liberar: si }, si ? "Documentos liberados a los profesores entrevistadores" : "Se retiró el acceso anticipado a los documentos");
+    actualizar(
+      a.id,
+      { entrevista: { ...e, documentosLiberadosEl: si ? new Date().toISOString() : undefined } },
+      si ? `Liberó los documentos del aspirante a los ${e.sinodo.length} profesores entrevistadores antes de publicar la cita` : "Retiró el acceso anticipado a los documentos del aspirante",
+    );
+  };
+
+  return (
+    <div className="mt-4 rounded-lg border border-gray-100 p-3">
+      <p className="text-sm font-medium text-gray-900">Profesores entrevistadores · {e.sinodo.length} de 3 profesores</p>
+      <ol className="mt-2 grid gap-2 sm:grid-cols-3">
+        {[0, 1, 2].map((i) => {
+          const id = e.sinodo[i];
+          return (
+            <li key={i} className={`rounded-md px-3 py-2 text-sm ${id ? "bg-indigo-50 text-gray-900" : "border border-dashed border-gray-300 text-gray-400"}`}>
+              {id ? (
+                <>
+                  {nombreProfesor(id)}
+                  <span className="block text-xs text-gray-500">{nombramientoDe(PROFESORES_SINODO.find((p) => p.id === id)!)}</span>
+                  {editable && (
+                    <button type="button" disabled={trabajando} className="mt-1 text-xs text-gray-500 hover:text-red-700 hover:underline" onClick={() => quitar(id)}>
+                      Quitar
+                    </button>
+                  )}
+                </>
+              ) : (
+                `Lugar ${i + 1} libre`
+              )}
+            </li>
+          );
+        })}
+      </ol>
+      <p className="mt-2 text-xs text-gray-500">
+        Lo habitual es que los profesores elijan la entrevista desde su sesión (ven solo el día y la hora hasta integrarse). Si hace falta, también puedes asignarlos tú.
+      </p>
+
+      {editable && e.sinodo.length < 3 && (
+        <div className="mt-3 flex flex-wrap items-end gap-2 rounded-lg bg-gray-50 p-3">
+          <label className="min-w-0 flex-1 text-xs text-gray-700">
+            Asignar profesor (opcional)
+            <select value={elegido} onChange={(ev) => setElegido(ev.target.value)} className={`${inputBase} mt-0.5`}>
+              <option value="">Elige un profesor…</option>
+              {opciones.map(({ p, choque }) => (
+                <option key={p.id} value={p.id} disabled={choque}>
+                  {p.nombre}
+                  {choque ? " — tiene otra entrevista a esa hora" : ""}
+                </option>
+              ))}
+            </select>
+          </label>
+          <button type="button" className={botonSecundario} disabled={!elegido || trabajando} onClick={asignar}>
+            <UserPlus size={14} /> Asignar
+          </button>
+        </div>
+      )}
+
+      {editable && !e.notificadaEl && (
+        <div className="mt-3 rounded-lg border border-sky-200 bg-sky-50/60 p-3 text-sm">
+          {e.documentosLiberadosEl ? (
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="flex items-center gap-1.5 text-sky-900">
+                <FileCheck size={15} /> Documentos liberados el {fechaCorta(e.documentosLiberadosEl.slice(0, 10))}: los profesores entrevistadores ya ven el SIP-02 y el cuestionario.
+              </span>
+              <button type="button" className="text-xs text-gray-600 hover:underline" disabled={trabajando} onClick={() => liberar(false)}>
+                Retirar acceso
+              </button>
+            </div>
+          ) : (
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="text-sky-900">
+                <b>Opcional:</b> liberar el SIP-02 y el cuestionario a los profesores entrevistadores antes de publicar la cita
+                {e.sinodo.length < 2 ? " (se necesitan al menos 2 profesores)." : "."}
+              </span>
+              <button type="button" className={botonSecundario} disabled={e.sinodo.length < 2 || trabajando} onClick={() => liberar(true)}>
+                <FileCheck size={14} /> Liberar documentos
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
   );
 }

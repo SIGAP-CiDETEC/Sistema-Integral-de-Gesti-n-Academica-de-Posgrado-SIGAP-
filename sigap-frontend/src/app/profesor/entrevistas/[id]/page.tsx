@@ -3,6 +3,7 @@
 import { use, useState } from "react";
 import { CalendarCheck, CheckCircle2, PenLine, Pencil, TriangleAlert, Upload, Wand2 } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
+import { ArchivoServidor } from "@/components/ArchivoServidor";
 import { usePosgrado } from "@/components/posgrado/PosgradoProvider";
 import { Aviso, Etiqueta, Migas, Tarjeta, botonPrimario, botonSecundario, inputBase } from "@/components/posgrado/ui";
 import { ActaVista, DescargarActa, SinodoActa, TEXTO_CONTINUAR, TONO_RESOLUCION } from "@/components/profesor/ActaVista";
@@ -23,7 +24,7 @@ import {
   type Valoracion,
   horarioEntrevista,
 } from "@/lib/posgrado/datos";
-import { TONO_ENTREVISTA_PROF, citaPublicada, estadoEntrevistaProf, useProfesorActual } from "@/lib/profesor";
+import { TONO_ENTREVISTA_PROF, citaPublicada, documentosLiberados, estadoEntrevistaProf, useProfesorActual } from "@/lib/profesor";
 
 /**
  * Entrevista colegiada desde la sesión del profesor. El acta MTC-EC funciona como cola: el primer profesor entrevistador que la llena
@@ -60,6 +61,20 @@ export default function EntrevistaProfesor({ params }: PageProps<"/profesor/entr
     );
 
   // Antes de que Posgrado publique la cita, el profesor no ve los datos del aspirante
+  if (!citaPublicada(a) && !a.concluido && documentosLiberados(a))
+    return (
+      <>
+        {migas}
+        <PageHeader titulo="Entrevista colegiada" subtitulo={`${a.nombre} · ${fechaCorta(a.entrevista.fecha)} · ${horarioEntrevista(a.entrevista)}`} />
+        <Aviso tono="info" titulo="Posgrado te liberó los documentos del aspirante">
+          Ya puedes revisar su currículum y su cuestionario para preparar la entrevista. Podrás llenar el acta MTC-EC cuando el Departamento de Posgrado publique la
+          cita (profesores entrevistadores: {a.entrevista.sinodo.length} de 3).
+        </Aviso>
+        <div className="mt-6">
+          <DocumentosAspirante a={a} />
+        </div>
+      </>
+    );
   if (!citaPublicada(a) && !a.concluido)
     return (
       <>
@@ -185,7 +200,24 @@ export default function EntrevistaProfesor({ params }: PageProps<"/profesor/entr
                 )
               }
             />
-            {!a.dictamen && (
+            {!a.dictamen && acta.firmada && (
+              <Aviso tono="info" titulo="Acta firmada recibida: Posgrado la está validando">
+                {nombreProfesor(acta.firmada.subidaPor)} la subió el {fechaCorta(acta.firmada.el)} ({acta.firmada.archivo}). El Departamento de Posgrado revisa que traiga las firmas de
+                los 3 profesores entrevistadores; al validarla se aplica el dictamen. Si falta alguna firma, te avisará aquí para volver a subirla.
+                {MODO_API && (
+                  <span className="mt-1 block">
+                    <ArchivoServidor ruta={`/aspirantes/${a.id}/acta/firmada`} texto="Ver acta firmada" />
+                  </span>
+                )}
+              </Aviso>
+            )}
+            {!a.dictamen && !acta.firmada && acta.rechazoFirmada && (
+              <Aviso tono="error" titulo="Posgrado rechazó el acta firmada: vuelve a subirla">
+                {acta.rechazoFirmada.motivo} (revisado por {acta.rechazoFirmada.por} el {fechaCorta(acta.rechazoFirmada.el)}). Recaba las firmas que faltan y sube de nuevo el PDF con las
+                firmas de los 3 profesores entrevistadores.
+              </Aviso>
+            )}
+            {!a.dictamen && !acta.firmada && (
               <Tarjeta titulo="Acta firmada por los 3 profesores entrevistadores">
                 <ol className="list-decimal space-y-1 pl-5 text-sm text-gray-700">
                   <li>
@@ -193,7 +225,7 @@ export default function EntrevistaProfesor({ params }: PageProps<"/profesor/entr
                     descárgala e imprímela.
                   </li>
                   <li>Fírmenla los 3 profesores entrevistadores.</li>
-                  <li>Súbela escaneada en PDF: el primero que la suba aplica el dictamen y se bloquea la subida para los demás.</li>
+                  <li>Súbela escaneada en PDF con las 3 firmas: el primero que la suba la envía a Posgrado, que la valida y entonces se aplica el dictamen.</li>
                 </ol>
                 <div className="mt-4 flex flex-wrap items-center gap-2">
                   <DescargarActa a={a} alDescargar={() => cerrarActa(a, yo)} />

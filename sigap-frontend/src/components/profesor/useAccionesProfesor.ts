@@ -40,7 +40,7 @@ export function useAccionesProfesor() {
     }
   };
 
-  /** Con el acta firmada por los 3 el dictamen surte efecto (RF-12, RN-05). */
+  /** Con el acta firmada por los 3, validada por Posgrado, el dictamen surte efecto (RF-12, RN-05). */
   const aplicarDictamen = (a: AspiranteP, acta: ActaEntrevista) => {
     const res = acta.resolucion;
     const comentarios = [acta.observaciones, acta.motivo].filter((x) => x.trim()).join(" · ");
@@ -52,7 +52,7 @@ export function useAccionesProfesor() {
         ...(res === "Rechazado" ? { concluido: "Rechazado en la entrevista colegiada" } : { etapa: "evaluacion" as const }),
         formatos: { ...a.formatos, "mtc-ec": true },
       },
-      `${nombreProfesor(acta.firmada?.subidaPor ?? "")} subió el acta MTC-EC firmada por los 3 profesores entrevistadores (${acta.firmada?.archivo}). Dictamen de entrevista: ${res}${
+      `Validó el acta MTC-EC firmada por los 3 profesores entrevistadores (${acta.firmada?.archivo}, subida por ${nombreProfesor(acta.firmada?.subidaPor ?? "")}). Dictamen de entrevista: ${res}${
         res === "Rechazado" ? ". El proceso queda concluido" : "; pasa a evaluación"
       }`,
     );
@@ -102,11 +102,40 @@ export function useAccionesProfesor() {
       if (!(archivo instanceof File)) return false;
       const formulario = new FormData();
       formulario.append("archivo", archivo, archivo.name);
-      return enServidor(`/aspirantes/${a.id}/acta/firmada`, { formulario }, "Acta firmada recibida: el dictamen quedó aplicado");
+      return enServidor(`/aspirantes/${a.id}/acta/firmada`, { formulario }, "Acta firmada recibida: Posgrado revisará que traiga las 3 firmas");
     }
     const acta = a.actaEntrevista;
     if (!acta || acta.firmada || a.dictamen) return false;
-    aplicarDictamen(a, { ...acta, firmada: { archivo: archivo.name, subidaPor: profesor, el: new Date().toISOString() } });
+    actualizar(
+      a.id,
+      { actaEntrevista: { ...acta, firmada: { archivo: archivo.name, subidaPor: profesor, el: new Date().toISOString() } } },
+      `${nombreProfesor(profesor)} subió el acta MTC-EC firmada (${archivo.name}); queda por validar por el Departamento de Posgrado`,
+    );
+    return true;
+  };
+
+  /**
+   * Posgrado valida el acta firmada: si trae las firmas de los 3 profesores entrevistadores se aplica el dictamen; si
+   * no, se rechaza con un motivo y los profesores la vuelven a subir.
+   */
+  const validarActa = async (a: AspiranteP, aprobar: boolean, motivo: string, quien: string): Promise<boolean> => {
+    if (MODO_API)
+      return enServidor(
+        `/aspirantes/${a.id}/acta/validacion`,
+        { cuerpo: { aprobar, motivo } },
+        aprobar ? "Acta validada: el dictamen de entrevista quedó aplicado" : "Acta rechazada: los profesores deberán volver a subirla",
+      );
+    const acta = a.actaEntrevista;
+    if (!acta?.firmada || acta.firmada.validada || a.dictamen) return false; // demostración
+    if (aprobar) {
+      aplicarDictamen(a, { ...acta, firmada: { ...acta.firmada, validada: { por: quien, el: new Date().toISOString() } } });
+      return true;
+    }
+    actualizar(
+      a.id,
+      { actaEntrevista: { ...acta, firmada: undefined, rechazoFirmada: { motivo, por: quien, el: new Date().toISOString(), archivo: acta.firmada.archivo } } },
+      `Rechazó el acta MTC-EC firmada (${acta.firmada.archivo}): ${motivo}. Los profesores entrevistadores deben volver a subirla`,
+    );
     return true;
   };
 
@@ -158,5 +187,5 @@ export function useAccionesProfesor() {
     actualizar(a.id, { entrevista: nueva }, `${nombreProfesor(profesor)} dejó su lugar en la entrevista del ${fechaCorta(e.fecha)} de ${horarioEntrevista(e)} · profesores entrevistadores ${nueva.sinodo.length} de 3`);
   };
 
-  return { guardarActa, cerrarActa, subirActaFirmada, capturar, elegirEntrevista, dejarLugar };
+  return { guardarActa, cerrarActa, subirActaFirmada, validarActa, capturar, elegirEntrevista, dejarLugar };
 }

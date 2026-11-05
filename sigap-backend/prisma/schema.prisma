@@ -424,6 +424,8 @@ model Entrevista {
   sala                  String
   horarioPublicadoEn    DateTime?
   publicadaAspiranteEn  DateTime?
+  /// Posgrado liberó a los profesores entrevistadores (mínimo 2) el SIP-02 y el cuestionario antes de publicar la cita
+  documentosLiberadosEn DateTime?
   postulacion           Postulacion           @relation(fields: [postulacionId], references: [id], onDelete: Cascade)
   sinodo                IntegranteSinodo[]
   acta                  ActaEntrevista?
@@ -465,6 +467,11 @@ model ActaEntrevista {
   firmadaArchivoRuta    String?
   firmadaSubidaPorId    String?
   firmadaSubidaEn       DateTime?
+  /// Posgrado revisó que el acta firmada traiga las firmas de los 3; hasta entonces no se aplica el dictamen
+  firmadaValidadaEn     DateTime?
+  firmadaValidadaPor    String?
+  /// Actas firmadas que Posgrado rechazó: [{ motivo, por, el, archivo, ruta, subidaPor }]
+  firmadaRechazos       Json                   @default("[]")
   entrevista            Entrevista             @relation(fields: [entrevistaId], references: [id], onDelete: Cascade)
   firmas                FirmaActaEntrevista[]
   creadoEn              DateTime               @default(now())

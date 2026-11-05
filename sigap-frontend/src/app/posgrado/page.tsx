@@ -6,7 +6,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { usePosgrado } from "@/components/posgrado/PosgradoProvider";
 import { Aviso, EtiquetaBandeja, Kpi, Tarjeta } from "@/components/posgrado/ui";
 import { convocatoriaActual } from "@/lib/config";
-import { bandejaDe, diasPara, fechaCorta, horarioEntrevista, nombreProfesor, prioridadDe, prorrogasDe, type Bandeja } from "@/lib/posgrado/datos";
+import { actaPorValidar, bandejaDe, diasPara, documentosPendientes, fechaCorta, horarioEntrevista, nombreProfesor, prioridadDe, prorrogasDe, type Bandeja } from "@/lib/posgrado/datos";
 
 /** Con el servidor real solo están conectadas las entrevistas: las demás bandejas aún no se muestran. */
 
@@ -33,6 +33,11 @@ export default function PosgradoInicio() {
     .flatMap((a) => prorrogasDe(a).map((d) => ({ a, d, dias: diasPara(d.prorrogaHasta!) })))
     .sort((x, y) => x.dias - y.dias);
   const altas = aspirantes.filter((a) => prioridadDe(a).nivel === "Alta").length;
+  // Siguen su proceso aunque les falte algún documento (sin contar los que ya están en prórroga, que se listan aparte)
+  const conPendientes = activos
+    .filter((a) => a.etapa !== "registro" && a.etapa !== "documentos")
+    .map((a) => ({ a, docs: documentosPendientes(a).filter((d) => d.estado !== "prorroga") }))
+    .filter((x) => x.docs.length);
   const proximas = aspirantes
     .filter((a) => a.entrevista && !a.dictamen)
     .sort((x, y) => `${x.entrevista!.fecha}${x.entrevista!.hora}`.localeCompare(`${y.entrevista!.fecha}${y.entrevista!.hora}`));
@@ -120,6 +125,29 @@ export default function PosgradoInicio() {
                       {a.nombre}
                     </Link>{" "}
                     · {d.nombre} · {dias < 0 ? <b>vencida</b> : dias <= 3 ? <b>vence en {dias} día(s)</b> : `vence el ${fechaCorta(d.prorrogaHasta!)}`}
+                  </li>
+                ))}
+              </ul>
+            </Aviso>
+          )}
+          {activos.some(actaPorValidar) && (
+            <Aviso tono="alerta" titulo={`Actas de entrevista firmadas por validar · ${activos.filter(actaPorValidar).length}`}>
+              Revisa que traigan las firmas de los 3 profesores entrevistadores para aplicar el dictamen.{" "}
+              <Link href="/posgrado/dictamen-entrevista" className="underline">
+                Ir a Dictamen de entrevista colegiada
+              </Link>
+            </Aviso>
+          )}
+          {conPendientes.length > 0 && (
+            <Aviso tono="info" titulo={`Expedientes aprobados con documentos pendientes · ${conPendientes.length}`}>
+              <p>Siguen su proceso hasta el dictamen final; registra cada documento cuando lo entreguen o dales prórroga.</p>
+              <ul className="mt-1 space-y-0.5">
+                {conPendientes.map(({ a, docs }) => (
+                  <li key={a.id}>
+                    <Link href={`/posgrado/aspirantes/${a.id}`} className="underline">
+                      {a.nombre}
+                    </Link>{" "}
+                    · {docs.map((d) => `${d.nombre.toLowerCase()}${d.estado === "pendiente" ? " (por revisar)" : d.estado === "observado" ? " (observado)" : ""}`).join(", ")}
                   </li>
                 ))}
               </ul>

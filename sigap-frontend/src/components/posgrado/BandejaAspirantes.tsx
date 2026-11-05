@@ -8,7 +8,7 @@ import { usePosgrado } from "@/components/posgrado/PosgradoProvider";
 import { EtiquetaBandeja, Etiqueta, Progreso, botonSecundario, inputBase, Regresar } from "@/components/posgrado/ui";
 import { descargarReporteAspirantes } from "@/lib/reporte-aspirantes";
 import { ETAPAS } from "@/lib/admision";
-import { TONO_BANDEJA, bandejaDe, prioridadDe, progresoDe, type Bandeja, type Prioridad } from "@/lib/posgrado/datos";
+import { TONO_BANDEJA, bandejaDe, prioridadDe, progresoDe, type Bandeja, type Prioridad, documentosPendientes } from "@/lib/posgrado/datos";
 
 const PRIORIDAD: Record<Prioridad, string> = { Alta: "bg-red-50 text-red-700", Media: "bg-amber-50 text-amber-800", Normal: "bg-gray-100 text-gray-600" };
 
@@ -139,6 +139,11 @@ export function BandejaAspirantes({ inicial, prioridadInicial }: { inicial?: str
                     </td>
                     <td className="px-3 py-3">
                       <EtiquetaBandeja b={b} />
+                      {a.etapa !== "registro" && a.etapa !== "documentos" && !a.concluido && documentosPendientes(a).length > 0 && (
+                        <p className="mt-1 text-[11px] text-amber-800">
+                          {documentosPendientes(a).length} documento(s) pendiente(s)
+                        </p>
+                      )}
                     </td>
                     <td className="px-3 py-3">
                       <Progreso {...progresoDe(a)} />

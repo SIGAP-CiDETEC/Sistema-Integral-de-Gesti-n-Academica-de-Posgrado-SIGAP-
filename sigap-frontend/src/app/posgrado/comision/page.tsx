@@ -10,7 +10,7 @@ import { generarResultadosFinales } from "@/lib/pdf/resultados-finales";
 import { descargarCsv } from "@/lib/csv";
 import { convocatoriaActual } from "@/lib/config";
 import { fechaResultados, guardarConvocatorias, hoyISO, useConvocatorias } from "@/lib/convocatoria";
-import { fechaCorta, prorrogasDe, resultadoFinal, type AspiranteP, type ResolucionColegio } from "@/lib/posgrado/datos";
+import { documentosPendientes, fechaCorta, resultadoFinal, type AspiranteP, type ResolucionColegio } from "@/lib/posgrado/datos";
 import { MODO_API } from "@/lib/api";
 import { DICTAMEN_FINAL, TONO_DICTAMEN } from "@/lib/reporte-aspirantes";
 
@@ -338,11 +338,17 @@ function DictamenFinal() {
                 <ArrowRight size={13} className="text-emerald-600" />
                 <span className="font-medium text-gray-900">{a.nombre}</span>
                 {a.resolucion && <Etiqueta tono={TONO[a.resolucion]}>{a.resolucion}</Etiqueta>}
-                {prorrogasDe(a).map((d) => (
-                  <Etiqueta key={d.id} tono="bg-sky-50 text-sky-800">
-                    {d.nombre} en prórroga al {fechaCorta(d.prorrogaHasta!)}
-                  </Etiqueta>
-                ))}
+                {documentosPendientes(a).map((d) =>
+                  d.estado === "prorroga" && d.prorrogaHasta ? (
+                    <Etiqueta key={d.id} tono="bg-sky-50 text-sky-800">
+                      {d.nombre} en prórroga al {fechaCorta(d.prorrogaHasta)}
+                    </Etiqueta>
+                  ) : (
+                    <Etiqueta key={d.id} tono="bg-amber-50 text-amber-800">
+                      {d.nombre}: {d.estado === "pendiente" ? "por revisar" : d.estado === "observado" ? "observado" : "falta"}
+                    </Etiqueta>
+                  ),
+                )}
                 {a.turnadoUteycv && <span className="text-xs text-gray-500">· publicado el {fechaCorta(a.turnadoUteycv)}</span>}
               </li>
             ))}

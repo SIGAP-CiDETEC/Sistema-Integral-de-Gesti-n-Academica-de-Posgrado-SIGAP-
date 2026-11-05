@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { use, useState } from "react";
-import { CalendarClock, CheckCircle2, Circle, FileText, History, Mail, ShieldAlert, Wand2, XCircle } from "lucide-react";
+import { CalendarClock, CheckCircle2, Circle, FileText, History, Mail, ShieldAlert, Upload, Wand2, XCircle } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { ArchivoServidor } from "@/components/ArchivoServidor";
 import { MODO_API } from "@/lib/api";
@@ -16,6 +16,8 @@ import {
   estadoInscripcion,
   puedeInscribirse,
   expedienteCompleto,
+  documentosPendientes,
+  diasPara,
   fechaCorta,
   fechaHora,
   nombreProfesor,
@@ -30,7 +32,6 @@ const FORMATOS = [
 ];
 
 /** Solo el inglés y el título pueden tener prórroga (el resto se entrega completo). */
-const CON_PRORROGA = ["ingles", "titulo"];
 
 /** Revisión de expediente (RF-05, RF-06, RF-52, RF-53, RN-09, RN-11). */
 export default function RevisionExpediente({ params }: PageProps<"/posgrado/aspirantes/[id]">) {
@@ -60,6 +61,7 @@ export default function RevisionExpediente({ params }: PageProps<"/posgrado/aspi
   const conProrroga = a.documentos.filter((d) => d.estado === "prorroga");
   const observados = a.documentos.filter((d) => d.estado === "observado");
   const completo = expedienteCompleto(a);
+  const pendientes = documentosPendientes(a);
   const idxEtapa = ETAPAS.findIndex((e) => e.id === a.etapa);
   const res = resultadoFinal(a.evaluacion);
   const bitacoraAsp = bitacora.filter((x) => x.aspirante === a.id);
@@ -183,7 +185,8 @@ export default function RevisionExpediente({ params }: PageProps<"/posgrado/aspi
                           placeholder={doc.id === "ingles" ? "Ej. La constancia no acredita el nivel requerido" : "Ej. El reverso no es legible"}
                           className={`${inputBase} mt-1 ${errorObs ? "border-red-400" : ""}`}
                         />
-                        {doc.archivo && (
+                        {MODO_API && doc.estado !== "pendiente" && <RegistrarEntrega key={`${a.id}-${doc.id}`} aspirante={a.id} doc={doc} />}
+                        {doc.archivo && doc.estado !== "falta" && (
                           <div className="mt-3 flex flex-wrap gap-2">
                             <button type="button" className={botonPrimario} onClick={() => decidir("aprobado")}>
                               <CheckCircle2 size={15} /> {doc.id === "ingles" ? "Validar constancia" : "Aprobar"}
@@ -194,7 +197,7 @@ export default function RevisionExpediente({ params }: PageProps<"/posgrado/aspi
                           </div>
                         )}
 
-                        {CON_PRORROGA.includes(doc.id) && (
+                        {doc.estado !== "pendiente" && (
                         <div className="mt-4 rounded-lg border border-sky-200 bg-sky-50/60 p-3">
                           <p className="flex items-center gap-1.5 text-sm font-medium text-sky-900">
                             <CalendarClock size={15} /> {doc.estado === "prorroga" ? "Cambiar prórroga" : "Dar prórroga"}
@@ -272,11 +275,32 @@ export default function RevisionExpediente({ params }: PageProps<"/posgrado/aspi
             </div>
           )}
 
-          {!editable && a.etapa !== "registro" && a.etapa !== "documentos" && (
-            <Aviso tono="exito" titulo="Expediente aprobado">
-              Los documentos ya fueron validados; el expediente continúa en la etapa {ETAPAS[idxEtapa].label.toLowerCase()}.
-            </Aviso>
-          )}
+          {!editable && a.etapa !== "registro" && a.etapa !== "documentos" &&
+            (pendientes.length ? (
+              <Aviso tono="alerta" titulo={`Expediente aprobado con ${pendientes.length} documento(s) pendiente(s)`}>
+                <p>
+                  Puede seguir su proceso hasta el dictamen final (ahora está en {ETAPAS[idxEtapa].label.toLowerCase()}). Cuando entregue cada documento, regístralo y revísalo aquí; mientras, puedes darle prórroga con
+                  fecha límite.
+                </p>
+                <ul className="mt-2 space-y-1">
+                  {pendientes.map((d) => (
+                    <li key={d.id}>
+                      <button type="button" className="inline-flex flex-wrap items-center gap-2 text-left underline-offset-2 hover:underline" onClick={() => setSel(d.id)}>
+                        <span className="font-medium">{d.nombre}</span>
+                        <EtiquetaDoc e={d.estado} hasta={d.prorrogaHasta} />
+                        {d.estado === "prorroga" && d.prorrogaHasta && (
+                          <span className="text-xs">{diasPara(d.prorrogaHasta) < 0 ? "prórroga vencida" : `vence el ${fechaCorta(d.prorrogaHasta)}`}</span>
+                        )}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </Aviso>
+            ) : (
+              <Aviso tono="exito" titulo="Expediente aprobado">
+                Todos los documentos están validados; el expediente continúa en la etapa {ETAPAS[idxEtapa].label.toLowerCase()}.
+              </Aviso>
+            ))}
 
           <Tarjeta titulo={<span className="flex items-center gap-2"><History size={16} className="text-gray-400" /> Bitácora del aspirante</span>}>
             {bitacoraAsp.length ? (
@@ -430,6 +454,49 @@ function PromedioValidado({ a }: { a: AspiranteP }) {
         {a.promedioValidado && !cambio && <span className="text-xs text-emerald-700">Guardado</span>}
       </div>
       {v.trim() !== "" && !ok && <p className="mt-1 text-xs text-red-600">Escribe un promedio entre 6 y 10.</p>}
+    </div>
+  );
+}
+
+/** Con el servidor real: Posgrado sube el PDF que el aspirante entregó después (correo u oficina); queda por revisar. */
+function RegistrarEntrega({ aspirante, doc }: { aspirante: string; doc: AspiranteP["documentos"][number] }) {
+  const { subirDocumento } = usePosgrado();
+  const [archivo, setArchivo] = useState<File | null>(null);
+  const [enviando, setEnviando] = useState(false);
+  const [error, setError] = useState("");
+  return (
+    <div className="mt-4 rounded-lg border border-emerald-200 bg-emerald-50/60 p-3">
+      <p className="flex items-center gap-1.5 text-sm font-medium text-emerald-900">
+        <Upload size={15} /> {doc.archivo ? "Registrar nueva versión entregada" : "Registrar documento entregado"}
+      </p>
+      <p className="mt-0.5 text-xs text-emerald-900/80">Si el aspirante lo mandó por correo o lo llevó a la oficina, súbelo aquí (PDF, máx. 10 MB); quedará por revisar.</p>
+      <div className="mt-2 flex flex-wrap items-center gap-2">
+        <input
+          type="file"
+          accept="application/pdf"
+          aria-label={`PDF de ${doc.nombre}`}
+          onChange={(e) => {
+            const f = e.target.files?.[0] ?? null;
+            setError(f && (f.type !== "application/pdf" || f.size > 10 * 1024 * 1024) ? "Debe ser un PDF de máximo 10 MB" : "");
+            setArchivo(f);
+          }}
+          className="max-w-full text-xs file:mr-2 file:rounded-md file:border file:border-gray-300 file:bg-white file:px-2.5 file:py-1 file:text-xs"
+        />
+        <button
+          type="button"
+          className={botonSecundario}
+          disabled={!archivo || !!error || enviando}
+          onClick={async () => {
+            if (!archivo) return;
+            setEnviando(true);
+            if (await subirDocumento(aspirante, doc.id, archivo)) setArchivo(null);
+            setEnviando(false);
+          }}
+        >
+          {enviando ? "Subiendo…" : "Registrar"}
+        </button>
+      </div>
+      {error && <p className="mt-1 text-xs text-red-700">{error}</p>}
     </div>
   );
 }

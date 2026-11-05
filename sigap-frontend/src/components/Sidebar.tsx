@@ -54,7 +54,7 @@ export function Sidebar({ rol }: { rol: Rol }) {
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col overflow-y-auto overscroll-contain bg-navy-900 px-4 py-6 text-white transition-transform [scrollbar-width:thin] lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 flex w-64 shrink-0 flex-col overflow-y-auto overscroll-contain bg-navy-900 px-4 py-6 text-white transition-transform [scrollbar-width:thin] lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 ${
           abierto ? "translate-x-0" : "-translate-x-full"
         }`}
       >

@@ -1,6 +1,6 @@
 import { Body, Controller, Get, HttpCode, NotFoundException, Param, Patch, Post, Put, Req, Res, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { IsIn, IsInt, IsObject, IsOptional, IsString, Matches, MaxLength } from 'class-validator';
+import { IsBoolean, IsIn, IsInt, IsObject, IsOptional, IsString, Matches, MaxLength } from 'class-validator';
 import type { Response } from 'express';
 import { AuthGuard, Areas, type UsuarioSesion } from '../auth/auth.guard';
 import { existeArchivo, rutaAlmacen } from '../comun/almacen';
@@ -15,6 +15,16 @@ class HorarioDto {
   @IsOptional() @IsInt() @IsIn([20, 25, 30, 40, 45, 60, 90, 120]) duracion?: number;
   @IsIn(['Presencial', 'En línea']) modalidad!: string;
   @IsString() @MaxLength(2000) sala!: string;
+}
+class ProfesorDto {
+  @IsString() @MaxLength(40) profesorId!: string;
+}
+class ValidacionActaDto {
+  @IsBoolean() aprobar!: boolean;
+  @IsOptional() @IsString() @MaxLength(500) motivo?: string;
+}
+class LiberarDto {
+  @IsBoolean() liberar!: boolean;
 }
 class ProcesoDto {
   @IsObject() patch!: Record<string, unknown>;
@@ -92,6 +102,14 @@ export class AdmisionController {
     return this.s.revisarDocumento(this.folio(f), clave, d, r.usuario);
   }
 
+  @Post('aspirantes/:folio/documentos/:clave/archivo')
+  @HttpCode(200)
+  @Areas('POSGRADO')
+  @UseInterceptors(FileInterceptor('archivo', { limits: { fileSize: 10 * 1024 * 1024, files: 1 } }))
+  subirDocumento(@Param('folio') f: string, @Param('clave') clave: string, @UploadedFile() archivo: Express.Multer.File | undefined, @Req() r: Req_) {
+    return this.s.subirDocumento(this.folio(f), clave, archivo, r.usuario);
+  }
+
   @Post('aspirantes/:folio/calificaciones')
   @HttpCode(200)
   @Areas('PROFESORES')
@@ -103,6 +121,34 @@ export class AdmisionController {
   @Areas('POSGRADO')
   horario(@Param('folio') f: string, @Body() d: HorarioDto, @Req() r: Req_) {
     return this.s.guardarHorario(this.folio(f), d, r.usuario);
+  }
+
+  @Post('aspirantes/:folio/acta/validacion')
+  @HttpCode(200)
+  @Areas('POSGRADO')
+  validarActa(@Param('folio') f: string, @Body() d: ValidacionActaDto, @Req() r: Req_) {
+    return this.s.validarActaFirmada(this.folio(f), d, r.usuario);
+  }
+
+  @Post('aspirantes/:folio/entrevista/asignar')
+  @HttpCode(200)
+  @Areas('POSGRADO')
+  asignar(@Param('folio') f: string, @Body() d: ProfesorDto, @Req() r: Req_) {
+    return this.s.asignarProfesor(this.folio(f), d.profesorId, r.usuario);
+  }
+
+  @Post('aspirantes/:folio/entrevista/quitar')
+  @HttpCode(200)
+  @Areas('POSGRADO')
+  quitar(@Param('folio') f: string, @Body() d: ProfesorDto, @Req() r: Req_) {
+    return this.s.quitarProfesor(this.folio(f), d.profesorId, r.usuario);
+  }
+
+  @Post('aspirantes/:folio/entrevista/documentos')
+  @HttpCode(200)
+  @Areas('POSGRADO')
+  liberarDocumentos(@Param('folio') f: string, @Body() d: LiberarDto, @Req() r: Req_) {
+    return this.s.liberarDocumentos(this.folio(f), d.liberar, r.usuario);
   }
 
   @Post('aspirantes/:folio/entrevista/publicar-horario')

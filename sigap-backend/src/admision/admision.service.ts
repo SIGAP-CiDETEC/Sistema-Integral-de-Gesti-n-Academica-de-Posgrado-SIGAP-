@@ -70,6 +70,9 @@ export class AdmisionService {
     const e = p.entrevista;
     const acta = e?.acta;
     const firmada = acta?.firmadaSubidaEn && acta.firmadaArchivoNombre;
+    const dictamenAplicado = !!acta?.firmadaValidadaEn || (p.estado !== 'ENTREVISTA_PROGRAMADA' && p.estado !== 'VALIDADA');
+    const rechazos = (acta?.firmadaRechazos ?? []) as { motivo: string; por: string; el: string; archivo: string }[];
+    const ultimoRechazo = rechazos.length ? (({ motivo, por, el, archivo }) => ({ motivo, por, el, archivo }))(rechazos[rechazos.length - 1]) : undefined;
     const ultimo = [p.actualizadoEn, e?.actualizadoEn, acta?.actualizadoEn].filter(Boolean).sort((x, y) => +y! - +x!)[0] ?? p.actualizadoEn;
     const base = {
       id: p.folio,
@@ -107,6 +110,7 @@ export class AdmisionService {
             sinodo: e.sinodo.map((s) => s.profesorId),
             horarioPublicadoEl: e.horarioPublicadoEn?.toISOString(),
             notificadaEl: e.publicadaAspiranteEn?.toISOString() ?? '',
+            ...(e.documentosLiberadosEn ? { documentosLiberadosEl: e.documentosLiberadosEn.toISOString() } : {}),
           }
         : undefined,
       actaEntrevista:
@@ -121,12 +125,21 @@ export class AdmisionService {
               capturadaPor: acta.capturadaPor,
               capturadaEl: acta.capturadaEn?.toISOString() ?? '',
               descargada: acta.descargadaEn ? { por: acta.descargadaPorId ?? '', el: acta.descargadaEn.toISOString() } : undefined,
-              firmada: firmada ? { archivo: acta.firmadaArchivoNombre!, subidaPor: acta.firmadaSubidaPorId ?? '', el: acta.firmadaSubidaEn!.toISOString() } : undefined,
+              firmada: firmada
+                ? {
+                    archivo: acta.firmadaArchivoNombre!,
+                    subidaPor: acta.firmadaSubidaPorId ?? '',
+                    el: acta.firmadaSubidaEn!.toISOString(),
+                    ...(acta.firmadaValidadaEn ? { validada: { por: acta.firmadaValidadaPor ?? '', el: acta.firmadaValidadaEn.toISOString() } } : {}),
+                  }
+                : undefined,
+              ...(ultimoRechazo ? { rechazoFirmada: ultimoRechazo } : {}),
             }
           : undefined,
+      // El dictamen surte efecto cuando Posgrado valida el acta firmada (las subidas antes de la validación ya lo habían aplicado)
       dictamen:
-        firmada && acta?.resolucion
-          ? { resolucion: RESOLUCION[acta.resolucion], comentarios: [acta.observaciones, acta.motivo].filter((x) => x?.trim()).join(' · '), registradoEl: acta.firmadaSubidaEn!.toISOString() }
+        firmada && acta?.resolucion && dictamenAplicado
+          ? { resolucion: RESOLUCION[acta.resolucion], comentarios: [acta.observaciones, acta.motivo].filter((x) => x?.trim()).join(' · '), registradoEl: (acta.firmadaValidadaEn ?? acta.firmadaSubidaEn!).toISOString() }
           : undefined,
     };
     // Avance que registró Posgrado: completo para Posgrado y Subdirección; a los profesores solo su evaluación y etapa
@@ -152,10 +165,11 @@ export class AdmisionService {
   async listar(u: UsuarioSesion) {
     const lista = await this.prisma.postulacion.findMany({ include: conTodo, orderBy: { folio: 'asc' } });
     if (u.area !== 'PROFESORES') return lista.map((p) => this.aFront(p, 'completa'));
-    // Profesores: las entrevistas con horario publicado y los aspirantes de los grupos del propedéutico que imparten
+    // Profesores: las entrevistas con horario publicado, aquellas a las que Posgrado los asignó y los aspirantes de los
+    // grupos del propedéutico que imparten
     const grupos = await this.gruposDelDocente(u.profesorId);
     return lista
-      .filter((p) => p.entrevista?.horarioPublicadoEn || this.esDocenteDe(p, grupos))
+      .filter((p) => p.entrevista?.horarioPublicadoEn || p.entrevista?.sinodo.some((s) => s.profesorId === u.profesorId) || this.esDocenteDe(p, grupos))
       .map((p) => {
         const v = this.vistaProfesor(p, u.profesorId);
         return this.aFront(p, v === 'profesor' ? 'profesor' : this.esDocenteDe(p, grupos) ? 'docente' : 'anonima');
@@ -208,6 +222,32 @@ export class AdmisionService {
       },
     });
     await this.bitacora(folio, u.nombre, d.accion?.trim().slice(0, 1000) || `Marcó ${doc.catalogo.nombre} como ${d.estado}`);
+    return this.aFront(await this.postulacion(folio), 'completa');
+  }
+
+  /**
+   * Posgrado registra un documento que el aspirante entregó después (por correo o en la oficina), aunque su proceso ya
+   * vaya más adelante: queda "Por revisar" para aprobarlo u observarlo. Sirve para los que faltaban, estaban en
+   * prórroga u observados.
+   */
+  async subirDocumento(folio: string, clave: string, archivo: { originalname: string; buffer: Buffer; mimetype: string; size: number } | undefined, u: UsuarioSesion) {
+    if (!archivo) throw new BadRequestException('Adjunta el documento en PDF');
+    if (archivo.mimetype !== 'application/pdf' || archivo.buffer.subarray(0, 5).toString() !== '%PDF-') throw new BadRequestException('El documento debe ser un PDF');
+    if (!/^[a-z0-9-]{2,40}$/.test(clave) || FORMATOS_PDF.includes(clave)) throw new NotFoundException('Ese documento no está en el expediente');
+    const p = await this.postulacion(folio);
+    const catalogo = await this.prisma.catalogoDocumento.findUnique({ where: { clave } });
+    if (!catalogo) throw new NotFoundException('Ese documento no está en el catálogo');
+    const previo = p.documentos.find((x) => x.catalogo.clave === clave);
+    if (previo?.estado === 'APROBADO') throw new ConflictException('Ese documento ya está aprobado');
+    const nombre = archivo.originalname.replace(/[^\w.\- ]+/g, '_').slice(0, 120) || `${clave}.pdf`;
+    const ruta = guardarArchivo(`aspirantes/${folio}/${clave}_${Date.now()}.pdf`, archivo.buffer);
+    const datos = { nombreArchivo: nombre, urlArchivo: ruta, tipoMime: 'application/pdf', tamanoBytes: archivo.size, estado: 'PENDIENTE' as const, observacion: null, prorrogaHasta: null };
+    await this.prisma.documentoPostulacion.upsert({
+      where: { postulacionId_catalogoId: { postulacionId: p.id, catalogoId: catalogo.id } },
+      create: { postulacionId: p.id, catalogoId: catalogo.id, ...datos },
+      update: datos,
+    });
+    await this.bitacora(folio, u.nombre, `Registró ${catalogo.nombre} que entregó el aspirante (${nombre}); queda por revisar`);
     return this.aFront(await this.postulacion(folio), 'completa');
   }
 
@@ -266,10 +306,13 @@ export class AdmisionService {
     return r.valor;
   }
 
-  /** El profesor ve los datos del aspirante solo si integra su entrevista y Posgrado ya publicó la cita. */
+  /**
+   * El profesor ve los datos del aspirante solo si integra su entrevista y Posgrado ya publicó la cita, o si Posgrado
+   * le liberó los documentos antes (con al menos 2 profesores entrevistadores).
+   */
   private vistaProfesor(p: PostulacionCompleta, prof?: string | null): Vista {
     const e = p.entrevista;
-    return prof && e?.publicadaAspiranteEn && e.sinodo.some((s) => s.profesorId === prof) ? 'profesor' : 'anonima';
+    return prof && (e?.publicadaAspiranteEn || e?.documentosLiberadosEn) && e.sinodo.some((s) => s.profesorId === prof) ? 'profesor' : 'anonima';
   }
 
   async profesores() {
@@ -343,13 +386,70 @@ export class AdmisionService {
   async publicarEntrevista(folio: string, u: UsuarioSesion) {
     const p = await this.postulacion(folio);
     const e = p.entrevista;
-    if (!e?.horarioPublicadoEn) throw new BadRequestException('Primero publica el horario a los profesores');
+    if (!e) throw new BadRequestException('Primero captura el horario');
     if (e.sinodo.length < LUGARES) throw new BadRequestException(`Faltan profesores entrevistadores (${e.sinodo.length} de ${LUGARES})`);
     if (e.publicadaAspiranteEn) return this.aFront(p, 'completa');
-    await this.prisma.entrevista.update({ where: { id: e.id }, data: { publicadaAspiranteEn: new Date() } });
+    await this.prisma.entrevista.update({ where: { id: e.id }, data: { publicadaAspiranteEn: new Date(), horarioPublicadoEn: e.horarioPublicadoEn ?? new Date() } });
     const nombres = await this.prisma.profesor.findMany({ where: { id: { in: e.sinodo.map((s) => s.profesorId) } } });
     const { fecha, hora } = deFechaHora(e.fechaHora);
     await this.bitacora(folio, u.nombre, `Publicó la entrevista al aspirante: ${fecha} de ${hora} a ${horaFin(hora, e.duracionMin)} h · ${MODALIDAD[e.modalidad]} · ${e.sala}; profesores entrevistadores: ${nombres.map((n) => n.nombre).join(', ')}`);
+    return this.aFront(await this.postulacion(folio), 'completa');
+  }
+
+  /**
+   * Opción de Posgrado (el camino principal sigue siendo que cada profesor elija): asignar a un profesor como
+   * profesor entrevistador, con las mismas reglas (3 lugares, sin choques de horario).
+   */
+  async asignarProfesor(folio: string, profesorId: string, u: UsuarioSesion) {
+    const prof = await this.prisma.profesor.findUnique({ where: { id: profesorId }, include: { usuario: true } });
+    if (!prof || (prof.usuario && !prof.usuario.activo)) throw new NotFoundException('Ese profesor no está disponible');
+    await this.prisma.$transaction(
+      async (tx) => {
+        const p = await tx.postulacion.findUnique({ where: { folio }, include: { entrevista: { include: { sinodo: true, acta: true } } } });
+        const e = p?.entrevista;
+        if (!e) throw new BadRequestException('Primero captura el horario de la entrevista');
+        if (e.acta?.capturadaPor) throw new ConflictException('La entrevista ya tiene acta; ya no se pueden cambiar los profesores');
+        if (e.sinodo.some((s) => s.profesorId === profesorId)) return;
+        if (e.sinodo.length >= LUGARES) throw new ConflictException('Ya están los 3 profesores entrevistadores');
+        const choque = await this.choqueDe(tx, [profesorId], e.fechaHora, e.duracionMin, e.postulacionId);
+        if (choque) throw new ConflictException(`${prof.nombre} ya tiene otra entrevista que se encima con ese horario`);
+        await tx.integranteSinodo.create({ data: { entrevistaId: e.id, profesorId } });
+        const n = e.sinodo.length + 1;
+        await tx.eventoBitacora.create({ data: { entidad: 'Postulacion', entidadId: folio, actor: u.nombre, accion: `Asignó a ${prof.nombre} como profesor entrevistador (${n} de ${LUGARES}${n === LUGARES ? ', completo' : ''})` } });
+      },
+      { isolationLevel: 'Serializable' },
+    );
+    return this.aFront(await this.postulacion(folio), 'completa');
+  }
+
+  /** Posgrado quita a un profesor entrevistador (mientras no se haya llenado el acta). */
+  async quitarProfesor(folio: string, profesorId: string, u: UsuarioSesion) {
+    const p = await this.postulacion(folio);
+    const e = p.entrevista;
+    if (!e?.sinodo.some((s) => s.profesorId === profesorId)) throw new BadRequestException('Ese profesor no está en la entrevista');
+    if (e.acta?.capturadaPor) throw new ConflictException('La entrevista ya tiene acta; ya no se pueden cambiar los profesores');
+    await this.prisma.integranteSinodo.delete({ where: { entrevistaId_profesorId: { entrevistaId: e.id, profesorId } } });
+    const prof = await this.prisma.profesor.findUnique({ where: { id: profesorId } });
+    await this.bitacora(folio, u.nombre, `Quitó a ${prof?.nombre ?? 'un profesor'} de los profesores entrevistadores (${e.sinodo.length - 1} de ${LUGARES})`);
+    return this.aFront(await this.postulacion(folio), 'completa');
+  }
+
+  /**
+   * Libera (o retira) a los profesores entrevistadores el SIP-02 y el cuestionario del aspirante antes de publicar la
+   * cita, siempre que haya al menos 2 profesores entrevistadores.
+   */
+  async liberarDocumentos(folio: string, liberar: boolean, u: UsuarioSesion) {
+    const p = await this.postulacion(folio);
+    const e = p.entrevista;
+    if (!e) throw new BadRequestException('Primero captura el horario de la entrevista');
+    if (liberar && e.sinodo.length < 2) throw new BadRequestException('Se necesitan al menos 2 profesores entrevistadores para liberar los documentos');
+    if (!!e.documentosLiberadosEn === liberar) return this.aFront(p, 'completa');
+    await this.prisma.entrevista.update({ where: { id: e.id }, data: { documentosLiberadosEn: liberar ? new Date() : null } });
+    await this.bitacora(
+      folio,
+      u.nombre,
+      liberar ? `Liberó los documentos del aspirante (SIP-02 y cuestionario) a los ${e.sinodo.length} profesores entrevistadores antes de publicar la cita` : 'Retiró a los profesores entrevistadores el acceso anticipado a los documentos del aspirante',
+    );
     return this.aFront(await this.postulacion(folio), 'completa');
   }
 
@@ -432,7 +532,7 @@ export class AdmisionService {
     return this.aFront(await this.postulacion(folio), 'profesor');
   }
 
-  /** El primero que sube el acta firmada por los 3 aplica el dictamen; a los demás se les bloquea la subida. */
+  /** El primero que sube el acta firmada la deja por validar (Posgrado revisa las firmas); a los demás se les bloquea la subida. */
   async subirActaFirmada(folio: string, archivo: { originalname: string; buffer: Buffer; mimetype: string; size: number } | undefined, u: UsuarioSesion) {
     const prof = this.profesorDe(u);
     if (!archivo) throw new BadRequestException('Adjunta el acta firmada en PDF');
@@ -445,16 +545,52 @@ export class AdmisionService {
     const nombre = archivo.originalname.replace(/[^\w.\- ]+/g, '_').slice(0, 120) || 'acta_firmada.pdf';
     const ruta = guardarArchivo(`actas/${folio}/MTC-EC_firmada_${Date.now()}.pdf`, archivo.buffer);
     const ahora = new Date();
-    const rechazado = acta.resolucion === 'RECHAZADO';
     const actualizada = await this.prisma.actaEntrevista.updateMany({
       where: { id: acta.id, firmadaSubidaEn: null },
       data: { firmadaArchivoNombre: nombre, firmadaArchivoRuta: ruta, firmadaSubidaPorId: prof, firmadaSubidaEn: ahora },
     });
     if (!actualizada.count) throw new ConflictException('Otro profesor entrevistador ya subió el acta firmada');
-    await this.prisma.integranteSinodo.updateMany({ where: { entrevistaId: e.id }, data: { firmadoEn: ahora } });
-    await this.prisma.postulacion.update({ where: { id: p.id }, data: { estado: rechazado ? 'RECHAZADA' : 'EN_EVALUACION' } });
-    await this.bitacora(folio, u.nombre, `Subió el acta MTC-EC firmada por los 3 profesores entrevistadores (${nombre}). Dictamen de entrevista: ${RESOLUCION[acta.resolucion!]}${rechazado ? '. El proceso queda concluido' : '; pasa a evaluación'}`);
+    await this.bitacora(folio, u.nombre, `Subió el acta MTC-EC firmada (${nombre}); queda por validar por el Departamento de Posgrado (que traiga las firmas de los 3 profesores entrevistadores)`);
     return this.aFront(await this.postulacion(folio), 'profesor');
+  }
+
+  /**
+   * Posgrado valida el acta firmada que subió un profesor. Si trae las firmas de los 3 profesores entrevistadores, la
+   * aprueba y se aplica el dictamen; si no, la rechaza con un motivo y los profesores deben volver a subirla.
+   */
+  async validarActaFirmada(folio: string, d: { aprobar: boolean; motivo?: string }, u: UsuarioSesion) {
+    const p = await this.postulacion(folio);
+    const acta = p.entrevista?.acta;
+    if (!acta?.firmadaSubidaEn || !acta.firmadaArchivoNombre) throw new BadRequestException('Aún no hay acta firmada que validar');
+    if (acta.firmadaValidadaEn) throw new ConflictException('El acta firmada ya fue validada');
+    const proc = { ...((p.estadoProceso ?? {}) as Record<string, unknown>) };
+    const ahora = new Date();
+    const rechazado = acta.resolucion === 'RECHAZADO';
+    if (d.aprobar) {
+      await this.prisma.$transaction(async (tx) => {
+        await tx.actaEntrevista.update({ where: { id: acta.id }, data: { firmadaValidadaEn: ahora, firmadaValidadaPor: u.nombre } });
+        await tx.integranteSinodo.updateMany({ where: { entrevistaId: p.entrevista!.id }, data: { firmadoEn: ahora } });
+        if (p.estado === 'ENTREVISTA_PROGRAMADA' || p.estado === 'VALIDADA') await tx.postulacion.update({ where: { id: p.id }, data: { estado: rechazado ? 'RECHAZADA' : 'EN_EVALUACION' } });
+      });
+      await this.bitacora(folio, u.nombre, `Validó el acta MTC-EC firmada por los 3 profesores entrevistadores. Dictamen de entrevista: ${RESOLUCION[acta.resolucion!]}${rechazado ? '. El proceso queda concluido' : '; pasa a evaluación'}`);
+    } else {
+      const motivo = d.motivo?.trim() ?? '';
+      if (motivo.length < 5) throw new BadRequestException('Escribe el motivo del rechazo (por ejemplo, qué firmas faltan)');
+      if (proc.resolucion || proc.turnadoUteycv) throw new ConflictException('El aspirante ya tiene resolución del Colegio; ya no se puede rechazar el acta');
+      const rechazos = [...((acta.firmadaRechazos ?? []) as object[]), { motivo, por: u.nombre, el: ahora.toISOString(), archivo: acta.firmadaArchivoNombre, ruta: acta.firmadaArchivoRuta, subidaPor: acta.firmadaSubidaPorId }];
+      for (const k of ['etapa', 'concluido']) delete proc[k];
+      await this.prisma.$transaction(async (tx) => {
+        await tx.actaEntrevista.update({
+          where: { id: acta.id },
+          data: { firmadaRechazos: rechazos, firmadaArchivoNombre: null, firmadaArchivoRuta: null, firmadaSubidaPorId: null, firmadaSubidaEn: null },
+        });
+        await tx.integranteSinodo.updateMany({ where: { entrevistaId: p.entrevista!.id }, data: { firmadoEn: null } });
+        // Si el dictamen ya se había aplicado (actas subidas antes de la validación), el aspirante regresa a la entrevista
+        if (p.estado === 'EN_EVALUACION' || p.estado === 'RECHAZADA') await tx.postulacion.update({ where: { id: p.id }, data: { estado: 'ENTREVISTA_PROGRAMADA', estadoProceso: proc as Prisma.InputJsonValue } });
+      });
+      await this.bitacora(folio, u.nombre, `Rechazó el acta MTC-EC firmada (${acta.firmadaArchivoNombre}): ${motivo}. Los profesores entrevistadores deben volver a subirla`);
+    }
+    return this.aFront(await this.postulacion(folio), 'completa');
   }
 
   // ---------- Archivos ----------

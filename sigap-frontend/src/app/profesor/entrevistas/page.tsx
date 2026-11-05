@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { CalendarClock, CalendarPlus, LogOut, Users } from "lucide-react";
+import { CalendarClock, CalendarPlus, FileText, LogOut, Users } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { usePosgrado } from "@/components/posgrado/PosgradoProvider";
 import { Etiqueta, Regresar, Tarjeta } from "@/components/posgrado/ui";
@@ -10,6 +10,7 @@ import { fechaCorta, horarioEntrevista, lugaresLibres, nombreProfesor } from "@/
 import {
   TONO_ENTREVISTA_PROF,
   citaPublicada,
+  documentosLiberados,
   entrevistasDe,
   entrevistasDisponibles,
   estadoEntrevistaProf,
@@ -17,7 +18,7 @@ import {
   type EstadoEntrevistaProf,
 } from "@/lib/profesor";
 
-const ORDEN: EstadoEntrevistaProf[] = ["Por llenar acta", "Por subir firmada", "Esperando publicación", "Profesores entrevistadores incompletos", "Dictaminada", "Concluida"];
+const ORDEN: EstadoEntrevistaProf[] = ["Por llenar acta", "Por subir firmada", "Acta por validar", "Esperando publicación", "Profesores entrevistadores incompletos", "Dictaminada", "Concluida"];
 
 const diaLargo = (iso: string) => {
   const t = new Date(`${iso}T12:00:00`).toLocaleDateString("es-MX", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
@@ -106,6 +107,11 @@ export default function MisEntrevistas() {
                     </span>
                   </span>
                   <span className="flex flex-wrap items-center gap-3">
+                    {documentosLiberados(a) && (
+                      <Link href={`/profesor/entrevistas/${a.id}`} className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline">
+                        <FileText size={13} /> Ver documentos de {a.nombre}
+                      </Link>
+                    )}
                     <Etiqueta tono="bg-gray-100 text-gray-700">{libres ? `Faltan ${libres} profesor(es)` : "Esperando que Posgrado publique la cita"}</Etiqueta>
                     <button type="button" onClick={() => dejarLugar(a, yo)} className="inline-flex items-center gap-1 text-xs text-gray-600 hover:text-red-700 hover:underline">
                       <LogOut size={13} /> Dejar lugar
