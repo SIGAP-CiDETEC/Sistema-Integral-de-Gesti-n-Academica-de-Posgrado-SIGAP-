@@ -32,7 +32,7 @@ export class AuthController {
       nombre: u.nombre,
       correo: u.correo,
       rol: ROL_FRONT[u.area],
-      puesto: u.roles.map((r) => r.rol.nombre).join(' · ') || u.area,
+      puesto: u.area === 'ASPIRANTES' ? `Aspirante · ${u.identificadorAcceso ?? ''}` : u.roles.map((r) => r.rol.nombre).join(' · ') || u.area,
       profesorId: u.profesorId,
       debeCambiarContrasena: u.debeCambiarContrasena,
     };
@@ -44,8 +44,10 @@ export class AuthController {
     const r = intentos.get(ip);
     if (r && Date.now() - r.desde < VENTANA && r.n >= 10) throw new HttpException('Demasiados intentos; espera unos minutos', HttpStatus.TOO_MANY_REQUESTS);
     const usuario = dto.usuario.trim().toLowerCase();
+    // Aspirantes: ID temporal "MTC-A2701" (también se acepta "MTCA2701" o en minúsculas)
+    const acceso = dto.usuario.trim().toUpperCase().replace(/^MTC-?([AB])(\d{4})$/, 'MTC-$1$2');
     const u = await this.prisma.usuario.findFirst({
-      where: { OR: [{ correo: usuario }, { identificadorAcceso: dto.usuario.trim().toUpperCase() }], activo: true },
+      where: { OR: [{ correo: usuario }, { identificadorAcceso: acceso }], activo: true },
     });
     const ok = !!u && (await compare(dto.contrasena, u.hashContrasena));
     await this.prisma.eventoBitacora.create({

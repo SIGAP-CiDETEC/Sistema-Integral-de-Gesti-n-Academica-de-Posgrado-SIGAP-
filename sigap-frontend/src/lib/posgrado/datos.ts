@@ -172,6 +172,8 @@ export type SegundaOportunidad = { decision: "examen" | "no"; areas: AreaEvalId[
 export type EvaluacionP = {
   modalidad?: ModalidadId;
   grupos: Record<string, string>;
+  /** Cuándo confirmó el aspirante su elección en el portal (irreversible) */
+  confirmadaEl?: string;
   propedeutico?: ResultadoEval;
   examen?: ResultadoEval;
   segundaOportunidad?: SegundaOportunidad;

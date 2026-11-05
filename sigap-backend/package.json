@@ -21,6 +21,7 @@
     "aspirante-demo": "node dist/carga/aspirante-demo.js",
     "reiniciar-entrevista": "node dist/carga/reiniciar-entrevista.js",
     "crear-cuenta": "node dist/carga/crear-cuenta.js",
+    "accesos-aspirantes": "node dist/carga/accesos-aspirantes.js",
     "cargar-profesores": "node dist/carga/cargar-profesores.js"
   },
   "dependencies": {

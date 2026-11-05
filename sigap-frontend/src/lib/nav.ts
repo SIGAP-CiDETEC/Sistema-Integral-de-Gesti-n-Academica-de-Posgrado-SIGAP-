@@ -114,7 +114,9 @@ export const NAV: Record<Rol, NavItem[]> = {
  * consulta de Subdirección). El resto del sistema sigue disponible con los datos de ejemplo cuando no hay servidor.
  */
 export const NAV_SERVIDOR: Partial<Record<Rol, NavItem[]>> = {
-  posgrado: [...NAV.posgrado, { label: "Cuentas de profesores", href: "/posgrado/cuentas", icon: "usuarios" }],
+  posgrado: [...NAV.posgrado, { label: "Cuentas", href: "/posgrado/cuentas", icon: "usuarios" }],
+  // Primera etapa del portal del aspirante con el servidor real: solo la elección de cursos propedéuticos o examen
+  aspirante: [{ label: "Elección de evaluación", href: "/aspirante", icon: "evaluacion" }],
   admin: [
     { label: "Inicio", href: "/admin", icon: "home" },
     { label: "Usuarios", href: "/admin/usuarios", icon: "usuarios" },

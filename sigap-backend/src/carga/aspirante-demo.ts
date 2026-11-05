@@ -5,6 +5,10 @@
  *   npm run aspirante-demo -- 2         lo mismo con un segundo aspirante ficticio, DEMO2702 (y así 3, 4…)
  *   npm run aspirante-demo -- borrar    elimina DEMO2701 por completo (postulación, entrevista, acta, bitácora y archivos)
  *   npm run aspirante-demo -- 2 borrar  elimina DEMO2702
+ *   npm run aspirante-demo -- 3 evaluacion
+ *       crea DEMO2703 ya en la etapa de evaluación (como si su dictamen de entrevista ya estuviera validado), para
+ *       probar en el portal del aspirante la elección de cursos propedéuticos o examen. Luego dale acceso con
+ *       npm run accesos-aspirantes -- DEMO2703
  *
  * OJO: crear un aspirante que ya existe lo deja como nuevo (borra su entrevista y su acta).
  *
@@ -120,6 +124,13 @@ async function main() {
     });
   }
   console.log(`Aspirante de demostración ${FOLIO_DEMO} (${nombre}) listo con ${Object.keys(DOCUMENTOS).length} documentos.`);
+  if (args.includes('evaluacion')) {
+    await prisma.postulacion.update({ where: { id: postulacion.id }, data: { estado: 'EN_EVALUACION' } });
+    await prisma.eventoBitacora.create({
+      data: { entidad: 'Postulacion', entidadId: FOLIO_DEMO, actor: 'Administración del sistema', accion: 'Pasó al aspirante de demostración a la etapa de evaluación (sin entrevista, solo para pruebas)' },
+    });
+    console.log('  Está en la etapa de evaluación: puede elegir cursos propedéuticos o examen en su portal.');
+  }
   await prisma.$disconnect();
 }
 

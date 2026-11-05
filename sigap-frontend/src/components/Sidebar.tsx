@@ -102,7 +102,7 @@ export function Sidebar({ rol }: { rol: Rol }) {
           <p className="text-sm">{personal?.nombre ?? aspiranteEjemplo?.nombre ?? USUARIO_DEMO[rol]}</p>
           {aspiranteEjemplo && <p className="truncate text-[11px] text-white/60">{aspiranteEjemplo.id} · perfil de ejemplo</p>}
           {personal && <p className="truncate text-[11px] text-white/60">{personal.puesto}</p>}
-          {personal && <p className="truncate text-[11px] text-white/60">{personal.correo}</p>}
+          {personal && !/sigap\.local$/.test(personal.correo) && <p className="truncate text-[11px] text-white/60">{personal.correo}</p>}
           <p className="text-xs text-white/60">
             Sesión segura ·{" "}
             <Link href={personal ? "/login" : "/"} onClick={() => personal && cerrarSesion()} className="underline-offset-2 hover:underline">

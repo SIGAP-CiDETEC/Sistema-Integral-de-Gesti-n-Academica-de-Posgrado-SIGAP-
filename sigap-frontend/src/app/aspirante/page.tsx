@@ -5,9 +5,15 @@ import { Megaphone } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { enlaceTarjeta, esExterno, useContenido } from "@/lib/contenido";
 import { MenuCentrosIngles } from "@/components/MenuCentrosIngles";
+import { EleccionServidor } from "@/components/portal/EleccionServidor";
+import { DEMO_ASPIRANTES, MODO_API } from "@/lib/api";
 
 /** Inicio del aspirante (mockup "Inicio del aspirante", RF-08). El contenido lo edita el Departamento de Posgrado. */
 export default function AspiranteInicio() {
+  return MODO_API && !DEMO_ASPIRANTES ? <EleccionServidor /> : <InicioDemo />;
+}
+
+function InicioDemo() {
   const { inicioAspirante, cargado } = useContenido();
   if (!cargado) return null;
   const { aviso, tarjetas } = inicioAspirante;

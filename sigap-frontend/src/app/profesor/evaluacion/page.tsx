@@ -7,7 +7,7 @@ import { usePosgrado } from "@/components/posgrado/PosgradoProvider";
 import { Aviso, Regresar, Tarjeta } from "@/components/posgrado/ui";
 import { gruposSip12 } from "@/lib/actas-sip12";
 import { CapturaCalificacion } from "@/components/profesor/CapturaCalificacion";
-import { describirGrupo, lugarDe } from "@/lib/evaluacion";
+import { InscritosEvaluacion } from "@/components/evaluacion/InscritosEvaluacion";
 import { useConfigEvaluacion } from "@/lib/evaluacion-config";
 import { MINIMA_AREA, nombreArea } from "@/lib/posgrado/datos";
 import { capturasPendientes, gruposDeProfesor, useProfesorActual } from "@/lib/profesor";
@@ -29,22 +29,11 @@ export default function CalificacionesProfesor() {
 
       {!grupos.length ? (
         <Aviso tono="info" titulo="No impartes grupos del propedéutico en esta convocatoria">
-          El Departamento de Posgrado asigna un docente a cada grupo. Usa la vista de prueba para actuar como la Dra. Adriana Castillo (Matemáticas) o el Dr. Ricardo
-          Morales (Programación).
+          El Departamento de Posgrado asigna un docente a cada grupo en Evaluación → Calendario de la evaluación.
         </Aviso>
       ) : (
         <div className="space-y-6">
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {grupos.map(({ materia, grupo }) => (
-              <div key={materia.id + grupo.id} className="rounded-xl border border-gray-200 bg-white p-4 text-sm">
-                <p className="font-medium text-gray-900">
-                  {materia.nombre} · grupo {grupo.id}
-                </p>
-                <p className="text-xs text-gray-500">{describirGrupo(grupo)}</p>
-                <p className="text-xs text-gray-500">{lugarDe(grupo)}</p>
-              </div>
-            ))}
-          </div>
+          <InscritosEvaluacion aspirantes={aspirantes.filter((a) => a.etapa === "evaluacion")} materias={materias} modo="docente" docente={yo} />
           <p className="text-sm text-gray-600">
             Calificación de 0 a 10; mínima aprobatoria por curso: {MINIMA_AREA.toFixed(1)}. Cuando se capturan los dos cursos de un aspirante, el resultado queda
             listo y el Departamento de Posgrado lo publica (el aspirante no lo ve antes). Puedes corregir una calificación hasta una semana después de

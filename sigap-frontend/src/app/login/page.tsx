@@ -131,13 +131,13 @@ export default function LoginPage({ searchParams }: PageProps<"/login">) {
                   setUsuario(e.target.value);
                   setError("");
                 }}
-                placeholder="correo@ipn.mx, MTC-A27001 o número de registro"
+                placeholder="correo@ipn.mx o ID temporal (MTC-A2701)"
                 autoComplete="username"
                 className="w-full py-2.5 text-sm outline-none"
               />
             </div>
             <p className="mt-1 text-xs text-gray-500">
-              {MODO_API ? `Correo institucional (o tu CURP, si así te lo indicaron).${DEMO_ASPIRANTES ? " Para la demostración: ID de aspirante (ASP-2026-001) o número de registro (B260842)." : ""}` : "Correo institucional, ID temporal de aspirante o número de registro (alumnos)."}
+              {MODO_API ? `Personal: correo institucional. Aspirantes: tu ID temporal (por ejemplo MTC-A2701) y la contraseña temporal que te envió Posgrado.${DEMO_ASPIRANTES ? " Para la demostración: ID de aspirante (ASP-2026-001) o número de registro (B260842)." : ""}` : "Correo institucional, ID temporal de aspirante o número de registro (alumnos)."}
             </p>
           </div>
 

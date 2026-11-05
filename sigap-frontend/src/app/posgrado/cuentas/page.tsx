@@ -9,7 +9,7 @@ export default function CuentasProfesores() {
   return (
     <>
       <Regresar href="/posgrado" t="Inicio" />
-      <PageHeader titulo="Cuentas de profesores" subtitulo="Restablece la contraseña de un profesor que la olvidó" />
+      <PageHeader titulo="Cuentas de profesores y aspirantes" subtitulo="Restablece la contraseña de un profesor o aspirante que la olvidó" />
       <CuentasServidor alcance="posgrado" />
     </>
   );

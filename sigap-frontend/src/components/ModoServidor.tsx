@@ -8,7 +8,7 @@ import { NAV_SERVIDOR, ROLES_DEMO, type Rol } from "@/lib/nav";
 import { useSesion } from "@/lib/sesion";
 
 /** Sesiones que ya trabajan con el servidor real (prueba de la entrevista colegiada). */
-export const ROLES_CON_SERVIDOR: Rol[] = ["posgrado", "profesor", "subdireccion", "admin"];
+export const ROLES_CON_SERVIDOR: Rol[] = ["posgrado", "profesor", "subdireccion", "admin", "aspirante"];
 
 /**
  * Con el servidor real: bloquea las sesiones que aún no están conectadas y pide cambiar

@@ -10,6 +10,7 @@ import { choques, describirGrupo, docenteDe, lugarDe, type ModalidadId } from "@
 import { fechaLargaIso, useConfigEvaluacion } from "@/lib/evaluacion-config";
 import { AvisoAspirante } from "@/components/posgrado/AvisoAspirante";
 import { EditarCalendario } from "@/components/posgrado/EditarCalendario";
+import { InscritosEvaluacion } from "@/components/evaluacion/InscritosEvaluacion";
 import {
   MINIMA_AREA,
   areasReprobadas,
@@ -46,6 +47,7 @@ export default function EvaluacionPosgrado() {
       <PageHeader titulo="Evaluación académica" subtitulo="Modalidades, grupos del propedéutico y resultados" />
 
       <EditarCalendario />
+      <InscritosEvaluacion aspirantes={lista} materias={MATERIAS} modo="posgrado" />
 
       <section className="mt-6 overflow-hidden rounded-xl border border-gray-200 bg-white">
         <div className="overflow-x-auto">

@@ -38,7 +38,7 @@ const frenar = (quien: string) => {
 /**
  * Cuentas del personal (RF-80):
  * - El Administrador ve todas, las activa o desactiva, crea cuentas y restablece cualquier contraseña.
- * - El Departamento de Posgrado ve y restablece solo las de los profesores (para atender a un docente sin esperar al Administrador).
+ * - El Departamento de Posgrado ve y restablece las de los profesores y los aspirantes (sin esperar al Administrador).
  * Restablecer genera una contraseña temporal que se muestra una sola vez, obliga a cambiarla al entrar y cierra las
  * sesiones abiertas de esa cuenta. Todo queda en la bitácora.
  */
@@ -48,7 +48,8 @@ export class UsuariosController {
   constructor(private readonly prisma: PrismaService) {}
 
   private alcance(u: UsuarioSesion) {
-    return u.area === 'ADMINISTRADOR' ? { area: { not: 'ASPIRANTES' as AreaPersonal } } : { area: 'PROFESORES' as AreaPersonal };
+    // Administrador: todas las cuentas; Posgrado: las de profesores y aspirantes
+    return u.area === 'ADMINISTRADOR' ? {} : { area: { in: ['PROFESORES', 'ASPIRANTES'] as AreaPersonal[] } };
   }
 
   private async cuenta(id: string, u: UsuarioSesion) {
@@ -90,7 +91,7 @@ export class UsuariosController {
     const t = temporal();
     await this.prisma.usuario.update({ where: { id: c.id }, data: { hashContrasena: await hash(t, 12), debeCambiarContrasena: true, sesionesDesde: new Date() } });
     await this.registrar(c.id, r.usuario.nombre, `Restableció la contraseña de ${c.nombre} (${c.correo}); sus sesiones abiertas se cerraron`);
-    return { temporal: t, nombre: c.nombre, usuario: c.correo.includes('@pendiente.') ? c.identificadorAcceso : c.correo };
+    return { temporal: t, nombre: c.nombre, usuario: c.area === 'ASPIRANTES' || c.correo.includes('@pendiente.') || c.correo.endsWith('.sigap.local') ? c.identificadorAcceso : c.correo };
   }
 
   @Patch(':id')

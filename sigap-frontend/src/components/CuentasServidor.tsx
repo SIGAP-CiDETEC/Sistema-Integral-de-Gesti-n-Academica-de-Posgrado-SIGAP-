@@ -21,6 +21,7 @@ type Entregada = { nombre: string; usuario: string; temporal: string; nueva?: bo
 
 const AREA: Record<string, string> = {
   PROFESORES: "Profesor",
+  ASPIRANTES: "Aspirante",
   POSGRADO: "Posgrado",
   SUBDIRECCION: "Subdirección",
   UTEYCV: "UTEyCV",
@@ -71,7 +72,7 @@ function TemporalEntregada({ e, cerrar }: { e: Entregada; cerrar: () => void }) 
 /**
  * Cuentas del personal con el servidor real.
  * - admin: todas las cuentas; restablecer contraseña, activar o desactivar y crear cuentas.
- * - posgrado: solo las de los profesores; restablecer contraseña.
+ * - posgrado: solo las de los profesores y los aspirantes; restablecer contraseña.
  */
 export function CuentasServidor({ alcance }: { alcance: "admin" | "posgrado" }) {
   const [cuentas, setCuentas] = useState<Cuenta[] | null>(null);
@@ -184,11 +185,11 @@ export function CuentasServidor({ alcance }: { alcance: "admin" | "posgrado" }) 
       )}
 
       <Tarjeta
-        titulo={admin ? `Cuentas del personal${cuentas ? ` (${cuentas.length})` : ""}` : `Cuentas de profesores${cuentas ? ` (${cuentas.length})` : ""}`}
+        titulo={admin ? `Cuentas del personal${cuentas ? ` (${cuentas.length})` : ""}` : `Cuentas de profesores y aspirantes${cuentas ? ` (${cuentas.length})` : ""}`}
         accion={
           <label className="flex items-center gap-2 rounded-lg border border-gray-300 px-2.5">
             <Search size={15} className="text-gray-500" />
-            <input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar por nombre o correo" aria-label="Buscar cuenta" className="w-56 py-1.5 text-sm outline-none" />
+            <input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar por nombre, correo o ID" aria-label="Buscar cuenta" className="w-56 py-1.5 text-sm outline-none" />
           </label>
         }
       >
@@ -203,7 +204,7 @@ export function CuentasServidor({ alcance }: { alcance: "admin" | "posgrado" }) 
                 <tr>
                   <th className="py-2 pr-3 font-medium">Nombre</th>
                   <th className="py-2 pr-3 font-medium">Usuario</th>
-                  {admin && <th className="py-2 pr-3 font-medium">Área</th>}
+                  <th className="py-2 pr-3 font-medium">{admin ? "Área" : "Tipo"}</th>
                   <th className="py-2 pr-3 font-medium">Estado</th>
                   <th className="py-2 pr-3 font-medium">Último acceso</th>
                   <th className="py-2 text-right font-medium">Acciones</th>
@@ -218,10 +219,10 @@ export function CuentasServidor({ alcance }: { alcance: "admin" | "posgrado" }) 
                       {admin && <span className="block text-xs text-gray-500">{c.puesto}</span>}
                     </td>
                     <td className="py-2.5 pr-3 text-xs">
-                      {c.correo || "—"}
-                      {c.acceso && <span className="block text-gray-500">o {c.acceso}</span>}
+                      {c.correo && !c.correo.endsWith(".sigap.local") ? c.correo : c.acceso || "—"}
+                      {c.acceso && c.correo && !c.correo.endsWith(".sigap.local") && <span className="block text-gray-500">o {c.acceso}</span>}
                     </td>
-                    {admin && <td className="py-2.5 pr-3 text-xs">{AREA[c.area] ?? c.area}</td>}
+                    <td className="py-2.5 pr-3 text-xs">{AREA[c.area] ?? c.area}</td>
                     <td className="py-2.5 pr-3">
                       {!c.activo ? (
                         <Etiqueta>Desactivada</Etiqueta>

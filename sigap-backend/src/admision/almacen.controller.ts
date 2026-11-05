@@ -41,6 +41,8 @@ export class AlmacenController {
   leer(@Param('clave') clave: string, @Req() r: { usuario: UsuarioSesion }) {
     const nivel = LECTURA[this.clave(clave)];
     if (nivel === 'posgrado' && !['POSGRADO', 'SUBDIRECCION'].includes(r.usuario.area)) throw new ForbiddenException('Tu cuenta no tiene acceso a esta sección');
+    // Los aspirantes reciben su información por /portal (sin los docentes de cada grupo)
+    if (nivel !== 'publico' && r.usuario.area === 'ASPIRANTES') throw new ForbiddenException('Tu cuenta no tiene acceso a esta sección');
     return this.s.almacenLeer(clave).then((valor) => ({ valor }));
   }
 
