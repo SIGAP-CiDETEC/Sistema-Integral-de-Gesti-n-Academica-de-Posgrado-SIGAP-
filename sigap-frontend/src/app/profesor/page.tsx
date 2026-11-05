@@ -18,8 +18,8 @@ export default function ProfesorInicio() {
   if (!cargado) return null;
   const yo = profesor?.id ?? "";
   const mias = entrevistasDe(aspirantes, yo);
-  const estados = mias.map((a) => ({ a, e: estadoEntrevistaProf(a) }));
-  const porHacer = estados.filter((x) => x.e === "Por llenar acta" || x.e === "Por subir firmada");
+  const estados = mias.map((a) => ({ a, e: estadoEntrevistaProf(a, yo) }));
+  const porHacer = estados.filter((x) => x.e === "Por llenar acta" || x.e === "Por subir firmada" || x.e === "Por firmar");
   const calif = capturasPendientes(aspirantes, yo, materias).filter((c) => !c.capturada);
   // Solo quien imparte algún grupo del propedéutico ve lo de calificaciones
   const imparte = gruposDeProfesor(yo, materias).length > 0;
@@ -50,7 +50,7 @@ export default function ProfesorInicio() {
                   <span className="flex items-center gap-2">
                     <Etiqueta tono={TONO_ENTREVISTA_PROF[e]}>{e}</Etiqueta>
                     <Link href={`/profesor/entrevistas/${a.id}`} className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline">
-                      <PenLine size={14} /> {e === "Por subir firmada" ? "Subir acta firmada" : "Llenar acta"}
+                      <PenLine size={14} /> {e === "Por subir firmada" ? "Subir acta firmada" : e === "Por firmar" ? "Ver acta" : "Llenar acta"}
                     </Link>
                   </span>
                 </li>

@@ -105,7 +105,7 @@ export function useAccionesProfesor() {
       return enServidor(`/aspirantes/${a.id}/acta/firmada`, { formulario }, "Acta firmada recibida: Posgrado revisará que traiga las 3 firmas");
     }
     const acta = a.actaEntrevista;
-    if (!acta || acta.firmada || a.dictamen) return false;
+    if (!acta || acta.firmada || a.dictamen || acta.capturadaPor !== profesor) return false;
     actualizar(
       a.id,
       { actaEntrevista: { ...acta, firmada: { archivo: archivo.name, subidaPor: profesor, el: new Date().toISOString() } } },

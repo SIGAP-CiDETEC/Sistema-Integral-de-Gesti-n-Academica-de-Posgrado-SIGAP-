@@ -68,12 +68,22 @@ export function useProfesorActual(): { profesor: ProfesorP | null; propio: Profe
 
 // ---------- Pendientes del profesor ----------
 
-export type EstadoEntrevistaProf = "Profesores entrevistadores incompletos" | "Esperando publicación" | "Por llenar acta" | "Por subir firmada" | "Acta por validar" | "Dictaminada" | "Concluida";
+export type EstadoEntrevistaProf =
+  | "Profesores entrevistadores incompletos"
+  | "Esperando publicación"
+  | "Por llenar acta"
+  | "Por subir firmada"
+  | "Por firmar"
+  | "Acta por validar"
+  | "Dictaminada"
+  | "Concluida";
 export const TONO_ENTREVISTA_PROF: Record<EstadoEntrevistaProf, string> = {
   "Profesores entrevistadores incompletos": "bg-gray-100 text-gray-700",
   "Esperando publicación": "bg-gray-100 text-gray-700",
   "Por llenar acta": "bg-indigo-50 text-primary",
   "Por subir firmada": "bg-amber-50 text-amber-800",
+  // La llenó otro profesor entrevistador: a este solo le toca firmarla (la sube quien la llenó)
+  "Por firmar": "bg-amber-50 text-amber-800",
   "Acta por validar": "bg-sky-50 text-sky-800",
   Dictaminada: "bg-emerald-50 text-emerald-700",
   Concluida: "bg-gray-100 text-gray-600",
@@ -115,14 +125,15 @@ export const tieneChoque = (lista: AspiranteP[], prof: string, a: AspiranteP) =>
 /** El profesor puede dejar su lugar mientras Posgrado no haya publicado la entrevista al aspirante. */
 export const puedeDejarLugar = (a: AspiranteP, prof: string) => !!a.entrevista?.sinodo.includes(prof) && !a.entrevista.notificadaEl && !a.actaEntrevista && !a.dictamen && !a.concluido;
 
-export function estadoEntrevistaProf(a: AspiranteP): EstadoEntrevistaProf {
+export function estadoEntrevistaProf(a: AspiranteP, yo?: string): EstadoEntrevistaProf {
   if (a.dictamen) return "Dictaminada";
   if (a.concluido) return "Concluida";
   if (!a.actaEntrevista && !sinodoCompleto(a.entrevista)) return "Profesores entrevistadores incompletos";
   if (!a.actaEntrevista && !a.entrevista?.notificadaEl) return "Esperando publicación";
   if (!a.actaEntrevista) return "Por llenar acta";
   if (a.actaEntrevista.firmada) return "Acta por validar";
-  return "Por subir firmada";
+  // Solo quien llenó el acta la sube firmada
+  return yo && a.actaEntrevista.capturadaPor !== yo ? "Por firmar" : "Por subir firmada";
 }
 
 /**

@@ -19,7 +19,7 @@ import {
   type EstadoEntrevistaProf,
 } from "@/lib/profesor";
 
-const ORDEN: EstadoEntrevistaProf[] = ["Por llenar acta", "Por subir firmada", "Acta por validar", "Esperando publicación", "Profesores entrevistadores incompletos", "Dictaminada", "Concluida"];
+const ORDEN: EstadoEntrevistaProf[] = ["Por llenar acta", "Por subir firmada", "Por firmar", "Acta por validar", "Esperando publicación", "Profesores entrevistadores incompletos", "Dictaminada", "Concluida"];
 
 const diaLargo = (iso: string) => {
   const t = new Date(`${iso}T12:00:00`).toLocaleDateString("es-MX", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
@@ -47,7 +47,7 @@ export default function MisEntrevistas() {
   const cerradas = mias.filter(validada).length;
   const lista = mias
     .filter((a) => (citaPublicada(a) || a.concluido) && !validada(a))
-    .map((a) => ({ a, e: estadoEntrevistaProf(a) }))
+    .map((a) => ({ a, e: estadoEntrevistaProf(a, yo) }))
     .sort((x, y) => ORDEN.indexOf(x.e) - ORDEN.indexOf(y.e) || porFecha(x.a, y.a));
 
   return (

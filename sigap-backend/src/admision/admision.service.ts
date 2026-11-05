@@ -542,7 +542,12 @@ export class AdmisionService {
     const e = this.exigirIntegrante(p, prof);
     const acta = e.acta;
     if (!acta?.capturadaPor) throw new BadRequestException('Primero se debe llenar el acta');
-    if (acta.firmadaSubidaEn) throw new ConflictException('Otro profesor entrevistador ya subió el acta firmada');
+    if (acta.firmadaSubidaEn) throw new ConflictException('El acta firmada ya se subió');
+    // Solo el profesor entrevistador que llenó el acta la sube firmada
+    if (acta.capturadaPor !== prof) {
+      const quien = await this.prisma.profesor.findUnique({ where: { id: acta.capturadaPor } });
+      throw new ForbiddenException(`Solo ${quien?.nombre ?? 'el profesor entrevistador que llenó el acta'}, quien llenó el acta, puede subirla firmada`);
+    }
     const nombre = archivo.originalname.replace(/[^\w.\- ]+/g, '_').slice(0, 120) || 'acta_firmada.pdf';
     const ruta = guardarArchivo(`actas/${folio}/MTC-EC_firmada_${Date.now()}.pdf`, archivo.buffer);
     const ahora = new Date();
@@ -550,7 +555,7 @@ export class AdmisionService {
       where: { id: acta.id, firmadaSubidaEn: null },
       data: { firmadaArchivoNombre: nombre, firmadaArchivoRuta: ruta, firmadaSubidaPorId: prof, firmadaSubidaEn: ahora },
     });
-    if (!actualizada.count) throw new ConflictException('Otro profesor entrevistador ya subió el acta firmada');
+    if (!actualizada.count) throw new ConflictException('El acta firmada ya se subió');
     await this.bitacora(folio, u.nombre, `Subió el acta MTC-EC firmada (${nombre}); queda por validar por el Departamento de Posgrado (que traiga las firmas de los 3 profesores entrevistadores)`);
     return this.aFront(await this.postulacion(folio), 'profesor');
   }

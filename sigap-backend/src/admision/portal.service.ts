@@ -5,7 +5,7 @@ import { AdmisionService } from './admision.service';
 import { idTemporal } from './id-temporal';
 
 type Sesion = { dia: string; inicio: string; fin: string };
-type Grupo = { id: string; sesiones?: Sesion[]; lugar?: string; docente?: string; cupo?: number };
+type Grupo = { id: string; sesiones?: Sesion[]; lugar?: string; docente?: string; cupo?: number; sala?: string };
 type Materia = { id: string; nombre?: string; grupos: Grupo[] };
 type Config = { propedeutico?: Record<string, string>; examen?: Record<string, string>; materias?: Materia[] };
 type Evaluacion = { modalidad?: string; grupos?: Record<string, string>; confirmadaEl?: string; [k: string]: unknown };
@@ -80,7 +80,6 @@ export class PortalService {
       puedeElegir,
       motivo,
       // Antes de elegir: horarios y lugares, sin el docente de cada grupo
-      // y los lugares que quedan en cada grupo con cupo
       config: cfg
         ? {
             propedeutico: cfg.propedeutico,
@@ -88,7 +87,8 @@ export class PortalService {
             materias: (cfg.materias ?? []).map((m) => ({
               id: m.id,
               nombre: m.nombre,
-              grupos: m.grupos.map(({ docente: _d, ...g }) => ({ ...g, ...(g.cupo ? { disponibles: Math.max(0, g.cupo - (ocupados.get(clave(m.id, g.id)) ?? 0)) } : {}) })),
+              // Solo se le dice si el grupo ya se llenó (no cuántos lugares quedan ni el cupo)
+              grupos: m.grupos.map(({ docente: _d, cupo, sala: _s, ...g }) => ({ ...g, lleno: !!cupo && (ocupados.get(clave(m.id, g.id)) ?? 0) >= cupo })),
             })),
           }
         : null,

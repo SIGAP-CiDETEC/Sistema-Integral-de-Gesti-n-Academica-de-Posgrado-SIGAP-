@@ -87,7 +87,7 @@ export default function EntrevistaProfesor({ params }: PageProps<"/profesor/entr
       </>
     );
 
-  const estado = estadoEntrevistaProf(a);
+  const estado = estadoEntrevistaProf(a, yo);
   const acta = a.actaEntrevista;
   const yoLaLlene = acta?.capturadaPor === yo;
   // Desde la primera descarga el acta queda cerrada: lo que se firma es lo que queda en el sistema
@@ -96,6 +96,7 @@ export default function EntrevistaProfesor({ params }: PageProps<"/profesor/entr
   const subir = async (archivo: File | undefined | { name: string; type: string; size: number }) => {
     setError("");
     if (!archivo) return;
+    if (!yoLaLlene) return setError(`Solo ${nombreProfesor(acta?.capturadaPor ?? "")}, quien llenó el acta, puede subirla firmada.`);
     if (archivo.type !== "application/pdf" && !archivo.name.toLowerCase().endsWith(".pdf")) return setError("Sube el acta firmada en PDF.");
     if (archivo.size > 10 * 1024 * 1024) return setError("El PDF no debe pasar de 10 MB.");
     // Con el servidor, el motivo del rechazo lo muestra el aviso flotante
@@ -212,9 +213,11 @@ export default function EntrevistaProfesor({ params }: PageProps<"/profesor/entr
               </Aviso>
             )}
             {!a.dictamen && !acta.firmada && acta.rechazoFirmada && (
-              <Aviso tono="error" titulo="Posgrado rechazó el acta firmada: vuelve a subirla">
-                {acta.rechazoFirmada.motivo} (revisado por {acta.rechazoFirmada.por} el {fechaCorta(acta.rechazoFirmada.el)}). Recaba las firmas que faltan y sube de nuevo el PDF con las
-                firmas de los 3 profesores entrevistadores.
+              <Aviso tono="error" titulo={yoLaLlene ? "Posgrado rechazó el acta firmada: vuelve a subirla" : "Posgrado rechazó el acta firmada"}>
+                {acta.rechazoFirmada.motivo} (revisado por {acta.rechazoFirmada.por} el {fechaCorta(acta.rechazoFirmada.el)}).{" "}
+                {yoLaLlene
+                  ? "Recaba las firmas que faltan y sube de nuevo el PDF con las firmas de los 3 profesores entrevistadores."
+                  : `Firma el acta si te falta; ${nombreProfesor(acta.capturadaPor)} la volverá a subir.`}
               </Aviso>
             )}
             {!a.dictamen && !acta.firmada && (
@@ -225,7 +228,10 @@ export default function EntrevistaProfesor({ params }: PageProps<"/profesor/entr
                     descárgala e imprímela.
                   </li>
                   <li>Fírmenla los 3 profesores entrevistadores.</li>
-                  <li>Súbela escaneada en PDF con las 3 firmas: el primero que la suba la envía a Posgrado, que la valida y entonces se aplica el dictamen.</li>
+                  <li>
+                    {yoLaLlene ? "Súbela" : `${nombreProfesor(acta.capturadaPor)} la sube`} escaneada en PDF con las 3 firmas: solo quien llenó el acta puede subirla. Posgrado
+                    la valida y entonces se aplica el dictamen.
+                  </li>
                 </ol>
                 <div className="mt-4 flex flex-wrap items-center gap-2">
                   <DescargarActa a={a} alDescargar={() => cerrarActa(a, yo)} />
@@ -234,17 +240,21 @@ export default function EntrevistaProfesor({ params }: PageProps<"/profesor/entr
                       <Pencil size={14} /> Corregir acta
                     </button>
                   )}
-                  <label className={`${botonPrimario} cursor-pointer`}>
-                    <Upload size={15} /> Subir acta firmada (PDF)
-                    <input type="file" accept="application/pdf" aria-label="Subir acta firmada" className="hidden" onChange={(e) => subir(e.target.files?.[0])} />
-                  </label>
+                  {yoLaLlene ? (
+                    <label className={`${botonPrimario} cursor-pointer`}>
+                      <Upload size={15} /> Subir acta firmada (PDF)
+                      <input type="file" accept="application/pdf" aria-label="Subir acta firmada" className="hidden" onChange={(e) => subir(e.target.files?.[0])} />
+                    </label>
+                  ) : (
+                    <span className="text-sm text-gray-600">La subirá firmada {nombreProfesor(acta.capturadaPor)}.</span>
+                  )}
                 </div>
                 {error && (
                   <div className="mt-3">
                     <Aviso tono="error" titulo={error} />
                   </div>
                 )}
-                {!MODO_API && <div className="mt-4 border-t border-dashed border-gray-300 pt-3">
+                {!MODO_API && yoLaLlene && <div className="mt-4 border-t border-dashed border-gray-300 pt-3">
                   <button
                     type="button"
                     onClick={() => subir({ name: `MTC-EC_${a.id}_firmada.pdf`, type: "application/pdf", size: 1000 })}
