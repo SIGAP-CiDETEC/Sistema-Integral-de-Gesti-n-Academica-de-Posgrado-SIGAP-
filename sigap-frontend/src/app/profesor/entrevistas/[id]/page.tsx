@@ -314,9 +314,8 @@ function FormularioActa({ a, inicial, onGuardar, onCancelar, yo }: { a: Aspirant
     !h.ingles2 && "inglés",
     !h.certificado && "certificado",
     CRITERIOS_ACTA.some((c) => !criterios[c.id]) && "consideraciones (hoja 2)",
-    !observaciones.trim() && "observaciones generales",
     !resolucion && "¿continuar proceso?",
-    resolucion && !motivo.trim() && "motivo",
+    resolucion && resolucion !== "Aprobado" && !motivo.trim() && "motivo",
   ].filter(Boolean) as string[];
 
   const ejemplo = () => {
@@ -476,7 +475,9 @@ function FormularioActa({ a, inicial, onGuardar, onCancelar, yo }: { a: Aspirant
             <textarea rows={2} value={proyeccion} onChange={(e) => setProyeccion(e.target.value)} className={`${inputBase} mt-1`} />
           </label>
           <label className="text-sm">
-            <span className="font-medium text-gray-900">Observaciones generales</span>
+            <span className="font-medium text-gray-900">
+              Observaciones generales <span className="font-normal text-gray-500">(opcional)</span>
+            </span>
             <textarea rows={2} value={observaciones} onChange={(e) => setObservaciones(e.target.value)} className={`${inputBase} mt-1`} />
           </label>
         </div>
@@ -499,14 +500,14 @@ function FormularioActa({ a, inicial, onGuardar, onCancelar, yo }: { a: Aspirant
           {resolucion && (
             <label className="mt-3 block text-sm">
               <span className="font-medium text-gray-900">
-                Motivo <span className="text-red-600">*</span>
+                Motivo {resolucion === "Aprobado" ? <span className="font-normal text-gray-500">(opcional)</span> : <span className="text-red-600">*</span>}
               </span>
               <textarea
                 rows={2}
                 maxLength={MAX_MOTIVO}
                 value={motivo}
                 onChange={(e) => setMotivo(e.target.value)}
-                placeholder={resolucion === "Aprobado" ? "Explica por qué recomiendan que continúe" : resolucion === "Con reservas" ? "Explica las reservas" : "Explica por qué no continúa"}
+                placeholder={resolucion === "Aprobado" ? "Si lo consideran, explica por qué recomiendan que continúe" : resolucion === "Con reservas" ? "Explica las reservas" : "Explica por qué no continúa"}
                 className={`${inputBase} mt-1`}
               />
               <span className="mt-0.5 block text-right text-xs text-gray-400">
