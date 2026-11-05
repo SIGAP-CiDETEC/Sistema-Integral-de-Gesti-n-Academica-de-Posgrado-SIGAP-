@@ -13,7 +13,26 @@ export type Sesion = { dia: Dia; inicio: string; fin: string };
  * Grupo de un curso propedéutico. El LUGAR lo ve el aspirante; el DOCENTE (id de profesor) solo lo ve
  * el Departamento de Posgrado y es quien captura las calificaciones de ese grupo.
  */
-export type Grupo = { id: string; sesiones: Sesion[]; lugar?: string; docente?: string };
+/**
+ * Grupo de un curso propedéutico. `sala` es una de SALAS; `cupo`, los lugares del grupo (al llenarse, el aspirante
+ * ya no puede elegirlo). `lleno` solo lo manda el servidor al portal del aspirante.
+ */
+export type Grupo = { id: string; sesiones: Sesion[]; lugar?: string; docente?: string; sala?: string; cupo?: number; lleno?: boolean };
+
+/** Aulas de CIDETEC para los cursos propedéuticos, con sus lugares y nivel. */
+export const SALAS = [
+  { id: "aula-1", nombre: "Aula 1", nivel: "Tercer nivel", lugares: 6 },
+  { id: "aula-2", nombre: "Aula 2", nivel: "Tercer nivel", lugares: 10 },
+  { id: "cc1", nombre: "CC1", nivel: "Tercer nivel", lugares: 12 },
+  { id: "cc2", nombre: "CC2", nivel: "Tercer nivel", lugares: 19 },
+  { id: "insignia", nombre: "Insignia", nivel: "Tercer nivel", lugares: 6 },
+  { id: "lindig", nombre: "Lindig", nivel: "Tercer nivel", lugares: 35 },
+  { id: "sum", nombre: "SUM", nivel: "Planta baja", lugares: 38 },
+] as const;
+export type Sala = (typeof SALAS)[number];
+/** Como se muestra la sala: "CC2 (TERCER NIVEL)". */
+export const nombreSala = (s: Sala) => `${s.nombre} (${s.nivel.toUpperCase()})`;
+export const salaDe = (g?: Grupo) => SALAS.find((s) => s.id === g?.sala);
 export type Materia = { id: string; nombre: string; grupos: Grupo[] };
 
 export type ModalidadId = "propedeutico" | "examen";

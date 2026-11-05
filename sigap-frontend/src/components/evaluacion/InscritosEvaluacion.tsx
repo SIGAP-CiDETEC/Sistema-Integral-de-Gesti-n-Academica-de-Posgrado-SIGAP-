@@ -79,8 +79,8 @@ export function InscritosEvaluacion({ aspirantes, materias, modo, docente }: { a
             <p className="text-xs text-gray-500">{describirGrupo(g)}</p>
             <p className="text-xs text-gray-500">{lugarDe(g)}</p>
             {conPosgrado && <p className="text-xs text-gray-500">Docente: {nombreProfesor(docenteDe(m.id, g.id, materias) ?? "") || "por asignar"}</p>}
-            <p className="mt-2 text-gray-800">
-              <b>{inscritos.length}</b> inscrito(s)
+            <p className={`mt-2 ${g.cupo && inscritos.length >= g.cupo ? "text-red-700" : "text-gray-800"}`}>
+              <b>{inscritos.length}</b> inscrito(s){g.cupo ? ` de ${g.cupo} lugares${inscritos.length >= g.cupo ? " · lleno" : ""}` : ""}
             </p>
             {inscritos.length > 0 && (
               <ul className="mt-1 max-h-32 overflow-y-auto text-xs text-gray-600">

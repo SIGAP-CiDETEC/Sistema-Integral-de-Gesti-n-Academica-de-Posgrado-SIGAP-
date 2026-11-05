@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { CalendarCog, CheckCircle2, Download, Pencil, Plus, RotateCcw, Trash2 } from "lucide-react";
-import { DIAS, describirGrupo, lugarDe, type Dia, type Materia } from "@/lib/evaluacion";
+import { DIAS, SALAS, describirGrupo, lugarDe, nombreSala, type Dia, type Grupo, type Materia } from "@/lib/evaluacion";
 import { PROFESORES_SINODO, nombreProfesor, profesorValido, type AspiranteP } from "@/lib/posgrado/datos";
 import { descargarCsv, fechaArchivo } from "@/lib/csv";
 import {
@@ -19,6 +19,28 @@ const mins = (h: string) => {
   const [a, b] = h.split(":").map(Number);
   return a * 60 + b;
 };
+
+/** Asigna una de las aulas (lugar y cupo) o deja el lugar libre para escribirlo. */
+function elegirSala(g: Grupo, valor: string) {
+  const sala = SALAS.find((x) => x.id === valor);
+  if (sala) {
+    g.sala = sala.id;
+    g.lugar = nombreSala(sala);
+    g.cupo = sala.lugares;
+  } else if (valor === "otro") {
+    // Si venía de un aula, el lugar y los lugares se escriben desde cero
+    if (g.sala) {
+      g.lugar = "";
+      delete g.cupo;
+    }
+    g.lugar ??= "";
+    delete g.sala;
+  } else {
+    delete g.sala;
+    delete g.lugar;
+    delete g.cupo;
+  }
+}
 
 /** Lista legible de lo que cambió entre dos configuraciones. */
 function diferencias(a: ConfigEvaluacion, b: ConfigEvaluacion) {
@@ -37,6 +59,8 @@ function diferencias(a: ConfigEvaluacion, b: ConfigEvaluacion) {
       else {
         if (JSON.stringify(ga.sesiones) !== JSON.stringify(g.sesiones)) out.push({ texto: `${m.nombre}, grupo ${g.id}: ${describirGrupo(g)}`, afecta: "propedeutico" });
         if ((ga.lugar ?? "") !== (g.lugar ?? "")) out.push({ texto: `${m.nombre}, grupo ${g.id}: lugar ${lugarDe(g)}`, afecta: "propedeutico" });
+        // El cupo no se le avisa al aspirante (solo decide si aún puede elegir el grupo)
+        if ((ga.cupo ?? 0) !== (g.cupo ?? 0)) out.push({ texto: `${m.nombre}, grupo ${g.id}: ${g.cupo ? `${g.cupo} lugares` : "sin cupo"}`, afecta: "interno" });
         // El docente no se publica al aspirante: el cambio no se le avisa
         if ((ga.docente ?? "") !== (g.docente ?? "")) out.push({ texto: `${m.nombre}, grupo ${g.id}: docente ${g.docente ? nombreProfesor(g.docente) : "sin asignar"}`, afecta: "interno" });
       }
@@ -104,7 +128,11 @@ export function EditarCalendario() {
                         Docente: {g.docente ? nombreProfesor(g.docente) : "sin asignar"} <span className="text-gray-400">(solo Posgrado)</span>
                       </span>
                     </span>
-                    <span className="shrink-0 font-semibold text-gray-900" title="Aspirantes inscritos">{usados(m.id, g.id)}</span>
+                    <span className={`shrink-0 font-semibold ${g.cupo && usados(m.id, g.id) >= g.cupo ? "text-red-700" : "text-gray-900"}`} title="Aspirantes inscritos / lugares">
+                      {usados(m.id, g.id)}
+                      {g.cupo ? ` / ${g.cupo}` : ""}
+                      {g.cupo && usados(m.id, g.id) >= g.cupo ? <span className="block text-[10px] font-medium">Lleno</span> : null}
+                    </span>
                   </li>
                 ))}
               </ul>
@@ -130,6 +158,7 @@ export function EditarCalendario() {
     m.grupos.forEach((g) => {
       if (!g.sesiones.length) errores.push(`${m.nombre}, grupo ${g.id}: agrega al menos una sesión.`);
       g.sesiones.forEach((s) => mins(s.fin) <= mins(s.inicio) && errores.push(`${m.nombre}, grupo ${g.id}: la hora de fin debe ser después del inicio.`));
+      if (g.cupo && usados(m.id, g.id) > g.cupo) errores.push(`${m.nombre}, grupo ${g.id}: ya hay ${usados(m.id, g.id)} inscritos y el lugar elegido tiene ${g.cupo}; elige un aula con más lugares.`);
     }),
   );
   const cambios = diferencias(config, b);
@@ -247,16 +276,48 @@ export function EditarCalendario() {
                     <Plus size={12} /> Agregar sesión
                   </button>
                   <div className="mt-2 grid gap-2 sm:grid-cols-2">
-                    <label className="block text-xs text-gray-700">
-                      Lugar (lo ve el aspirante)
-                      <input
+                    <div className="text-xs text-gray-700">
+                      <label htmlFor={`lugar-${m.id}-${g.id}`}>Lugar (lo ve el aspirante)</label>
+                      <select
+                        id={`lugar-${m.id}-${g.id}`}
                         aria-label={`Lugar de ${m.nombre}, grupo ${g.id}`}
-                        value={g.lugar ?? ""}
-                        placeholder="Ej. Aula 1, CIDETEC"
-                        onChange={(e) => setMateria(mi, (x) => void (x.grupos[gi].lugar = e.target.value))}
+                        value={g.sala ?? (g.lugar ? "otro" : "")}
+                        onChange={(e) => setMateria(mi, (x) => elegirSala(x.grupos[gi], e.target.value))}
                         className={`${inputBase} mt-0.5 py-1.5`}
-                      />
-                    </label>
+                      >
+                        <option value="">Por confirmar</option>
+                        {SALAS.map((sa) => (
+                          <option key={sa.id} value={sa.id}>
+                            {nombreSala(sa)} · {sa.lugares} lugares
+                          </option>
+                        ))}
+                        <option value="otro">Otro lugar o enlace…</option>
+                      </select>
+                      {!g.sala && g.lugar !== undefined && (
+                        <div className="mt-1 grid grid-cols-[1fr_auto] gap-1.5">
+                          <input
+                            aria-label={`Otro lugar de ${m.nombre}, grupo ${g.id}`}
+                            value={g.lugar}
+                            placeholder="Ej. Laboratorio, CIDETEC o enlace"
+                            onChange={(e) => setMateria(mi, (x) => void (x.grupos[gi].lugar = e.target.value))}
+                            className={`${inputBase} py-1.5`}
+                          />
+                          <input
+                            aria-label={`Lugares de ${m.nombre}, grupo ${g.id}`}
+                            type="number"
+                            min={1}
+                            value={g.cupo ?? ""}
+                            placeholder="Lugares"
+                            title="Lugares (vacío = sin límite)"
+                            onChange={(e) => setMateria(mi, (x) => void (x.grupos[gi].cupo = Number(e.target.value) || undefined))}
+                            className={`${inputBase} w-24 py-1.5`}
+                          />
+                        </div>
+                      )}
+                      <span className={`mt-0.5 block ${g.cupo && usados(m.id, g.id) >= g.cupo ? "font-medium text-red-700" : "text-gray-500"}`}>
+                        {usados(m.id, g.id)} inscrito(s){g.cupo ? ` de ${g.cupo} lugares${usados(m.id, g.id) >= g.cupo ? " · lleno: los aspirantes ya no pueden elegirlo" : ""}` : " · sin límite de lugares"}
+                      </span>
+                    </div>
                     <label className="block text-xs text-gray-700">
                       Docente (solo Posgrado; captura las calificaciones del grupo)
                       <select

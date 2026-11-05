@@ -58,7 +58,10 @@ export function EleccionServidor() {
     );
 
   const materias = yo.config?.materias ?? [];
-  const elegidos = materias.map((m) => ({ materia: m, grupo: m.grupos.length === 1 ? m.grupos[0] : m.grupos.find((g) => g.id === grupos[m.id]) }));
+  const lleno = (g: Grupo) => !!g.lleno;
+  const elegidos = materias.map((m) => ({ materia: m, grupo: (m.grupos.length === 1 ? m.grupos[0] : m.grupos.find((g) => g.id === grupos[m.id])) ?? undefined })).map((x) => ({ ...x, grupo: x.grupo && !lleno(x.grupo) ? x.grupo : undefined }));
+  // Cursos sin ningún grupo con lugares: ya no se puede elegir propedéutico
+  const sinLugar = materias.filter((m) => m.grupos.every(lleno));
   const completos = elegidos.every((x) => x.grupo);
   const cruces = completos ? choques(elegidos as { materia: Materia; grupo: Grupo }[]) : [];
   const listo = modalidad === "examen" || (modalidad === "propedeutico" && completos && !cruces.length);
@@ -73,6 +76,9 @@ export function EleccionServidor() {
       setConfirmando(false);
     } catch (e) {
       setError(mensajeDe(e));
+      // Si un grupo se llenó mientras elegía, se actualizan los lugares disponibles
+      setConfirmando(false);
+      api<Yo>("/portal/yo").then(setYo).catch(() => undefined);
     } finally {
       setEnviando(false);
     }
@@ -112,8 +118,9 @@ export function EleccionServidor() {
             <button
               type="button"
               onClick={() => setModalidad("propedeutico")}
+              disabled={sinLugar.length > 0}
               aria-pressed={modalidad === "propedeutico"}
-              className={`rounded-xl border-2 bg-white p-5 text-left transition ${modalidad === "propedeutico" ? "border-primary ring-2 ring-primary/20" : "border-gray-200 hover:border-gray-300"}`}
+              className={`rounded-xl border-2 bg-white p-5 text-left transition disabled:cursor-not-allowed disabled:opacity-60 ${modalidad === "propedeutico" ? "border-primary ring-2 ring-primary/20" : "border-gray-200 hover:border-gray-300"}`}
             >
               <span className="flex items-center gap-2 font-semibold text-gray-900">
                 <BookOpenCheck size={18} className="text-primary" /> Cursos propedéuticos con opción a examen
@@ -124,6 +131,11 @@ export function EleccionServidor() {
                 {yo.config?.propedeutico?.duracion ? ` · ${yo.config.propedeutico.duracion}` : ""}
               </span>
               <span className="mt-2 block text-xs text-gray-500">Si no acreditas alguna área del curso, podrás presentar el examen de esa área.</span>
+              {sinLugar.length > 0 && (
+                <span className="mt-2 block text-xs font-medium text-red-700">
+                  Ya no hay lugares en {sinLugar.map((m) => m.nombre).join(" ni en ")}. Si te interesa el curso, escribe al Departamento de Posgrado.
+                </span>
+              )}
             </button>
             {/* Examen */}
             <button
@@ -152,15 +164,17 @@ export function EleccionServidor() {
                     <legend className="text-sm font-medium text-gray-900">{m.nombre}</legend>
                     <div className="mt-2 grid gap-2 sm:grid-cols-2">
                       {m.grupos.map((g) => {
-                        const activo = m.grupos.length === 1 || grupos[m.id] === g.id;
+                        const sinCupo = lleno(g);
+                        const activo = !sinCupo && (m.grupos.length === 1 || grupos[m.id] === g.id);
                         return (
                           <label
                             key={g.id}
-                            className={`flex cursor-pointer gap-3 rounded-lg border p-3 text-sm ${activo ? "border-primary bg-indigo-50/60" : "border-gray-200 bg-white hover:border-gray-300"}`}
+                            className={`flex gap-3 rounded-lg border p-3 text-sm ${sinCupo ? "cursor-not-allowed border-gray-200 bg-gray-50 opacity-60" : activo ? "cursor-pointer border-primary bg-indigo-50/60" : "cursor-pointer border-gray-200 bg-white hover:border-gray-300"}`}
                           >
                             <input
                               type="radio"
                               name={`grupo-${m.id}`}
+                              disabled={sinCupo}
                               checked={activo}
                               onChange={() => setGrupos({ ...grupos, [m.id]: g.id })}
                               className="mt-0.5"
@@ -173,6 +187,7 @@ export function EleccionServidor() {
                               <span className="flex items-center gap-1 text-gray-500">
                                 <MapPin size={13} /> {lugarDe(g)}
                               </span>
+                              {sinCupo && <span className="mt-1 block text-xs font-medium text-red-700">Grupo lleno: elige otro horario</span>}
                             </span>
                           </label>
                         );
