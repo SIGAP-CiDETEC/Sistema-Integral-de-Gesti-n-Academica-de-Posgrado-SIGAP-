@@ -12,13 +12,20 @@ import { cerrarSesion, usePermisos, useSesion } from "@/lib/sesion";
 import { permisoDeRuta } from "@/lib/admin/accesos";
 import { ID_EN_VIVO, useAspiranteActivo } from "@/lib/aspirante-activo";
 import { ASPIRANTES_BASE } from "@/lib/posgrado/datos";
+import { useConfigEvaluacion } from "@/lib/evaluacion-config";
+import { gruposDeProfesor, useProfesorActual } from "@/lib/profesor";
 
 export function Sidebar({ rol }: { rol: Rol }) {
   const pathname = usePathname();
   const [abierto, setAbierto] = useState(false);
   const permisos = usePermisos();
+  // Calificaciones del propedéutico: solo para los profesores que imparten algún grupo
+  const { profesor } = useProfesorActual();
+  const { materias } = useConfigEvaluacion();
+  const sinGrupos = rol === "profesor" && !gruposDeProfesor(profesor?.id ?? "", materias).length;
   // Solo las pestañas que su rol permite (RF-80, menor privilegio)
   const items = (MODO_API && !(DEMO_ASPIRANTES && ROLES_DEMO.includes(rol)) ? (NAV_SERVIDOR[rol] ?? []) : NAV[rol]).filter((i) => {
+    if (sinGrupos && i.href === "/profesor/evaluacion") return false;
     const p = permisoDeRuta(i.href);
     return !p || !permisos || permisos.has(p.id);
   });

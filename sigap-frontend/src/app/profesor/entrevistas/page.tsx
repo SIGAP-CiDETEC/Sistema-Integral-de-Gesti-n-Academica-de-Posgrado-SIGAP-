@@ -6,6 +6,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { usePosgrado } from "@/components/posgrado/PosgradoProvider";
 import { Etiqueta, Regresar, Tarjeta } from "@/components/posgrado/ui";
 import { useAccionesProfesor } from "@/components/profesor/useAccionesProfesor";
+import { MODO_API } from "@/lib/api";
 import { fechaCorta, horarioEntrevista, lugaresLibres, nombreProfesor } from "@/lib/posgrado/datos";
 import {
   TONO_ENTREVISTA_PROF,
@@ -41,8 +42,11 @@ export default function MisEntrevistas() {
   const mias = entrevistasDe(aspirantes, yo);
   const porFecha = (x: (typeof mias)[number], y: (typeof mias)[number]) => `${x.entrevista!.fecha}${x.entrevista!.hora}`.localeCompare(`${y.entrevista!.fecha}${y.entrevista!.hora}`);
   const seleccionadas = mias.filter((a) => !citaPublicada(a) && !a.concluido).sort(porFecha);
+  // Las que Posgrado ya validó (acta firmada por los 3 profesores) dejan de mostrarse
+  const validada = (a: (typeof mias)[number]) => !!a.actaEntrevista?.firmada?.validada || (!MODO_API && !!a.dictamen);
+  const cerradas = mias.filter(validada).length;
   const lista = mias
-    .filter((a) => citaPublicada(a) || a.concluido)
+    .filter((a) => (citaPublicada(a) || a.concluido) && !validada(a))
     .map((a) => ({ a, e: estadoEntrevistaProf(a) }))
     .sort((x, y) => ORDEN.indexOf(x.e) - ORDEN.indexOf(y.e) || porFecha(x.a, y.a));
 
@@ -172,13 +176,18 @@ export default function MisEntrevistas() {
               {!lista.length && (
                 <tr>
                   <td colSpan={5} className="px-5 py-8 text-center text-gray-500">
-                    Aquí aparecerán las entrevistas que elegiste cuando Posgrado publique la cita al aspirante.
+                    {cerradas ? "No tienes entrevistas en curso." : "Aquí aparecerán las entrevistas que elegiste cuando Posgrado publique la cita al aspirante."}
                   </td>
                 </tr>
               )}
             </tbody>
           </table>
         </div>
+        {cerradas > 0 && (
+          <p className="border-t border-gray-100 px-5 py-2.5 text-xs text-gray-500">
+            {cerradas === 1 ? "1 entrevista ya concluyó" : `${cerradas} entrevistas ya concluyeron`}: Posgrado validó el acta firmada por los 3 profesores entrevistadores.
+          </p>
+        )}
       </section>
     </>
   );
