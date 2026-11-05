@@ -214,7 +214,50 @@ export function EditarCalendario() {
             <Campo t="Fecha"><input type="date" value={b.examen.fecha} onChange={(e) => set((c) => void (c.examen.fecha = e.target.value))} className={inputBase} /></Campo>
             <Campo t="Hora"><input type="time" value={b.examen.hora} onChange={(e) => set((c) => void (c.examen.hora = e.target.value))} className={inputBase} /></Campo>
             <div className="sm:col-span-2">
-              <Campo t="Lugar o enlace"><input value={b.examen.lugar} onChange={(e) => set((c) => void (c.examen.lugar = e.target.value))} className={inputBase} /></Campo>
+              <Campo t="Lugar o enlace">
+                <select
+                  aria-label="Lugar del examen"
+                  value={b.examen.sala ?? "otro"}
+                  onChange={(e) =>
+                    set((c) => {
+                      const sala = SALAS.find((x) => x.id === e.target.value);
+                      if (sala) {
+                        c.examen.sala = sala.id;
+                        c.examen.lugar = nombreSala(sala);
+                      } else {
+                        if (c.examen.sala) c.examen.lugar = "";
+                        delete c.examen.sala;
+                      }
+                    })
+                  }
+                  className={inputBase}
+                >
+                  {SALAS.map((sa) => (
+                    <option key={sa.id} value={sa.id}>
+                      {nombreSala(sa)} · {sa.lugares} lugares
+                    </option>
+                  ))}
+                  <option value="otro">Otro lugar o enlace…</option>
+                </select>
+                {!b.examen.sala && (
+                  <input
+                    aria-label="Otro lugar del examen"
+                    value={b.examen.lugar}
+                    placeholder="Ej. Auditorio, CIDETEC o enlace de la videollamada"
+                    onChange={(e) => set((c) => void (c.examen.lugar = e.target.value))}
+                    className={`${inputBase} mt-1`}
+                  />
+                )}
+                {(() => {
+                  const sala = SALAS.find((x) => x.id === b.examen.sala);
+                  const n = enEvaluacion.filter((a) => a.evaluacion.modalidad === "examen").length;
+                  return (
+                    <span className={`mt-0.5 block text-xs ${sala && n > sala.lugares ? "font-medium text-red-700" : "text-gray-500"}`}>
+                      {n} aspirante(s) eligieron solo examen{sala ? ` · ${sala.lugares} lugares${n > sala.lugares ? ": no caben, elige un aula más grande" : ""}` : ""}
+                    </span>
+                  );
+                })()}
+              </Campo>
             </div>
           </div>
         </fieldset>

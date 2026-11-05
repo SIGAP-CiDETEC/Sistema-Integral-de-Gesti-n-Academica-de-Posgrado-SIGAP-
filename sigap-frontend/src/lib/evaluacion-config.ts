@@ -11,7 +11,8 @@ import { MATERIAS, MODALIDADES, type Materia, type ModalidadId } from "./evaluac
  */
 export type ConfigEvaluacion = {
   propedeutico: { inicio: string; fin: string; modalidad: "Presencial" | "En línea" | "Mixta"; duracion: string };
-  examen: { fecha: string; hora: string; lugar: string };
+  /** `sala`: una de SALAS (si se eligió del menú); si no, `lugar` es un texto libre o un enlace. */
+  examen: { fecha: string; hora: string; lugar: string; sala?: string };
   materias: Materia[];
 };
 
