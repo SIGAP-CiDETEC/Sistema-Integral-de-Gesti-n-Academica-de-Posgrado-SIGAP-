@@ -15,7 +15,7 @@ const archivo = (t: string) => t.normalize("NFD").replace(/[̀-ͯ]/g, "").replac
 /**
  * Aspirantes inscritos a los cursos propedéuticos (por curso y grupo) y al examen, con su lista descargable.
  * - posgrado: todos los grupos y el examen, con correo y teléfono.
- * - docente: solo los grupos que imparte (ID temporal y nombre).
+ * - docente: solo los grupos que imparte (ID temporal, nombre, correo, teléfono, curso y grupo).
  */
 export function InscritosEvaluacion({ aspirantes, materias, modo, docente }: { aspirantes: AspiranteP[]; materias: Materia[]; modo: "posgrado" | "docente"; docente?: string }) {
   const todos = aspirantes.filter((a) => a.evaluacion?.modalidad);
@@ -27,14 +27,22 @@ export function InscritosEvaluacion({ aspirantes, materias, modo, docente }: { a
   const examen = todos.filter((a) => a.evaluacion.modalidad === "examen");
   const conPosgrado = modo === "posgrado";
 
-  const encabezados = ["ID temporal", "Nombre", ...(conPosgrado ? ["Correo", "Teléfono"] : [])];
-  const fila = (a: AspiranteP) => [idTemporal(a.id), a.nombre, ...(conPosgrado ? [a.correo, a.telefono] : [])];
+  const encabezados = ["ID temporal", "Nombre", "Correo", "Teléfono"];
+  const fila = (a: AspiranteP) => [idTemporal(a.id), a.nombre, /sigap\.local$/.test(a.correo) ? "" : a.correo, a.telefono];
 
   const bajarGrupo = (m: Materia, g: string, lista: AspiranteP[]) =>
     descargarCsv(
       `Inscritos_${archivo(m.nombre)}_grupo-${nombreGrupo(m, g)}_${fechaArchivo()}.csv`,
       [...encabezados, "Curso", "Grupo", ...(conPosgrado ? ["Docente", "Fecha de elección"] : [])],
       lista.map((a) => [...fila(a), m.nombre, nombreGrupo(m, g), ...(conPosgrado ? [nombreProfesor(docenteDe(m.id, g, materias) ?? "") || "", fechaEleccion(a.evaluacion.confirmadaEl)] : [])]),
+    );
+
+  // Docente: una sola lista con todos sus grupos (mismas columnas que la de Posgrado, hasta Grupo)
+  const bajarMisGrupos = () =>
+    descargarCsv(
+      `Inscritos_mis-grupos_${fechaArchivo()}.csv`,
+      [...encabezados, "Curso", "Grupo"],
+      grupos.flatMap(({ m, g, inscritos }) => inscritos.map((a) => [...fila(a), m.nombre, nombreGrupo(m, g.id)])),
     );
 
   const bajarTodo = () =>
@@ -60,6 +68,10 @@ export function InscritosEvaluacion({ aspirantes, materias, modo, docente }: { a
         conPosgrado && todos.length > 0 ? (
           <button type="button" className={botonSecundario} onClick={bajarTodo}>
             <Download size={15} /> Descargar todo
+          </button>
+        ) : !conPosgrado && grupos.length > 1 && grupos.some((x) => x.inscritos.length) ? (
+          <button type="button" className={botonSecundario} onClick={bajarMisGrupos}>
+            <Download size={15} /> Descargar todos mis grupos
           </button>
         ) : undefined
       }

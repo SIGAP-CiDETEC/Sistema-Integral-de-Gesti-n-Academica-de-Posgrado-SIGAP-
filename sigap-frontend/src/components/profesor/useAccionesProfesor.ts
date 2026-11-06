@@ -143,17 +143,29 @@ export function useAccionesProfesor() {
    * Captura (o corrige, hasta una semana después de la primera captura y antes de que se publique) la calificación
    * de un área. Con todas las áreas, el resultado queda listo para que Posgrado lo publique.
    */
-  const capturar = (a: AspiranteP, area: AreaEvalId, calificacion: number, profesor: string) => {
+  /** Captura, corrige o borra (calificacion = null) la calificación de un área. */
+  const capturar = (a: AspiranteP, area: AreaEvalId, calificacion: number | null, profesor: string) => {
     const pend = evaluacionEnCaptura(a.evaluacion);
     if (!pend) return false;
     const e = a.evaluacion;
     const previa = e.capturas?.[pend.tipo]?.[area];
     if (previa && !puedeEditarCaptura(previa, false)) return false;
+    const nombreEval = pend.tipo === "propedeutico" ? "curso propedéutico" : pend.esSegunda ? "examen de áreas no acreditadas" : "examen de admisión";
+    if (calificacion === null) {
+      // Sin valor: se quita la calificación y el área vuelve a quedar por capturar
+      if (!previa) return false;
+      const resto = { ...(e.capturas?.[pend.tipo] ?? {}) };
+      delete resto[area];
+      // El resultado integrado ya no aplica: falta esa área
+      const sinResultado = { ...e, capturas: { ...(e.capturas ?? {}), [pend.tipo]: resto } };
+      delete sinResultado[pend.tipo];
+      actualizar(a.id, { evaluacion: sinResultado }, `Quitó la calificación de ${nombreArea(area)} del ${nombreEval} (era ${previa.calificacion}); queda por capturar`);
+      return true;
+    }
     const ahora = new Date().toISOString();
     const delTipo = { ...(e.capturas?.[pend.tipo] ?? {}), [area]: { calificacion, por: profesor, el: ahora, primeraEl: previa?.primeraEl ?? previa?.el ?? ahora } };
     const capturas = { ...(e.capturas ?? {}), [pend.tipo]: delTipo };
     const resultado = integrarResultado(delTipo, pend.areas);
-    const nombreEval = pend.tipo === "propedeutico" ? "curso propedéutico" : pend.esSegunda ? "examen de áreas no acreditadas" : "examen de admisión";
     actualizar(
       a.id,
       { evaluacion: { ...e, capturas, ...(resultado ? { [pend.tipo]: resultado } : {}) } },

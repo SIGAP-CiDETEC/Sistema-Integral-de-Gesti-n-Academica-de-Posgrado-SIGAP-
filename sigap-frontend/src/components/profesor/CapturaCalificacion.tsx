@@ -42,7 +42,9 @@ export function CapturaCalificacion({ a, area, capturada, por, publicado = false
       </span>
     );
   const n = Number(v);
-  const ok = v !== "" && n >= 0 && n <= 10;
+  // Al corregir se puede guardar vacío: quita la calificación y el área vuelve a quedar por capturar
+  const vacio = v.trim() === "";
+  const ok = vacio ? editando : n >= 0 && n <= 10;
   return (
     <span className="flex items-center gap-2">
       <input
@@ -60,18 +62,19 @@ export function CapturaCalificacion({ a, area, capturada, por, publicado = false
         className={botonPrimario}
         disabled={!ok || !por}
         onClick={() => {
-          capturar(a, area, Math.round(n * 10) / 10, por);
+          capturar(a, area, vacio ? null : Math.round(n * 10) / 10, por);
           setEditando(false);
         }}
       >
-        {editando ? "Guardar" : "Registrar"}
+        {editando ? (vacio ? "Guardar sin calificación" : "Guardar") : "Registrar"}
       </button>
       {editando && (
         <button type="button" className="text-xs text-gray-500 underline" onClick={() => setEditando(false)}>
           Cancelar
         </button>
       )}
-      {v !== "" && ok && <span className={`text-xs ${n >= MINIMA_AREA ? "text-emerald-700" : "text-red-700"}`}>{n >= MINIMA_AREA ? "Acreditada" : "No acreditada"}</span>}
+      {editando && vacio && <span className="text-xs text-gray-500">Se quitará la calificación</span>}
+      {!vacio && ok && <span className={`text-xs ${n >= MINIMA_AREA ? "text-emerald-700" : "text-red-700"}`}>{n >= MINIMA_AREA ? "Acreditada" : "No acreditada"}</span>}
     </span>
   );
 }

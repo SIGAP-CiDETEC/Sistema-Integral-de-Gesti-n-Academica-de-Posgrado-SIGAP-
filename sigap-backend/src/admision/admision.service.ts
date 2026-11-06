@@ -31,7 +31,8 @@ type PostulacionCompleta = Prisma.PostulacionGetPayload<{ include: typeof conTod
  * Qué datos del aspirante ve cada cuenta:
  * - completa: Posgrado y Subdirección.
  * - profesor: profesor entrevistador de una cita ya publicada (nombre, procedencia, promedio y correo; solo su SIP-02).
- * - docente: docente del grupo del propedéutico en que está inscrito (nombre y su evaluación, para capturar calificaciones).
+ * - docente: docente del grupo del propedéutico en que está inscrito (nombre, correo, teléfono y su evaluación, para su lista
+ *   del grupo y capturar calificaciones).
  * - anonima: solo día, hora y lugares de la entrevista (profesores que aún no integran la entrevista o cuya cita no se publica).
  */
 export type Vista = 'completa' | 'profesor' | 'docente' | 'anonima';
@@ -78,8 +79,8 @@ export class AdmisionService {
       id: p.folio,
       nombre: completo || vista === 'docente' ? [a.nombres, a.apellidoPaterno, a.apellidoMaterno].filter(Boolean).join(' ') : 'Aspirante',
       curp: todo ? (a.curp ?? '') : '',
-      correo: completo && !a.correo.endsWith('@sin-correo.sigap.local') ? a.correo : '',
-      telefono: todo ? (a.telefono ?? '') : '',
+      correo: (completo || vista === 'docente') && !a.correo.endsWith('@sin-correo.sigap.local') ? a.correo : '',
+      telefono: todo || vista === 'docente' ? (a.telefono ?? '') : '',
       procedencia: completo ? (r.procedencia ?? '') : '',
       promedio: completo ? (r.promedio ?? '') : '',
       registradoEl: (p.enviadaEn ?? p.creadoEn).toISOString(),
@@ -273,7 +274,12 @@ export class AdmisionService {
     for (const area of cambiadas) {
       const c = capN.propedeutico?.[area];
       if (!this.esDocenteDe(p, grupos, area)) throw new ForbiddenException('Solo puedes calificar a los aspirantes de tus grupos');
-      if (!c || c.por !== prof || typeof c.calificacion !== 'number' || c.calificacion < 0 || c.calificacion > 10) throw new BadRequestException('Calificación inválida');
+      // Sin calificación: el docente quita la que él mismo capturó (el área vuelve a quedar por capturar)
+      if (!c) {
+        if (capA.propedeutico?.[area]?.por !== prof) throw new ForbiddenException('Solo puedes quitar las calificaciones que tú capturaste');
+        continue;
+      }
+      if (c.por !== prof || typeof c.calificacion !== 'number' || c.calificacion < 0 || c.calificacion > 10) throw new BadRequestException('Calificación inválida');
     }
     if (actual.propedeutico && (actual.propedeutico as { publicadoEl?: string }).publicadoEl) throw new ConflictException('El resultado ya se publicó; ya no se puede corregir');
     const nuevo = { ...((p.estadoProceso ?? {}) as Record<string, unknown>), evaluacion: { ...actual, capturas: evaluacion.capturas, propedeutico: evaluacion.propedeutico } };
