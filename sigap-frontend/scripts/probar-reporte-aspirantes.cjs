@@ -1,6 +1,10 @@
 const fs = require('node:fs');
 const assert = require('node:assert/strict');
 const ts = require('typescript');
+const path = require('node:path');
+const Module = require('node:module');
+const resolver = Module._resolveFilename;
+Module._resolveFilename = function(id, ...args) { return resolver.call(this, id.startsWith('@/') ? path.join(__dirname, '../src', id.slice(2)) : id, ...args); };
 require.extensions['.ts'] = (m, f) => m._compile(ts.transpileModule(fs.readFileSync(f, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020 } }).outputText, f);
 const csv = require('../src/lib/csv.ts');
 let reporte;
@@ -41,7 +45,7 @@ assert.equal(valor('Línea de investigación 1 (mayor interés)'), registro.area
 assert.equal(valor('Línea de investigación 2'), registro.areasInteres[1]);
 assert.equal(valor('Línea de investigación 3 (menor interés)'), registro.areasInteres[2]);
 assert.equal(valor('3. Día de entrevista'), '2026-10-20');
-assert.equal(valor('3. Hora de entrevista'), '11:30');
+assert.equal(valor('3. Horario de entrevista'), '11:30 a 11:55');
 assert.equal(valor('Fecha de registro'), '2026-10-15');
 assert(!reporte.encabezados.includes('Hora de registro'));
 for (const nombre of ['5. Día de publicación del propedéutico', '5. Hora de publicación del propedéutico', '5. Día de publicación del examen', '5. Hora de publicación del examen']) assert(!reporte.encabezados.includes(nombre));
@@ -56,7 +60,7 @@ assert.equal(valor('¿Continuaría sin beca?'), 'No');
 assert.equal(reporte.encabezados[51], '6. Resolución del Colegio', 'AZ debe contener la clasificación');
 for (const [resolucion, clasificacion, dictamen] of [
   ['Aceptado', 'Aceptado', 'Aceptado.'],
-  ['Con reservas', 'Condicionado', 'Condicionado al cumplimiento documental para proceder a su aceptación.'],
+  ['Con reservas', 'Condicionado', 'Condicionado al cumplimiento documental para proceder a su inscripción.'],
   ['No aceptado', 'No aceptado', 'No aceptado. Invitado a participar en los siguientes procesos de Admisión.'],
 ]) {
   descargarReporteAspirantes([{ ...base, resolucion }], () => registro);

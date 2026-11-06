@@ -61,7 +61,7 @@ export function ResultadosAspirante() {
           {so?.decision === "examen" && (
             <p className="mt-4 flex items-start gap-2 rounded-lg bg-indigo-50 px-3 py-2.5 text-sm text-navy-800">
               <CheckCircle2 size={16} className="mt-0.5 shrink-0" />
-              Elegiste presentar el examen de {so.areas.map(nombreArea).join(" y ")} el {fechaLargaIso(config.examen.fecha)} a las {config.examen.hora} h. Tus resultados aparecerán abajo.
+              Elegiste presentar el examen de {so.areas.map(nombreArea).join(" y ")} el {fechaLargaIso(config.examen.fecha)} a las {config.examen.hora} h. Tus resultados aparecerán en esta sección cuando Posgrado los publique.
             </p>
           )}
           {so?.decision === "no" && (
@@ -70,14 +70,22 @@ export function ResultadosAspirante() {
               Decidiste no presentar el examen. Tu proceso de admisión en esta convocatoria concluye; te invitamos a participar en la próxima.
             </p>
           )}
+          {conExamen && exa && (
+            <div className="mt-5 border-t border-gray-200 pt-4">
+              <h3 className="font-semibold text-gray-900">Resultado del examen de admisión</h3>
+              <p className="mt-1 text-xs text-gray-500">Publicado el {fecha(exa.publicadoEl!)}</p>
+              <ResultadosPorArea resultado={exa} />
+              {exa.acreditado ? <Acreditado /> : <p className="mt-3 text-sm text-gray-700">Tu proceso de admisión en esta convocatoria concluye. Te invitamos a participar en la próxima.</p>}
+            </div>
+          )}
         </Seccion>
       )}
 
       {/* Sección B · Examen de admisión */}
-      {conExamen && (
+      {modalidad === "examen" && (
         <Seccion
           icono={FileQuestion}
-          titulo={so?.decision === "examen" ? "Resultados del examen de áreas no acreditadas" : "Resultados del examen de admisión"}
+          titulo="Resultados del examen de admisión"
           publicacion={`Examen: ${fechaLargaIso(config.examen.fecha)}, ${config.examen.hora} h, ${config.examen.lugar}. Los resultados se publican después del examen.`}
           resultado={exa}
         >
@@ -126,6 +134,15 @@ function Seccion({
       {!resultado ? (
         <p className="mt-2 text-sm text-gray-600">{publicacion} Te avisaremos por correo y en tus notificaciones.</p>
       ) : (
+        <ResultadosPorArea resultado={resultado} />
+      )}
+      {children}
+    </section>
+  );
+}
+
+function ResultadosPorArea({ resultado }: { resultado: ResultadoEval }) {
+  return (
         <ul className="mt-4 grid gap-3 sm:grid-cols-2">
           {(resultado.areas
             ? (Object.entries(resultado.areas) as [AreaEvalId, ResultadoArea][])
@@ -139,9 +156,6 @@ function Seccion({
             </li>
           ))}
         </ul>
-      )}
-      {children}
-    </section>
   );
 }
 

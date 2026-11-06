@@ -104,6 +104,7 @@ export type EstadoVivo = {
   /** Resultados de la evaluación (el aspirante solo ve los ya publicados) */
   evaluacion: { propedeutico?: ResultadoEval; examen?: ResultadoEval };
   resolucion?: "Aceptado" | "Con reservas" | "No aceptado";
+  motivoReservas?: string;
   turnadoUteycv?: string;
 };
 
@@ -134,6 +135,7 @@ export function useEstadoAdmision(idPedido?: string): EstadoVivo {
       resultadoEntrevista: (c.dictamen as { resolucion?: EstadoVivo["resultadoEntrevista"] } | undefined)?.resolucion,
       evaluacion: { propedeutico: ev.propedeutico, examen: ev.examen },
       resolucion: (c.resolucion === "Condicionado" ? "Con reservas" : c.resolucion) as EstadoVivo["resolucion"],
+      motivoReservas: c.motivoReservas as string | undefined,
       turnadoUteycv: c.turnadoUteycv as string | undefined,
     };
   }, [raw, id]);

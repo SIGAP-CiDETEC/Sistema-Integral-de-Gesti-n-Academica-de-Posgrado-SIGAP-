@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { AlertTriangle, BookOpen, CalendarDays, CheckCircle2, FileQuestion, Info, Lock, Mail } from "lucide-react";
 import { CORREO_POSGRADO } from "@/lib/config";
+import { PROFESORES_SINODO } from "@/lib/posgrado/datos";
 import { DIAS, choques, describirGrupo, lugarDe, type Grupo, type Materia, type ModalidadId } from "@/lib/evaluacion";
 import { useConfigEvaluacion } from "@/lib/evaluacion-config";
 import { useExpediente } from "./ExpedienteProvider";
@@ -177,7 +178,7 @@ function Resumen({
   const porDia = DIAS.map((dia) => ({
     dia,
     clases: elegidos
-      .flatMap(({ materia, grupo }) => grupo.sesiones.filter((s) => s.dia === dia).map((s) => ({ ...s, materia: materia.nombre, lugar: lugarDe(grupo) })))
+      .flatMap(({ materia, grupo }) => grupo.sesiones.filter((s) => s.dia === dia).map((s) => ({ ...s, materia: materia.nombre, lugar: lugarDe(grupo), docente: PROFESORES_SINODO.find((p) => p.id === grupo.docente) })))
       .sort((a, b) => a.inicio.localeCompare(b.inicio)),
   })).filter((d) => d.clases.length);
 
@@ -211,6 +212,7 @@ function Resumen({
                         </span>
                         <span className="text-gray-900">{c.materia}</span>
                         <span className="block text-xs text-gray-500">{c.lugar}</span>
+                        {c.docente && <span className="mt-1 block text-xs text-gray-700">{c.docente.nombre}{c.docente.correo && <a href={`mailto:${c.docente.correo}`} className="mt-0.5 block break-all text-primary underline">{c.docente.correo}</a>}</span>}
                       </li>
                     ))}
                   </ul>

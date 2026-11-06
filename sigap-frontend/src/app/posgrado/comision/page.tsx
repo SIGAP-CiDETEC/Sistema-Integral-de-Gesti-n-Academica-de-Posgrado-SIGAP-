@@ -12,7 +12,7 @@ import { convocatoriaActual } from "@/lib/config";
 import { fechaResultados, guardarConvocatorias, hoyISO, useConvocatorias } from "@/lib/convocatoria";
 import { documentosPendientes, fechaCorta, resultadoFinal, type AspiranteP, type ResolucionColegio } from "@/lib/posgrado/datos";
 import { MODO_API } from "@/lib/api";
-import { DICTAMEN_FINAL, TONO_DICTAMEN } from "@/lib/reporte-aspirantes";
+import { DICTAMEN_FINAL, TEXTO_DICTAMEN_FINAL, TONO_DICTAMEN } from "@/lib/reporte-aspirantes";
 
 const TONO: Record<ResolucionColegio, string> = {
   Aceptado: "bg-emerald-50 text-emerald-700",
@@ -76,8 +76,8 @@ function DictamenFinal() {
   const descargarInforme = () =>
     descargarCsv(
       `Informe_Comision_Admision_${convocatoriaActual.nombre.split(" ").pop()}.csv`,
-      ["ID del aspirante", "Dictamen final", "Con reservas", "Motivo de las reservas"],
-      enComision.map((a) => [a.id, DICTAMEN_FINAL[resolucionDe(a)], resolucionDe(a) === "Con reservas" ? "Sí" : "No", resolucionDe(a) === "Con reservas" ? motivoDe(a) : ""]),
+      ["ID del aspirante", "Resolución", "Dictamen final", "Con reservas", "Motivo de las reservas"],
+      enComision.map((a) => [a.id, DICTAMEN_FINAL[resolucionDe(a)], TEXTO_DICTAMEN_FINAL[resolucionDe(a)], resolucionDe(a) === "Con reservas" ? "Sí" : "No", resolucionDe(a) === "Con reservas" ? motivoDe(a) : ""]),
     );
 
   const registrar = () => {
@@ -205,7 +205,7 @@ function DictamenFinal() {
                           className={`${inputBase} max-w-[180px] py-1.5`}
                         >
                           <option>Aceptado</option>
-                          <option>Con reservas</option>
+                          <option value="Con reservas">Condicionado</option>
                           <option>No aceptado</option>
                         </select>
                       )}

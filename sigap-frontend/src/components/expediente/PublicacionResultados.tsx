@@ -1,12 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, BellRing, CalendarDays, CheckCircle2, Clock, Globe } from "lucide-react";
+import { ArrowRight, BellRing, CalendarDays, CheckCircle2, Globe } from "lucide-react";
 import { useContenido } from "@/lib/contenido";
 import type { IdConvocatoria } from "@/lib/config";
 import { fechaResultados, useConvocatorias } from "@/lib/convocatoria";
 import { useEstadoAdmision, useSesionColegio } from "@/lib/posgrado/revision";
 import { useExpediente } from "./ExpedienteProvider";
+import { useAspiranteActivo } from "@/lib/aspirante-activo";
+import { DICTAMEN_FINAL, TEXTO_DICTAMEN_FINAL } from "@/lib/reporte-aspirantes";
 
 const fechaLarga = (iso?: string) =>
   iso ? new Date(`${iso}T12:00:00`).toLocaleDateString("es-MX", { day: "numeric", month: "long", year: "numeric" }) : "";
@@ -18,6 +20,7 @@ const fechaLarga = (iso?: string) =>
 export function PublicacionResultados() {
   const { registro } = useExpediente();
   const v = useEstadoAdmision();
+  const id = useAspiranteActivo();
   const { calendarioDe } = useContenido();
   const conv = (String(registro.semestre ?? "A").charAt(0) === "B" ? "B" : "A") as IdConvocatoria;
   const calendario = calendarioDe(conv);
@@ -25,7 +28,6 @@ export function PublicacionResultados() {
   const fechaPub = fechaResultados(config, conv);
   const sesion = useSesionColegio();
   const admitido = !v.concluido && (v.resolucion === "Aceptado" || v.resolucion === "Con reservas");
-  const enComision = v.etapa === "dictamen" && !v.resolucion;
 
   return (
     <div className="space-y-6">
@@ -34,6 +36,10 @@ export function PublicacionResultados() {
           <Globe size={17} className="text-primary" /> ¿Dónde se publican los resultados?
         </h2>
         <ul className="mt-3 space-y-2.5 text-sm text-gray-700">
+          <li className="flex gap-2">
+            <Globe size={16} className="mt-0.5 shrink-0 text-primary" />
+            <span>Los resultados se publicarán en la página de CIDETEC: <a href="https://www.cidetec.ipn.mx/" target="_blank" rel="noopener noreferrer" className="break-all font-medium text-primary underline">https://www.cidetec.ipn.mx/</a></span>
+          </li>
           <li className="flex gap-2">
             <CheckCircle2 size={16} className="mt-0.5 shrink-0 text-emerald-600" />
             <span>
@@ -72,37 +78,31 @@ export function PublicacionResultados() {
         )}
       </section>
 
-      <section className="rounded-xl border border-gray-200 bg-white p-5">
+      {v.resolucion && <section className="rounded-xl border border-gray-200 bg-white p-5">
         <h2 className="font-semibold text-gray-900">Tu resultado</h2>
+        {v.resolucion && <div className="mt-3 overflow-x-auto"><table className="w-full text-left text-sm"><thead className="bg-indigo-50"><tr><th className="p-3">ID Aspirante</th><th className="p-3">Resolución</th><th className="p-3">Dictamen final</th></tr></thead><tbody><tr className="border-b border-gray-200"><td className="p-3 font-mono">{id}</td><td className="p-3 font-medium">{DICTAMEN_FINAL[v.resolucion]}</td><td className="p-3">{TEXTO_DICTAMEN_FINAL[v.resolucion]}</td></tr></tbody></table></div>}
         {admitido ? (
           <div className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50/70 p-4 text-sm text-emerald-900">
             <p className="flex items-center gap-2 text-base font-semibold">
-              <CheckCircle2 size={18} /> ¡Fuiste admitido(a)!{v.resolucion === "Con reservas" ? " (admisión con reservas)" : ""}
+              <CheckCircle2 size={18} /> {v.resolucion === "Con reservas" ? "Condicionado al cumplimiento documental para proceder a su inscripción" : "Aceptado"}
             </p>
             <p className="mt-1.5">
               Resolución del Colegio de Profesores
               {sesion?.fecha ? ` en su sesión del ${fechaLarga(sesion.fecha)}${sesion.hora ? ` a las ${sesion.hora} h` : ""}${sesion.numero ? ` (acta ${sesion.numero})` : ""}` : ""}.
-              Con esto concluye tu proceso de admisión.
+              {v.resolucion === "Con reservas" ? " Debes cumplir los requisitos documentales para proceder a tu inscripción." : " Con esto concluye tu proceso de admisión."}
             </p>
             <p className="mt-1.5">
-              Sigue tu <b>inscripción</b>: ahí llenas tu dictamen SIP-04 (con tu dedicación), tu SIP-01, SIP-05 y SIP-06, y subes tu fotografía.
+              {v.resolucion === "Con reservas" ? <>El Departamento de Posgrado te contactará para dar seguimiento al cumplimiento documental. {v.motivoReservas && <>Motivo: {v.motivoReservas}</>}</> : <>Sigue tu <b>inscripción</b>: ahí llenas tu dictamen SIP-04 (con tu dedicación), tu SIP-01, SIP-05 y SIP-06, y subes tu fotografía. La Unidad de Tecnología Educativa y Campus Virtual te contactará para orientarte.</>}
             </p>
-            <Link href="/aspirante/inscripcion" className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 font-medium text-white hover:bg-primary-hover">
-              Ir a mi inscripción <ArrowRight size={15} />
+            <p className="mt-2">Contacto: {v.resolucion === "Con reservas" ? <><span>Departamento de Posgrado · </span><a className="break-all underline" href="mailto:cgomeza@ipn.mx">cgomeza@ipn.mx</a></> : <><span>Unidad de Tecnología Educativa y Campus Virtual · </span><a className="break-all underline" href="mailto:lsalazarr@ipn.mx">lsalazarr@ipn.mx</a></>}</p>
+            <Link href={v.resolucion === "Con reservas" ? "/aspirante/documentos" : "/aspirante/inscripcion"} className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 font-medium text-white hover:bg-primary-hover">
+              {v.resolucion === "Con reservas" ? "Revisar mis documentos" : "Ir a mi inscripción"} <ArrowRight size={15} />
             </Link>
           </div>
-        ) : enComision ? (
-          <p className="mt-3 flex items-start gap-2 text-sm text-gray-700">
-            <Clock size={16} className="mt-0.5 shrink-0 text-gray-400" /> Acreditaste tu evaluación. Tu resultado está en la Comisión de Admisión del Colegio de
-            Profesores; todavía no se publica.
-          </p>
-        ) : (
-          <p className="mt-3 flex items-start gap-2 text-sm text-gray-700">
-            <Clock size={16} className="mt-0.5 shrink-0 text-gray-400" /> Tu resultado se publica después de que acredites tu evaluación y sesione el Colegio de
-            Profesores.
-          </p>
-        )}
-      </section>
+        ) : v.resolucion === "No aceptado" ? (
+          <p className="mt-3 rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm text-gray-800">{TEXTO_DICTAMEN_FINAL[v.resolucion]}</p>
+        ) : null}
+      </section>}
 
     </div>
   );
