@@ -23,7 +23,8 @@
     "crear-cuenta": "node dist/carga/crear-cuenta.js",
     "accesos-aspirantes": "node dist/carga/accesos-aspirantes.js",
     "cargar-profesores": "node dist/carga/cargar-profesores.js",
-    "borrar-eleccion": "node dist/carga/borrar-eleccion.js"
+    "borrar-eleccion": "node dist/carga/borrar-eleccion.js",
+    "borrar-calificaciones": "node dist/carga/borrar-calificaciones.js"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.0",
