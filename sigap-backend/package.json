@@ -24,7 +24,8 @@
     "accesos-aspirantes": "node dist/carga/accesos-aspirantes.js",
     "cargar-profesores": "node dist/carga/cargar-profesores.js",
     "borrar-eleccion": "node dist/carga/borrar-eleccion.js",
-    "borrar-calificaciones": "node dist/carga/borrar-calificaciones.js"
+    "borrar-calificaciones": "node dist/carga/borrar-calificaciones.js",
+    "actualizar-contacto": "node dist/carga/actualizar-contacto.js"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.0",

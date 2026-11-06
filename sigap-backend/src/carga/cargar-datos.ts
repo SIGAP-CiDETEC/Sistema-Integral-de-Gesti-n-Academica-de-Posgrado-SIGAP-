@@ -68,7 +68,8 @@ async function main() {
     const aspirante = await prisma.aspirante.upsert({
       where: { idTemporal: a.folio },
       create: { idTemporal: a.folio, nombres: a.nombres, apellidoPaterno: a.apellidoPaterno, apellidoMaterno: a.apellidoMaterno || null, curp: a.curp || null, correo, telefono: a.telefono || null },
-      update: { nombres: a.nombres, apellidoPaterno: a.apellidoPaterno, apellidoMaterno: a.apellidoMaterno || null, curp: a.curp || null, correo, telefono: a.telefono || null },
+      // Si datos.json no trae correo o teléfono, se conservan los registrados después (npm run actualizar-contacto)
+      update: { nombres: a.nombres, apellidoPaterno: a.apellidoPaterno, apellidoMaterno: a.apellidoMaterno || null, curp: a.curp || null, ...(a.correo ? { correo } : {}), ...(a.telefono ? { telefono: a.telefono } : {}) },
     });
     const postulacion = await prisma.postulacion.upsert({
       where: { folio: a.folio },
