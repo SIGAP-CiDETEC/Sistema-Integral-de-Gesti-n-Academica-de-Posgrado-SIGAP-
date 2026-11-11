@@ -13,6 +13,11 @@ export const MODO_API = API_URL.length > 0;
  * NEXT_PUBLIC_DEMO=1.
  */
 export const DEMO_ASPIRANTES = MODO_API && process.env.NEXT_PUBLIC_DEMO === "1";
+/**
+ * Botones de "Vista de prueba (solo cascarón)" para recorrer el flujo del aspirante y del alumno (simular resultados,
+ * dictamen, documentos…). Solo en la demostración (Vercel, sin servidor); nunca con el servidor real.
+ */
+export const SIMULACION = !MODO_API || DEMO_ASPIRANTES;
 
 const CLAVE_TOKEN = "sigap-token";
 
