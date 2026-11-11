@@ -97,11 +97,18 @@ export class PortalService {
             modalidad: ev.modalidad,
             confirmadaEl: ev.confirmadaEl,
             grupos: ev.grupos ?? {},
-            // Ya elegido: quién imparte cada curso de sus grupos
+            // Ya elegido: quién imparte cada curso de sus grupos y su correo institucional para contactarlo
             docentes: Object.fromEntries(
               (cfg?.materias ?? []).map((m) => {
                 const g = m.grupos.find((x) => x.id === ev.grupos?.[m.id]);
                 return [m.id, profesores.find((x) => x.id === g?.docente)?.nombre ?? ''];
+              }),
+            ),
+            correosDocentes: Object.fromEntries(
+              (cfg?.materias ?? []).map((m) => {
+                const g = m.grupos.find((x) => x.id === ev.grupos?.[m.id]);
+                const correo = profesores.find((x) => x.id === g?.docente)?.correo ?? '';
+                return [m.id, /sigap\.local$/i.test(correo) ? '' : correo];
               }),
             ),
           }

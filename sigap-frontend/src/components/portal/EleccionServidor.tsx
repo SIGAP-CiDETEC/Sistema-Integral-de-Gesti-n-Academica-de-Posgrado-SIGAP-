@@ -20,7 +20,7 @@ type Yo = {
   puedeElegir: boolean;
   motivo?: string;
   config: Config | null;
-  eleccion: { modalidad: "propedeutico" | "examen"; confirmadaEl?: string; grupos: Record<string, string>; docentes: Record<string, string> } | null;
+  eleccion: { modalidad: "propedeutico" | "examen"; confirmadaEl?: string; grupos: Record<string, string>; docentes: Record<string, string>; correosDocentes?: Record<string, string> } | null;
 };
 
 const fecha = (f?: string) => (f ? fechaLargaIso(f) : "por confirmar");
@@ -286,7 +286,14 @@ function Eleccion({ yo }: { yo: Yo }) {
                         {g ? describirGrupo(g) : "—"}
                         <span className="block text-xs text-gray-500">{lugarDe(g)}</span>
                       </td>
-                      <td className="py-2.5">{e.docentes[m.id] || <span className="text-gray-500">Por asignar</span>}</td>
+                      <td className="py-2.5">
+                        {e.docentes[m.id] || <span className="text-gray-500">Por asignar</span>}
+                        {e.correosDocentes?.[m.id] && (
+                          <a href={`mailto:${e.correosDocentes[m.id]}`} className="block break-all text-xs text-primary underline">
+                            {e.correosDocentes[m.id]}
+                          </a>
+                        )}
+                      </td>
                     </tr>
                   );
                 })}
