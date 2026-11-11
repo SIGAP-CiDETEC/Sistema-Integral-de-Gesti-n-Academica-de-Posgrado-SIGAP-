@@ -32,6 +32,8 @@ export class AuthController {
       nombre: u.nombre,
       correo: u.correo,
       rol: ROL_FRONT[u.area],
+      // Sesiones que puede abrir con la misma cuenta (su área principal y las adicionales)
+      roles: [u.area, ...u.areasExtra.filter((a) => a !== u.area)].map((a) => ROL_FRONT[a]),
       puesto: u.area === 'ASPIRANTES' ? `Aspirante · ${u.identificadorAcceso ?? ''}` : u.roles.map((r) => r.rol.nombre).join(' · ') || u.area,
       profesorId: u.profesorId,
       debeCambiarContrasena: u.debeCambiarContrasena,

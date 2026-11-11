@@ -1,5 +1,6 @@
 "use client";
 
+import { TextoConEnlaces } from "@/components/TextoConEnlaces";
 import Link from "next/link";
 import { CalendarClock, CalendarDays, ClipboardPenLine, PenLine } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
@@ -44,7 +45,7 @@ export default function ProfesorInicio() {
                   <span>
                     <span className="font-medium text-gray-900">{a.nombre}</span>
                     <span className="block text-xs text-gray-500">
-                      {fechaCorta(a.entrevista!.fecha)} · {horarioEntrevista(a.entrevista!)} · {a.entrevista!.sala}
+                      {fechaCorta(a.entrevista!.fecha)} · {horarioEntrevista(a.entrevista!)} · <TextoConEnlaces texto={a.entrevista!.sala} />
                     </span>
                   </span>
                   <span className="flex items-center gap-2">

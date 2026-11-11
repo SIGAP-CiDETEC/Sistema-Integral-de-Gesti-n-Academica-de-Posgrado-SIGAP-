@@ -47,11 +47,26 @@ export class ErrorApi extends Error {
 }
 
 /** Llama a la API con la sesión; si la sesión ya no vale, vuelve al login. */
-export async function api<T>(ruta: string, opciones: { metodo?: string; cuerpo?: unknown; formulario?: FormData } = {}): Promise<T> {
+/** Área del servidor de cada sesión del front (para las cuentas que atienden más de un área). */
+const AREA_DE_ROL: Record<string, string> = { posgrado: "POSGRADO", profesor: "PROFESORES", subdireccion: "SUBDIRECCION", uteycv: "UTEYCV", admin: "ADMINISTRADOR", aspirante: "ASPIRANTES" };
+
+/** Encabezados de la petición: el token y, si la cuenta tiene varias áreas, con cuál está actuando. */
+function encabezados(): Record<string, string> {
   const token = leerToken();
+  let area = "";
+  try {
+    const s = JSON.parse(localStorage.getItem("sigap-sesion") ?? "null") as { rol?: string; roles?: string[] } | null;
+    if (s?.rol && (s.roles?.length ?? 0) > 1) area = AREA_DE_ROL[s.rol] ?? "";
+  } catch {
+    /* ignorar */
+  }
+  return { ...(token ? { authorization: `Bearer ${token}` } : {}), ...(area ? { "x-sigap-area": area } : {}) };
+}
+
+export async function api<T>(ruta: string, opciones: { metodo?: string; cuerpo?: unknown; formulario?: FormData } = {}): Promise<T> {
   const r = await fetch(`${API_URL}${ruta}`, {
     method: opciones.metodo ?? (opciones.cuerpo || opciones.formulario ? "POST" : "GET"),
-    headers: { ...(token ? { authorization: `Bearer ${token}` } : {}), ...(opciones.cuerpo !== undefined ? { "content-type": "application/json" } : {}) },
+    headers: { ...encabezados(), ...(opciones.cuerpo !== undefined ? { "content-type": "application/json" } : {}) },
     body: opciones.formulario ?? (opciones.cuerpo !== undefined ? JSON.stringify(opciones.cuerpo) : undefined),
   });
   const texto = await r.text();
@@ -78,7 +93,7 @@ export async function api<T>(ruta: string, opciones: { metodo?: string; cuerpo?:
 export async function abrirArchivo(ruta: string): Promise<string | null> {
   const ventana = window.open("", "_blank");
   try {
-    const r = await fetch(`${API_URL}${ruta}`, { headers: { authorization: `Bearer ${leerToken() ?? ""}` } });
+    const r = await fetch(`${API_URL}${ruta}`, { headers: encabezados() });
     if (!r.ok) throw new Error((await r.json().catch(() => null))?.message ?? "No se pudo abrir el archivo");
     const url = URL.createObjectURL(await r.blob());
     if (ventana) ventana.location.href = url;

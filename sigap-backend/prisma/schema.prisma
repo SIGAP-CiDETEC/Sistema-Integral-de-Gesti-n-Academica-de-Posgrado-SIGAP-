@@ -583,6 +583,8 @@ model Usuario {
   /** Las sesiones iniciadas antes de esta fecha ya no valen (p. ej. al restablecer la contraseña) */
   sesionesDesde         DateTime?
   area                  AreaPersonal
+  /** Otras áreas que también atiende (p. ej. profesora y Subdirección Académica); las asigna el Administrador */
+  areasExtra            AreaPersonal[]             @default([])
   activo                Boolean                    @default(true)
   aspiranteId           String?                    @unique
   profesorId            String?                    @unique

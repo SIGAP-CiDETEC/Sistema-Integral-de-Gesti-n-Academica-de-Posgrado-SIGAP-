@@ -8,8 +8,19 @@ type Sesion = { dia: string; inicio: string; fin: string };
 type Grupo = { id: string; sesiones?: Sesion[]; lugar?: string; docente?: string; cupo?: number; sala?: string };
 type Materia = { id: string; nombre?: string; grupos: Grupo[] };
 type Config = { propedeutico?: Record<string, string>; examen?: Record<string, string>; materias?: Materia[] };
-type Evaluacion = { modalidad?: string; grupos?: Record<string, string>; confirmadaEl?: string; [k: string]: unknown };
-const yaElegida = (ev: Evaluacion, etapa: string) => !!ev.modalidad && (!!ev.confirmadaEl || etapa === 'evaluacion');
+type Resultado = { calificacion?: number; acreditado?: boolean; publicadoEl?: string; areas?: Record<string, { acreditado?: boolean }> };
+type Evaluacion = { modalidad?: string; grupos?: Record<string, string>; confirmadaEl?: string; propedeutico?: Resultado; examen?: Resultado; [k: string]: unknown };
+/** Solo lo que Posgrado ya publicó: si acreditó y, por área, si la acreditó (sin calificaciones ni datos de captura). */
+const publicado = (r?: Resultado) =>
+  r?.publicadoEl
+    ? {
+        acreditado: !!r.acreditado,
+        publicadoEl: r.publicadoEl,
+        areas: Object.fromEntries(Object.entries(r.areas ?? {}).map(([k, v]) => [k, { acreditado: !!v?.acreditado }])),
+      }
+    : null;
+// Registrada por el aspirante (confirmadaEl) o por Posgrado ya en la evaluación o después (dictamen)
+const yaElegida = (ev: Evaluacion, etapa: string) => !!ev.modalidad && (!!ev.confirmadaEl || etapa === 'evaluacion' || etapa === 'dictamen');
 const clave = (m: string, g: string) => `${m}|${g}`;
 /** Bloqueo para que dos aspirantes no tomen al mismo tiempo el último lugar de un grupo. */
 const BLOQUEO_CUPO = 4207;
@@ -56,7 +67,16 @@ export class PortalService {
 
   async yo(u: UsuarioSesion) {
     const p = await this.postulacionDe(u);
-    const a = this.adm.aFront(p, 'completa') as { nombre: string; etapa: string; concluido?: string; dictamen?: { resolucion: string }; evaluacion: Evaluacion };
+    const a = this.adm.aFront(p, 'completa') as {
+      nombre: string;
+      etapa: string;
+      concluido?: string;
+      dictamen?: { resolucion: string };
+      evaluacion: Evaluacion;
+      resolucion?: string;
+      motivoReservas?: string;
+      turnadoUteycv?: string;
+    };
     const cfg = await this.config();
     const ev = a.evaluacion ?? {};
     // Elegida por el aspirante (confirmadaEl) o registrada por Posgrado durante la evaluación
@@ -112,6 +132,18 @@ export class PortalService {
               }),
             ),
           }
+        : null,
+      // 5 · Resultados: lo publicado de su evaluación (el examen de áreas no acreditadas no se muestra en esta etapa)
+      resultados: elegida
+        ? {
+            modalidad: ev.modalidad,
+            propedeutico: ev.modalidad === 'propedeutico' ? publicado(ev.propedeutico) : null,
+            examen: ev.modalidad === 'examen' ? publicado(ev.examen) : null,
+          }
+        : null,
+      // 6 · Dictamen final: la resolución del Colegio, cuando Posgrado la publica (Comisión de Admisión)
+      dictamen: a.resolucion
+        ? { resolucion: a.resolucion, motivo: a.resolucion === 'Con reservas' ? (a.motivoReservas ?? '') : '', publicadoEl: a.turnadoUteycv ?? null }
         : null,
     };
   }

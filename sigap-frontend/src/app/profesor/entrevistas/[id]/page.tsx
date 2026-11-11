@@ -1,5 +1,6 @@
 "use client";
 
+import { TextoConEnlaces } from "@/components/TextoConEnlaces";
 import { use, useState } from "react";
 import { CalendarCheck, CheckCircle2, PenLine, Pencil, TriangleAlert, Upload, Wand2 } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
@@ -113,13 +114,18 @@ export default function EntrevistaProfesor({ params }: PageProps<"/profesor/entr
           <dl className="grid gap-x-6 gap-y-3 text-sm sm:grid-cols-2">
             {[
               ["Fecha y horario", `${fechaCorta(a.entrevista.fecha)} · ${horarioEntrevista(a.entrevista)}`],
-              ["Modalidad / sala", `${a.entrevista.modalidad} · ${a.entrevista.sala}`],
+              [
+                "Modalidad / sala o enlace",
+                <>
+                  {a.entrevista.modalidad} · <TextoConEnlaces texto={a.entrevista.sala} />
+                </>,
+              ],
               ["Procedencia", a.procedencia],
               ["Promedio de licenciatura", a.promedio],
               ["Correo", a.correo],
               ["Documentos aprobados", `${a.documentos.filter((d) => d.estado === "aprobado").length} de ${a.documentos.length}`],
             ].map(([k, v]) => (
-              <div key={k} className="min-w-0">
+              <div key={String(k)} className="min-w-0">
                 <dt className="text-gray-500">{k}</dt>
                 <dd className="break-words font-medium text-gray-900">{v}</dd>
               </div>

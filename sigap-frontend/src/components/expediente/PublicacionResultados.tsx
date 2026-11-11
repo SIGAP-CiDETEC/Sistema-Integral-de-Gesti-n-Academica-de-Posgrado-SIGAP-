@@ -82,7 +82,7 @@ export function PublicacionResultados() {
       </section>
 
       {v.resolucion && <section className="rounded-xl border border-gray-200 bg-white p-5">
-        <h2 className="font-semibold text-gray-900">Tu resultado</h2>
+        <h2 className="font-semibold text-gray-900">1. Informe de la Comisión de Admisión</h2>
         {v.resolucion && <div className="mt-3 overflow-x-auto"><table className="w-full text-left text-sm"><thead className="bg-indigo-50"><tr><th className="p-3">ID Aspirante</th><th className="p-3">Resolución</th><th className="p-3">Dictamen final</th></tr></thead><tbody><tr className="border-b border-gray-200"><td className="p-3 font-mono">{id}</td><td className="p-3 font-medium">{DICTAMEN_FINAL[v.resolucion]}</td><td className="p-3">{TEXTO_DICTAMEN_FINAL[v.resolucion]}</td></tr></tbody></table></div>}
         {admitido ? (
           <div className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50/70 p-4 text-sm text-emerald-900">

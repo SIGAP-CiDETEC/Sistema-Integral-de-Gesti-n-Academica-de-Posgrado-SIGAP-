@@ -4,7 +4,12 @@ import { AreaPersonal } from '../generated/prisma/client';
 import { verify } from 'jsonwebtoken';
 import { PrismaService } from '../prisma/prisma.service';
 
-export type UsuarioSesion = { id: string; nombre: string; correo: string; area: AreaPersonal; profesorId: string | null };
+/**
+ * `area` es el área con la que actúa en esta petición: la principal de la cuenta o, si la cuenta tiene áreas
+ * adicionales, la que pide el front con el encabezado x-sigap-area (p. ej. una profesora en su sesión de Subdirección).
+ * `areas` son todas las que tiene la cuenta.
+ */
+export type UsuarioSesion = { id: string; nombre: string; correo: string; area: AreaPersonal; areas: AreaPersonal[]; profesorId: string | null };
 
 export const AREAS = 'areas';
 /** Restringe una ruta a ciertas áreas del personal. */
@@ -42,9 +47,12 @@ export class AuthGuard implements CanActivate {
     if (!u || !u.activo) throw new UnauthorizedException('Cuenta inactiva');
     // Sesión abierta antes de que se restableciera la contraseña: ya no vale
     if (u.sesionesDesde && emitido < u.sesionesDesde.getTime() - 1000) throw new UnauthorizedException('Tu sesión ya no es válida; vuelve a iniciar sesión');
-    req.usuario = { id: u.id, nombre: u.nombre, correo: u.correo, area: u.area, profesorId: u.profesorId } satisfies UsuarioSesion;
+    const propias = [u.area, ...u.areasExtra.filter((a) => a !== u.area)];
+    const pedida = String(req.headers['x-sigap-area'] ?? '').toUpperCase() as AreaPersonal;
+    const actua = propias.includes(pedida) ? pedida : u.area;
+    req.usuario = { id: u.id, nombre: u.nombre, correo: u.correo, area: actua, areas: propias, profesorId: u.profesorId } satisfies UsuarioSesion;
     const areas = this.reflector.getAllAndOverride<AreaPersonal[] | undefined>(AREAS, [ctx.getHandler(), ctx.getClass()]);
-    if (areas?.length && !areas.includes(u.area)) throw new ForbiddenException('Tu cuenta no tiene acceso a esta sección');
+    if (areas?.length && !areas.includes(actua)) throw new ForbiddenException('Tu cuenta no tiene acceso a esta sección');
     return true;
   }
 }

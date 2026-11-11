@@ -1,5 +1,6 @@
 "use client";
 
+import { TextoConEnlaces } from "@/components/TextoConEnlaces";
 import Link from "next/link";
 import { CalendarClock, CalendarPlus, FileText, LogOut, Users } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
@@ -153,7 +154,7 @@ export default function MisEntrevistas() {
                   <td className="px-3 py-3 text-gray-700">
                     {fechaCorta(a.entrevista!.fecha)} · {horarioEntrevista(a.entrevista!)}
                     <span className="block text-xs text-gray-500">
-                      {a.entrevista!.modalidad} · {a.entrevista!.sala}
+                      {a.entrevista!.modalidad} · <TextoConEnlaces texto={a.entrevista!.sala} />
                     </span>
                   </td>
                   <td className="px-3 py-3 text-xs text-gray-600">

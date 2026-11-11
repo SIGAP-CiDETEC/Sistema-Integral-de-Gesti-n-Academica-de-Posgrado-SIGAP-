@@ -1,7 +1,7 @@
 import { BadRequestException, Body, Controller, ForbiddenException, Get, HttpCode, NotFoundException, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
 import { randomInt } from 'node:crypto';
 import { hash } from 'bcryptjs';
-import { IsBoolean, IsEmail, IsIn, IsString, MaxLength, MinLength } from 'class-validator';
+import { ArrayMaxSize, IsArray, IsBoolean, IsEmail, IsIn, IsString, MaxLength, MinLength } from 'class-validator';
 import { AreaPersonal } from '../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuthGuard, Areas, type UsuarioSesion } from './auth.guard';
@@ -11,6 +11,12 @@ type Req_ = { usuario: UsuarioSesion };
 class EstadoDto {
   @IsBoolean() activo!: boolean;
 }
+/** Áreas adicionales que puede tener una cuenta del personal. */
+const AREAS_EXTRA = ['POSGRADO', 'UTEYCV', 'SUBDIRECCION', 'PROFESORES'] as const;
+class AreasExtraDto {
+  @IsArray() @ArrayMaxSize(4) @IsIn(AREAS_EXTRA, { each: true }) areas!: (typeof AREAS_EXTRA)[number][];
+}
+const NOMBRE_AREA: Record<string, string> = { POSGRADO: 'Departamento de Posgrado', UTEYCV: 'UTEyCV', SUBDIRECCION: 'Subdirección Académica', PROFESORES: 'Profesores' };
 const AREAS_PERSONAL = ['PROFESORES', 'POSGRADO', 'UTEYCV', 'SUBDIRECCION', 'ADMINISTRADOR'] as const;
 class NuevaCuentaDto {
   @IsString() @MinLength(3) @MaxLength(120) nombre!: string;
@@ -72,6 +78,7 @@ export class UsuariosController {
       correo: c.correo.endsWith('.sigap.local') && c.correo.includes('@pendiente.') ? '' : c.correo,
       acceso: c.identificadorAcceso ?? '',
       area: c.area,
+      areasExtra: c.areasExtra,
       puesto: c.roles.map((x) => x.rol.nombre).join(' · ') || c.area,
       activo: c.activo,
       temporal: c.debeCambiarContrasena,
@@ -106,6 +113,29 @@ export class UsuariosController {
     await this.prisma.usuario.update({ where: { id: c.id }, data: { activo: dto.activo, ...(dto.activo ? {} : { sesionesDesde: new Date() }) } });
     await this.registrar(c.id, r.usuario.nombre, `${dto.activo ? 'Reactivó' : 'Desactivó'} la cuenta de ${c.nombre} (${c.correo})`);
     return { ok: true };
+  }
+
+  /**
+   * El Administrador agrega o quita áreas adicionales a una cuenta (p. ej. Subdirección Académica a una profesora).
+   * Al quitarlas, la persona deja de ver esa sesión en cuanto recarga SIGAP.
+   */
+  @Patch(':id/areas')
+  @Areas('ADMINISTRADOR')
+  async areasExtra(@Req() r: Req_, @Param('id') id: string, @Body() dto: AreasExtraDto) {
+    const c = await this.cuenta(id, r.usuario);
+    if (c.area === 'ASPIRANTES' || c.area === 'ADMINISTRADOR') throw new BadRequestException('A esta cuenta no se le pueden agregar áreas');
+    const nuevas = [...new Set(dto.areas)].filter((a) => a !== c.area);
+    const antes = c.areasExtra;
+    await this.prisma.usuario.update({ where: { id: c.id }, data: { areasExtra: nuevas } });
+    const agregadas = nuevas.filter((a) => !antes.includes(a)).map((a) => NOMBRE_AREA[a]);
+    const quitadas = antes.filter((a) => !nuevas.includes(a as (typeof AREAS_EXTRA)[number])).map((a) => NOMBRE_AREA[a] ?? a);
+    if (agregadas.length || quitadas.length)
+      await this.registrar(
+        c.id,
+        r.usuario.nombre,
+        `${[agregadas.length && `Dio acceso a ${agregadas.join(', ')}`, quitadas.length && `Quitó el acceso a ${quitadas.join(', ')}`].filter(Boolean).join('; ')} a ${c.nombre} (${c.correo})`,
+      );
+    return { areasExtra: nuevas };
   }
 
   @Post()

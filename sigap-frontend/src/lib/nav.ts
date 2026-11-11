@@ -116,7 +116,11 @@ export const NAV: Record<Rol, NavItem[]> = {
 export const NAV_SERVIDOR: Partial<Record<Rol, NavItem[]>> = {
   posgrado: [...NAV.posgrado, { label: "Cuentas", href: "/posgrado/cuentas", icon: "usuarios" }],
   // Primera etapa del portal del aspirante con el servidor real: solo la elección de cursos propedéuticos o examen
-  aspirante: [{ label: "Elección de evaluación", href: "/aspirante", icon: "evaluacion" }],
+  aspirante: [
+    { label: "Elección de evaluación", href: "/aspirante", icon: "evaluacion" },
+    { label: "Resultados", href: "/aspirante/resultados", icon: "resultados" },
+    { label: "Dictamen final", href: "/aspirante/dictamen", icon: "dictamen" },
+  ],
   admin: [
     { label: "Inicio", href: "/admin", icon: "home" },
     { label: "Usuarios", href: "/admin/usuarios", icon: "usuarios" },

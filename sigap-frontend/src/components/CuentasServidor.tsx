@@ -11,6 +11,8 @@ type Cuenta = {
   correo: string;
   acceso: string;
   area: string;
+  /** Otras áreas que también atiende (p. ej. una profesora que es de Subdirección Académica) */
+  areasExtra?: string[];
   puesto: string;
   activo: boolean;
   temporal: boolean;
@@ -29,6 +31,55 @@ const AREA: Record<string, string> = {
 };
 const fecha = (iso: string | null) =>
   iso ? new Date(iso).toLocaleString("es-MX", { timeZone: "America/Mexico_City", day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "Nunca";
+
+const AREAS_AGREGABLES = ["SUBDIRECCION", "POSGRADO", "UTEYCV", "PROFESORES"];
+
+/**
+ * Áreas adicionales de una cuenta (solo Administrador): con la misma cuenta la persona ve también esas sesiones.
+ * Se pueden quitar en cualquier momento (p. ej. si deja la Subdirección).
+ */
+function AreasCuenta({ c, editable, alCambiar }: { c: Cuenta; editable: boolean; alCambiar: () => void }) {
+  const [guardando, setGuardando] = useState(false);
+  const [error, setError] = useState("");
+  const extra = c.areasExtra ?? [];
+  const cambiar = async (area: string, activa: boolean) => {
+    setGuardando(true);
+    setError("");
+    try {
+      await api(`/usuarios/${c.id}/areas`, { metodo: "PATCH", cuerpo: { areas: activa ? [...extra, area] : extra.filter((a) => a !== area) } });
+      alCambiar();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "No se pudo guardar");
+    } finally {
+      setGuardando(false);
+    }
+  };
+  return (
+    <div>
+      <span>{AREA[c.area] ?? c.area}</span>
+      {extra.map((a) => (
+        <span key={a} className="ml-1 inline-block rounded-full bg-indigo-50 px-2 py-0.5 text-[11px] font-medium text-primary">
+          + {AREA[a] ?? a}
+        </span>
+      ))}
+      {editable && !["ASPIRANTES", "ADMINISTRADOR"].includes(c.area) && (
+        <details className="mt-1">
+          <summary className="cursor-pointer text-[11px] text-primary underline">Otras áreas</summary>
+          <div className="mt-1 space-y-1 rounded-md border border-gray-200 bg-white p-2">
+            {AREAS_AGREGABLES.filter((a) => a !== c.area).map((a) => (
+              <label key={a} className="flex items-center gap-1.5 text-xs">
+                <input type="checkbox" disabled={guardando} checked={extra.includes(a)} onChange={(e) => cambiar(a, e.target.checked)} />
+                También {AREA[a]}
+              </label>
+            ))}
+            {guardando && <Loader2 size={12} className="animate-spin text-gray-400" />}
+            {error && <p className="text-[11px] text-red-700">{error}</p>}
+          </div>
+        </details>
+      )}
+    </div>
+  );
+}
 
 /** La contraseña temporal recién generada: se muestra una sola vez. */
 function TemporalEntregada({ e, cerrar }: { e: Entregada; cerrar: () => void }) {
@@ -222,7 +273,9 @@ export function CuentasServidor({ alcance }: { alcance: "admin" | "posgrado" }) 
                       {c.correo && !c.correo.endsWith(".sigap.local") ? c.correo : c.acceso || "—"}
                       {c.acceso && c.correo && !c.correo.endsWith(".sigap.local") && <span className="block text-gray-500">o {c.acceso}</span>}
                     </td>
-                    <td className="py-2.5 pr-3 text-xs">{AREA[c.area] ?? c.area}</td>
+                    <td className="py-2.5 pr-3 text-xs">
+                      <AreasCuenta c={c} editable={admin} alCambiar={cargar} />
+                    </td>
                     <td className="py-2.5 pr-3">
                       {!c.activo ? (
                         <Etiqueta>Desactivada</Etiqueta>

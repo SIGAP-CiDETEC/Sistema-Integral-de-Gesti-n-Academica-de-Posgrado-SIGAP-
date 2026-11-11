@@ -7,6 +7,7 @@ import { Menu, X } from "lucide-react";
 import { Logos } from "./Logos";
 import { NavIcon } from "./NavIcon";
 import { NAV, NAV_SERVIDOR, ROLES_DEMO, ROL_LABEL, USUARIO_DEMO, type Rol } from "@/lib/nav";
+import { ArrowLeftRight } from "lucide-react";
 import { DEMO_ASPIRANTES, MODO_API } from "@/lib/api";
 import { cerrarSesion, usePermisos, useSesion } from "@/lib/sesion";
 import { permisoDeRuta } from "@/lib/admin/accesos";
@@ -30,7 +31,7 @@ export function Sidebar({ rol }: { rol: Rol }) {
     return !p || !permisos || permisos.has(p.id);
   });
   const { sesion } = useSesion();
-  const personal = sesion && sesion.rol === rol ? sesion : null;
+  const personal = sesion && (sesion.rol === rol || sesion.roles?.includes(rol)) ? sesion : null;
   // Portal del aspirante: perfil de ejemplo (p. ej. ASP-2026-050) o el aspirante de este navegador
   const activo = useAspiranteActivo();
   const aspiranteEjemplo = rol === "aspirante" && activo !== ID_EN_VIVO ? ASPIRANTES_BASE.find((a) => a.id === activo) : undefined;
@@ -83,6 +84,18 @@ export function Sidebar({ rol }: { rol: Rol }) {
         <span className="mt-4 self-start rounded-full bg-guinda-soft px-3 py-0.5 text-xs font-medium text-guinda">
           {ROL_LABEL[rol]}
         </span>
+        {/* La misma cuenta atiende otras áreas: cambiar de sesión sin volver a iniciar sesión */}
+        {personal?.roles && personal.roles.length > 1 && (
+          <div className="mt-2 flex flex-col gap-1">
+            {personal.roles
+              .filter((r) => r !== rol)
+              .map((r) => (
+                <Link key={r} href={`/${r}`} onClick={() => setAbierto(false)} className="flex items-center gap-1.5 text-xs text-white/70 hover:text-white">
+                  <ArrowLeftRight size={12} /> Ir a {ROL_LABEL[r]}
+                </Link>
+              ))}
+          </div>
+        )}
 
         <nav className="mt-6 mb-4 flex shrink-0 flex-col gap-1">
           {items.map((item) => {

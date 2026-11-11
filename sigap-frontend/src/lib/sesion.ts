@@ -67,10 +67,12 @@ export type Sesion = {
   /** Con el servidor real: profesor ligado a la cuenta y si debe cambiar su contraseña temporal */
   profesorId?: string | null;
   debeCambiarContrasena?: boolean;
+  /** Con el servidor real: todas las sesiones que puede abrir la cuenta (p. ej. profesor y subdirección) */
+  roles?: Rol[];
 };
 
 /** Cuenta que devuelve la API al iniciar sesión. */
-export type UsuarioApi = { id: string; nombre: string; correo: string; rol: Rol; puesto: string; profesorId: string | null; debeCambiarContrasena: boolean };
+export type UsuarioApi = { id: string; nombre: string; correo: string; rol: Rol; roles?: Rol[]; puesto: string; profesorId: string | null; debeCambiarContrasena: boolean };
 
 /** Inicia sesión contra el servidor real. Devuelve la cuenta o lanza el error de la API. */
 export async function autenticarApi(usuario: string, contrasena: string): Promise<UsuarioApi> {
@@ -84,6 +86,7 @@ export async function autenticarApi(usuario: string, contrasena: string): Promis
     desde: new Date().toISOString(),
     profesorId: r.usuario.profesorId,
     debeCambiarContrasena: r.usuario.debeCambiarContrasena,
+    roles: r.usuario.roles ?? [r.usuario.rol],
   };
   try {
     localStorage.setItem(CLAVE, JSON.stringify(s));
@@ -92,6 +95,38 @@ export async function autenticarApi(usuario: string, contrasena: string): Promis
   }
   window.dispatchEvent(new Event(EVENTO));
   return r.usuario;
+}
+
+/** Cambia la sesión activa entre las áreas de la misma cuenta (p. ej. de Profesor a Subdirección Académica). */
+export function cambiarRolSesion(rol: Rol) {
+  try {
+    const s = JSON.parse(localStorage.getItem(CLAVE) ?? "null") as Sesion | null;
+    if (!s || !s.roles?.includes(rol) || s.rol === rol) return;
+    localStorage.setItem(CLAVE, JSON.stringify({ ...s, rol }));
+  } catch {
+    /* ignorar */
+  }
+  window.dispatchEvent(new Event(EVENTO));
+}
+
+/**
+ * Vuelve a pedir la cuenta al servidor (una vez por carga de página) para que se reflejen las áreas que el
+ * Administrador agregó o quitó. Si le quitaron el área con la que estaba actuando, regresa a su área principal.
+ */
+let refrescada = false;
+export async function refrescarSesionApi() {
+  if (!MODO_API || refrescada) return;
+  refrescada = true;
+  try {
+    const u = await api<UsuarioApi>("/auth/yo");
+    const s = JSON.parse(localStorage.getItem(CLAVE) ?? "null") as Sesion | null;
+    if (!s) return;
+    const roles = u.roles ?? [u.rol];
+    localStorage.setItem(CLAVE, JSON.stringify({ ...s, nombre: u.nombre, puesto: u.puesto, roles, rol: roles.includes(s.rol) ? s.rol : u.rol }));
+    window.dispatchEvent(new Event(EVENTO));
+  } catch {
+    /* sin conexión: se queda la sesión guardada */
+  }
 }
 
 /** Cambia la contraseña en el servidor real y quita el aviso de contraseña temporal. */
