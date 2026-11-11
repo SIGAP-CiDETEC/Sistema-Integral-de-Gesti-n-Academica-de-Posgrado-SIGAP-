@@ -1,8 +1,9 @@
-import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { AreaPersonal, EstadoPostulacion, ModalidadEntrevista, Prisma, ResolucionEntrevista } from '../generated/prisma/client';
 import type { UsuarioSesion } from '../auth/auth.guard';
 import { guardarArchivo } from '../comun/almacen';
 import { aFechaHora, deFechaHora } from '../comun/fechas';
+import { correoConfigurado, correoReal, enviarCorreo, urlSigap } from '../correo/correo';
 import { PrismaService } from '../prisma/prisma.service';
 
 /** Profesores que integran cada entrevista colegiada. */
@@ -304,12 +305,69 @@ export class AdmisionService {
       await this.prisma.almacen.deleteMany({ where: { clave } });
       return null;
     }
+    const previo = clave === 'posgrado' ? await this.almacenLeer('posgrado') : null;
     const r = await this.prisma.almacen.upsert({
       where: { clave },
       create: { clave, valor: valor as Prisma.InputJsonValue, actualizadoPor: u.nombre },
       update: { valor: valor as Prisma.InputJsonValue, actualizadoPor: u.nombre },
     });
+    if (clave === 'posgrado') void this.correosNuevos(previo, valor).catch((e) => this.log.error(`Correos de avisos: ${String(e)}`));
     return r.valor;
+  }
+
+  private readonly log = new Logger('Correo');
+
+  /**
+   * Los avisos (canal correo o ambos) y comunicados que Posgrado acaba de agregar se envían por correo a cada aspirante.
+   * Se compara contra lo guardado antes, así que solo salen una vez. Si no hay SMTP configurado, no se envía nada.
+   */
+  private async correosNuevos(previo: unknown, valor: unknown) {
+    if (!correoConfigurado()) return;
+    type Av = { id?: string; aspirante?: string; canal?: string; asunto?: string; mensaje?: string };
+    type Com = { id?: string; destinatarios?: string[]; asunto?: string; cuerpo?: string; adjuntos?: string[] };
+    const lista = <T>(v: unknown, k: string) => ((v as Record<string, unknown> | null)?.[k] as T[] | undefined) ?? [];
+    const ids = (v: unknown, k: string) => new Set(lista<{ id?: string }>(v, k).map((x) => x.id));
+    const avisosPrev = ids(previo, 'avisos');
+    const comPrev = ids(previo, 'comunicados');
+    const envios: { folio: string; asunto: string; texto: string }[] = [];
+    for (const a of lista<Av>(valor, 'avisos'))
+      if (a.id && !avisosPrev.has(a.id) && a.aspirante && (a.canal === 'correo' || a.canal === 'ambos'))
+        envios.push({ folio: a.aspirante, asunto: a.asunto ?? 'Aviso del Departamento de Posgrado', texto: a.mensaje ?? '' });
+    for (const c of lista<Com>(valor, 'comunicados'))
+      if (c.id && !comPrev.has(c.id))
+        for (const f of c.destinatarios ?? [])
+          envios.push({
+            folio: f,
+            asunto: c.asunto ?? 'Comunicado del Departamento de Posgrado',
+            texto: (c.cuerpo ?? '') + (c.adjuntos?.length ? `\n\nEste comunicado incluye archivos adjuntos (${c.adjuntos.join(', ')}); consúltalos en SIGAP.` : ''),
+          });
+    if (!envios.length) return;
+    const ps = await this.prisma.postulacion.findMany({
+      where: { folio: { in: [...new Set(envios.map((e) => e.folio))] } },
+      select: { folio: true, aspirante: { select: { nombres: true, correo: true } } },
+    });
+    const porFolio = new Map(ps.map((p) => [p.folio, p.aspirante]));
+    let enviados = 0;
+    for (const e of envios) {
+      const asp = porFolio.get(e.folio);
+      const para = correoReal(asp?.correo);
+      if (!para) {
+        this.log.warn(`Sin correo registrado para ${e.folio}; no se envió “${e.asunto}”`);
+        continue;
+      }
+      try {
+        await enviarCorreo({
+          para,
+          asunto: `SIGAP · ${e.asunto}`,
+          texto: `Hola, ${asp!.nombres}:\n\n${e.texto}\n\nDepartamento de Posgrado · CIDETEC-IPN`,
+          boton: { texto: 'Entrar a SIGAP', url: `${urlSigap()}/login` },
+        });
+        enviados++;
+      } catch (err) {
+        this.log.error(`No se pudo enviar “${e.asunto}” a ${e.folio}: ${err instanceof Error ? err.message : String(err)}`);
+      }
+    }
+    this.log.log(`Avisos y comunicados por correo: ${enviados} de ${envios.length} enviados`);
   }
 
   /**

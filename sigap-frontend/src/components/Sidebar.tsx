@@ -84,18 +84,6 @@ export function Sidebar({ rol }: { rol: Rol }) {
         <span className="mt-4 self-start rounded-full bg-guinda-soft px-3 py-0.5 text-xs font-medium text-guinda">
           {ROL_LABEL[rol]}
         </span>
-        {/* La misma cuenta atiende otras áreas: cambiar de sesión sin volver a iniciar sesión */}
-        {personal?.roles && personal.roles.length > 1 && (
-          <div className="mt-2 flex flex-col gap-1">
-            {personal.roles
-              .filter((r) => r !== rol)
-              .map((r) => (
-                <Link key={r} href={`/${r}`} onClick={() => setAbierto(false)} className="flex items-center gap-1.5 text-xs text-white/70 hover:text-white">
-                  <ArrowLeftRight size={12} /> Ir a {ROL_LABEL[r]}
-                </Link>
-              ))}
-          </div>
-        )}
 
         <nav className="mt-6 mb-4 flex shrink-0 flex-col gap-1">
           {items.map((item) => {
@@ -117,6 +105,25 @@ export function Sidebar({ rol }: { rol: Rol }) {
             );
           })}
         </nav>
+
+        {/* La misma cuenta atiende otras áreas (p. ej. profesora y Subdirección): cambiar de sesión sin volver a entrar */}
+        {personal?.roles && personal.roles.length > 1 && (
+          <div className="mb-4 shrink-0 rounded-lg border border-white/15 p-2">
+            <p className="px-1 pb-1 text-[11px] uppercase tracking-wide text-white/50">También eres</p>
+            {personal.roles
+              .filter((r) => r !== rol)
+              .map((r) => (
+                <Link
+                  key={r}
+                  href={`/${r}`}
+                  onClick={() => setAbierto(false)}
+                  className="flex items-center gap-2 rounded-md px-2 py-2 text-sm font-medium text-white hover:bg-white/10"
+                >
+                  <ArrowLeftRight size={16} /> {ROL_LABEL[r]}
+                </Link>
+              ))}
+          </div>
+        )}
 
         <div className="mt-auto shrink-0 border-t border-white/10 pt-4">
           <p className="text-sm">{personal?.nombre ?? aspiranteEjemplo?.nombre ?? USUARIO_DEMO[rol]}</p>

@@ -595,10 +595,24 @@ model Usuario {
   avisosCreados         Aviso[]
   comunicadosCreados    Comunicado[]
   destinatarios         DestinatarioComunicado[]
+  tokensRecuperacion    TokenRecuperacion[]
   creadoEn              DateTime                   @default(now())
   actualizadoEn         DateTime                   @updatedAt
 
   @@index([area, activo])
+}
+
+/** Enlace de un solo uso para restablecer la contraseña por correo (solo se guarda su hash). */
+model TokenRecuperacion {
+  id                    String    @id @default(cuid())
+  usuarioId             String
+  hashToken             String    @unique
+  expiraEn              DateTime
+  usadoEn               DateTime?
+  creadoEn              DateTime  @default(now())
+  usuario               Usuario   @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@index([usuarioId])
 }
 
 model Rol {

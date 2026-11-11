@@ -40,8 +40,8 @@ export type Area = keyof typeof AREAS;
 /** Correo de contacto del Departamento de Posgrado. */
 export const CORREO_POSGRADO = "posgrado.cidetec@ipn.mx";
 
-/** A quién escriben los profesores que olvidaron su contraseña (Departamento de Posgrado). */
-export const CONTACTO_CONTRASENAS = { nombre: "Lic. Citlalli Gómez Aguilar", correo: "cgomeza@ipn.mx" };
+/** A quién escribe quien olvidó su contraseña y no le llega el enlace por correo (el Administrador de SIGAP). */
+export const CONTACTO_CONTRASENAS = { nombre: "el Administrador de SIGAP", correo: "sigap.cidetec@ipn.mx" };
 
 /** Correo de Control Escolar (UTEyCV). GENÉRICO: reemplazar por el oficial cuando se conozca. */
 export const CORREO_UTEYCV = "uteycv.cidetec@ipn.mx";

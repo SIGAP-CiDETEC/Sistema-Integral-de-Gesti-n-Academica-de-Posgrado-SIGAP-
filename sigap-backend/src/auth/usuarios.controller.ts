@@ -69,7 +69,7 @@ export class UsuariosController {
   }
 
   @Get()
-  @Areas('ADMINISTRADOR', 'POSGRADO')
+  @Areas('ADMINISTRADOR')
   async listar(@Req() r: Req_) {
     const cs = await this.prisma.usuario.findMany({ where: this.alcance(r.usuario), include: { roles: { include: { rol: true } } }, orderBy: [{ area: 'asc' }, { nombre: 'asc' }] });
     return cs.map((c) => ({
@@ -89,7 +89,7 @@ export class UsuariosController {
 
   @Post(':id/restablecer')
   @HttpCode(200)
-  @Areas('ADMINISTRADOR', 'POSGRADO')
+  @Areas('ADMINISTRADOR')
   async restablecer(@Req() r: Req_, @Param('id') id: string) {
     const c = await this.cuenta(id, r.usuario);
     if (c.id === r.usuario.id) throw new BadRequestException('Para tu propia cuenta usa “Cambiar contraseña”');

@@ -1,11 +1,12 @@
 import Link from "next/link";
-import { ArrowLeft, GraduationCap, KeyRound, ShieldCheck, UserCog } from "lucide-react";
+import { ArrowLeft, KeyRound, ShieldCheck, UserCog } from "lucide-react";
 import { Logos } from "@/components/Logos";
+import { SolicitarEnlace } from "@/components/recuperar/SolicitarEnlace";
 import { CONTACTO_CONTRASENAS } from "@/lib/config";
 
 /**
- * ¿Olvidaste tu contraseña? Mientras SIGAP no envía correos, la contraseña se restablece con ayuda:
- * Posgrado (profesores) o el Administrador (personal) generan una temporal que se cambia al entrar.
+ * ¿Olvidaste tu contraseña? Con el correo configurado en el servidor, SIGAP envía un enlace para restablecerla.
+ * Si la cuenta no tiene correo (o no llega), la restablece el Administrador con una temporal que se cambia al entrar.
  */
 export default function RecuperarContrasena() {
   return (
@@ -17,34 +18,26 @@ export default function RecuperarContrasena() {
             <KeyRound size={22} />
           </span>
           <h1 className="mt-3 text-xl font-semibold text-gray-900">¿Olvidaste tu contraseña?</h1>
-          <p className="mt-1 text-sm text-gray-600">Por tu seguridad, la restablece el área que administra tu cuenta.</p>
         </div>
 
-        <ul className="mt-6 space-y-3 text-sm">
-          <li className="flex gap-3 rounded-lg border border-gray-200 p-3">
-            <GraduationCap size={20} className="mt-0.5 shrink-0 text-primary" />
-            <span>
-              <b className="block text-gray-900">Profesores</b>
-              Escribe desde tu correo institucional a {CONTACTO_CONTRASENAS.nombre}, del Departamento de Posgrado (
-              <a className="text-primary underline" href={`mailto:${CONTACTO_CONTRASENAS.correo}?subject=${encodeURIComponent("SIGAP: restablecer mi contraseña")}`}>
-                {CONTACTO_CONTRASENAS.correo}
-              </a>
-              ), o acude a la oficina.
-            </span>
-          </li>
-          <li className="flex gap-3 rounded-lg border border-gray-200 p-3">
-            <UserCog size={20} className="mt-0.5 shrink-0 text-primary" />
-            <span>
-              <b className="block text-gray-900">Personal de Posgrado, Subdirección y UTEyCV</b>
-              Pídelo al Administrador del sistema.
-            </span>
-          </li>
-        </ul>
+        <SolicitarEnlace />
+
+        <p className="mt-6 text-sm font-medium text-gray-900">¿No te llega el correo o tu cuenta no tiene correo registrado?</p>
+        <div className="mt-3 flex gap-3 rounded-lg border border-gray-200 p-3 text-sm">
+          <UserCog size={20} className="mt-0.5 shrink-0 text-primary" />
+          <span>
+            Escribe desde el correo que tienes registrado a {CONTACTO_CONTRASENAS.nombre} (
+            <a className="text-primary underline" href={`mailto:${CONTACTO_CONTRASENAS.correo}?subject=${encodeURIComponent("SIGAP: restablecer mi contraseña")}`}>
+              {CONTACTO_CONTRASENAS.correo}
+            </a>
+            ). Si eres aspirante, indica tu ID temporal (por ejemplo MTC-A2701).
+          </span>
+        </div>
 
         <div className="mt-5 flex gap-3 rounded-lg bg-indigo-50/70 p-3 text-sm text-gray-700">
           <ShieldCheck size={18} className="mt-0.5 shrink-0 text-primary" />
           <p>
-            Te darán una <b>contraseña temporal</b> y, al entrar, SIGAP te pedirá crear una nueva. Nadie del personal te pedirá tu contraseña: si alguien lo
+            Si te ayuda el Administrador, te dará una <b>contraseña temporal</b> y, al entrar, SIGAP te pedirá crear una nueva. Nadie del personal te pedirá tu contraseña: si alguien lo
             hace, no la compartas.
           </p>
         </div>
