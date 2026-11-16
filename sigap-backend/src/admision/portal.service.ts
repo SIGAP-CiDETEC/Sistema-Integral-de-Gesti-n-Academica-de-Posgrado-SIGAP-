@@ -1,8 +1,19 @@
 import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import type { UsuarioSesion } from '../auth/auth.guard';
+import { guardarArchivo } from '../comun/almacen';
+import { validarCurpCompleta } from '../comun/curp';
+import { deFechaHora } from '../comun/fechas';
+import { Prisma } from '../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { AdmisionService } from './admision.service';
+import { CATALOGO_EXPEDIENTE, DOCUMENTOS_EXPEDIENTE, convocatorias, esPdf, estadoParaAspirante, puedeSubir, type ExpedienteAspirante } from './expediente';
 import { idTemporal } from './id-temporal';
+
+type AvisoAlmacen = { id?: string; fecha?: string; aspirante?: string; canal?: string; asunto?: string; mensaje?: string };
+type ComunicadoAlmacen = { id?: string; fecha?: string; asunto?: string; cuerpo?: string; destinatarios?: string[]; adjuntos?: string[] };
+export type DatosAspirante = { nombres: string; apellidoPaterno: string; apellidoMaterno: string; curp: string; correo: string; telefono: string; procedencia: string; carrera: string; promedio: string };
+const ORDEN = ['registro', 'documentos', 'entrevista', 'evaluacion', 'dictamen'];
+const MODALIDAD_TXT: Record<string, string> = { PRESENCIAL: 'Presencial', EN_LINEA: 'En línea' };
 
 type Sesion = { dia: string; inicio: string; fin: string };
 type Grupo = { id: string; sesiones?: Sesion[]; lugar?: string; docente?: string; cupo?: number; sala?: string };
@@ -94,9 +105,34 @@ export class PortalService {
             : undefined;
     const ocupados = cfg?.materias?.length && !elegida ? await this.ocupados(this.prisma, p.id) : new Map<string, number>();
     const profesores = elegida && ev.modalidad === 'propedeutico' ? await this.prisma.profesor.findMany({ where: { id: { in: (cfg?.materias ?? []).flatMap((m) => m.grupos.map((g) => g.docente ?? '')).filter(Boolean) } } }) : [];
+    const exp = (p.expediente ?? {}) as ExpedienteAspirante;
+    const e = p.entrevista;
+    const resultadosPub = elegida && (publicado(ev.propedeutico) || publicado(ev.examen));
+    const etapa = ORDEN.indexOf(a.etapa);
+    const docs = this.documentosDe(p, exp);
+    // Pestañas del portal: se habilitan conforme avanza su proceso
+    const pestanas = [
+      'inicio',
+      'registro',
+      'documentos',
+      ...(e?.publicadaAspiranteEn || etapa >= ORDEN.indexOf('evaluacion') ? ['entrevista'] : []),
+      ...(etapa >= ORDEN.indexOf('evaluacion') || elegida ? ['evaluacion'] : []),
+      ...(resultadosPub ? ['resultados'] : []),
+      ...(a.resolucion ? ['dictamen'] : []),
+      'notificaciones',
+    ];
     return {
       nombre: a.nombre,
       idTemporal: idTemporal(p.folio),
+      pestanas,
+      etapa: a.etapa,
+      concluido: a.concluido ?? null,
+      enLinea: !!exp.enLinea,
+      verificadoEl: exp.verificadoEl ?? null,
+      documentos: { faltan: docs.filter((d) => d.obligatorio && (d.estado === 'falta' || d.estado === 'observado' || d.estado === 'prorroga')).length, observados: docs.filter((d) => d.estado === 'observado').length },
+      noLeidas: (await this.listaNotificaciones(u, p, exp)).filter((n) => n.nueva).length,
+      // Su cita, cuando Posgrado la publica
+      entrevista: e?.publicadaAspiranteEn ? { ...deFechaHora(e.fechaHora), duracion: e.duracionMin, modalidad: MODALIDAD_TXT[e.modalidad] ?? e.modalidad, sala: e.sala } : null,
       puedeElegir,
       motivo,
       // Antes de elegir: horarios y lugares, sin el docente de cada grupo
@@ -187,5 +223,194 @@ export class PortalService {
     const nombres = (cfg.materias ?? []).map((m) => `${m.nombre ?? m.id} grupo ${grupos[m.id]}`).join(', ');
     await this.adm.bitacora(p.folio, u.nombre, d.modalidad === 'propedeutico' ? `El aspirante eligió cursos propedéuticos (${nombres})` : 'El aspirante eligió presentar solo el examen de admisión');
     return this.yo(u);
+  }
+
+  // ---------- Expediente: documentos ----------
+
+  /** Documentos que el aspirante ve en su portal (escaneados y, si se registró en línea, su SIP-02). */
+  private documentosDe(p: Awaited<ReturnType<AdmisionService['postulacion']>>, exp: ExpedienteAspirante) {
+    const claves = new Set(p.documentos.map((d) => d.catalogo.clave).filter((c) => DOCUMENTOS_EXPEDIENTE.includes(c)));
+    // La CURP es opcional pero siempre se puede entregar; los obligatorios se muestran aunque no tengan registro
+    for (const c of DOCUMENTOS_EXPEDIENTE) if (c === 'curp' || CATALOGO_EXPEDIENTE[c]?.obligatorio) claves.add(c);
+    if (exp.enLinea) claves.add('sip-02');
+    const orden = [...DOCUMENTOS_EXPEDIENTE, 'sip-02'];
+    return [...claves]
+      .sort((x, y) => orden.indexOf(x) - orden.indexOf(y))
+      .map((clave) => {
+        const d = p.documentos.find((x) => x.catalogo.clave === clave);
+        const estado = d ? estadoParaAspirante(d) : 'falta';
+        return {
+          clave,
+          nombre: d?.catalogo.nombre ?? CATALOGO_EXPEDIENTE[clave]?.nombre ?? clave,
+          obligatorio: d?.catalogo.obligatorio ?? CATALOGO_EXPEDIENTE[clave]?.obligatorio ?? false,
+          estado,
+          archivo: d?.nombreArchivo ?? null,
+          subidoEl: d?.nombreArchivo ? d.actualizadoEn.toISOString() : null,
+          observacion: estado === 'observado' || estado === 'prorroga' ? (d?.observacion ?? null) : null,
+          prorrogaHasta: d?.prorrogaHasta ? deFechaHora(d.prorrogaHasta).fecha : null,
+          puedeSubir: puedeSubir(estado) && !p.estado.startsWith('RECHAZ'),
+        };
+      });
+  }
+
+  private async limiteMB() {
+    return convocatorias(await this.adm.almacenLeer('convocatorias')).limiteMB ?? 5;
+  }
+
+  async documentos(u: UsuarioSesion) {
+    const p = await this.postulacionDe(u);
+    const exp = (p.expediente ?? {}) as ExpedienteAspirante;
+    return { enLinea: !!exp.enLinea, limiteMB: await this.limiteMB(), documentos: this.documentosDe(p, exp) };
+  }
+
+  /** El aspirante sube un documento que falta, que tiene observaciones o que está en prórroga; queda por revisar. */
+  async subirDocumento(u: UsuarioSesion, clave: string, archivo: { originalname: string; buffer: Buffer; mimetype: string; size: number } | undefined) {
+    const p = await this.postulacionDe(u);
+    const exp = (p.expediente ?? {}) as ExpedienteAspirante;
+    const doc = this.documentosDe(p, exp).find((d) => d.clave === clave);
+    if (!doc) throw new NotFoundException('Ese documento no forma parte de tu expediente');
+    if (!doc.puedeSubir)
+      throw new ConflictException(doc.estado === 'aprobado' ? 'Ese documento ya fue aprobado.' : 'Ya enviaste ese documento; el Departamento de Posgrado lo está revisando. Solo podrás cambiarlo si te hace observaciones.');
+    if (!archivo) throw new BadRequestException('Adjunta el documento en PDF');
+    if (archivo.mimetype !== 'application/pdf' || !esPdf(archivo.buffer)) throw new BadRequestException('El documento debe ser un PDF');
+    const limite = await this.limiteMB();
+    if (archivo.size > limite * 1024 * 1024) throw new BadRequestException(`El archivo pesa más de ${limite} MB. Redúcelo e inténtalo de nuevo.`);
+    const info = CATALOGO_EXPEDIENTE[clave] ?? { nombre: doc.nombre, obligatorio: doc.obligatorio };
+    const catalogo = await this.prisma.catalogoDocumento.upsert({ where: { clave }, create: { clave, nombre: info.nombre, obligatorio: info.obligatorio }, update: {} });
+    const nombre = archivo.originalname.replace(/[^\w.\- ]+/g, '_').slice(0, 120) || `${clave}.pdf`;
+    const ruta = guardarArchivo(`aspirantes/${p.folio}/${clave}_${Date.now()}.pdf`, archivo.buffer);
+    const datos = { nombreArchivo: nombre, urlArchivo: ruta, tipoMime: 'application/pdf', tamanoBytes: archivo.size, estado: 'PENDIENTE' as const, observacion: null, prorrogaHasta: null };
+    await this.prisma.documentoPostulacion.upsert({
+      where: { postulacionId_catalogoId: { postulacionId: p.id, catalogoId: catalogo.id } },
+      create: { postulacionId: p.id, catalogoId: catalogo.id, ...datos },
+      update: datos,
+    });
+    const antes = doc.estado === 'observado' ? ' para atender la observación' : doc.estado === 'prorroga' ? ' (estaba en prórroga)' : '';
+    await this.adm.bitacora(p.folio, u.nombre, `El aspirante subió ${catalogo.nombre}${antes}; queda por revisar`);
+    return this.documentos(u);
+  }
+
+  /** Ruta del archivo que el aspirante subió (para que lo vuelva a ver). */
+  async archivoPropio(u: UsuarioSesion, clave: string) {
+    const p = await this.postulacionDe(u);
+    const d = p.documentos.find((x) => x.catalogo.clave === clave && (DOCUMENTOS_EXPEDIENTE.includes(clave) || clave === 'sip-02'));
+    if (!d?.urlArchivo) throw new NotFoundException('Documento no disponible');
+    return { ruta: d.urlArchivo, nombre: `${clave}_${p.folio}.pdf` };
+  }
+
+  // ---------- Registro: datos del aspirante ----------
+
+  private datosDe(p: Awaited<ReturnType<AdmisionService['postulacion']>>): DatosAspirante {
+    const a = p.aspirante;
+    const r = (p.respuestasRegistro ?? {}) as Record<string, unknown>;
+    const txt = (v: unknown) => (typeof v === 'string' ? v : '');
+    return {
+      nombres: a.nombres,
+      apellidoPaterno: a.apellidoPaterno,
+      apellidoMaterno: a.apellidoMaterno ?? '',
+      curp: a.curp ?? '',
+      correo: /sigap\.local$/i.test(a.correo) ? '' : a.correo,
+      telefono: a.telefono ?? '',
+      procedencia: txt(r.procedencia),
+      carrera: txt(r.carrera),
+      promedio: txt(r.promedio),
+    };
+  }
+
+  async registro(u: UsuarioSesion) {
+    const p = await this.postulacionDe(u);
+    const exp = (p.expediente ?? {}) as ExpedienteAspirante;
+    return {
+      idTemporal: idTemporal(p.folio),
+      enLinea: !!exp.enLinea,
+      registradoEl: exp.registradoEl ?? null,
+      verificadoEl: exp.verificadoEl ?? null,
+      datos: this.datosDe(p),
+      // Quien se registró en línea: sus respuestas (para volver a generar su SIP-02 llenado)
+      respuestas: exp.enLinea ? p.respuestasRegistro : null,
+    };
+  }
+
+  /** El aspirante revisa sus datos, corrige lo necesario y confirma que son correctos (una sola vez). */
+  async verificar(u: UsuarioSesion, d: DatosAspirante) {
+    const p = await this.postulacionDe(u);
+    const exp = (p.expediente ?? {}) as ExpedienteAspirante;
+    if (exp.verificadoEl) throw new ConflictException('Ya confirmaste tus datos. Si necesitas corregir algo, escribe al Departamento de Posgrado.');
+    const limpio = Object.fromEntries(Object.entries(d).map(([k, v]) => [k, String(v ?? '').trim().replace(/\s+/g, ' ')])) as DatosAspirante;
+    limpio.curp = limpio.curp.toUpperCase();
+    limpio.correo = limpio.correo.toLowerCase();
+    if (!limpio.nombres || !limpio.apellidoPaterno) throw new BadRequestException('Escribe tu nombre y tu apellido paterno');
+    const errorCurp = limpio.curp ? validarCurpCompleta(limpio.curp, { nombre: limpio.nombres, apellidoPaterno: limpio.apellidoPaterno, apellidoMaterno: limpio.apellidoMaterno }) : null;
+    if (errorCurp) throw new BadRequestException(errorCurp);
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(limpio.correo)) throw new BadRequestException('Escribe un correo válido');
+    if (!/^\d{10}$/.test(limpio.telefono.replace(/[\s-]/g, ''))) throw new BadRequestException('El teléfono debe tener 10 dígitos');
+    limpio.telefono = limpio.telefono.replace(/[\s-]/g, '');
+    if (limpio.promedio && !(Number(limpio.promedio) >= 6 && Number(limpio.promedio) <= 10)) throw new BadRequestException('El promedio debe estar entre 6 y 10');
+    const antes = this.datosDe(p);
+    const cambios = (Object.keys(limpio) as (keyof DatosAspirante)[]).filter((k) => (antes[k] ?? '') !== limpio[k]);
+    const a = p.aspirante;
+    try {
+      await this.prisma.$transaction(async (tx) => {
+        await tx.aspirante.update({
+          where: { id: a.id },
+          data: { nombres: limpio.nombres, apellidoPaterno: limpio.apellidoPaterno, apellidoMaterno: limpio.apellidoMaterno || null, curp: limpio.curp || null, correo: limpio.correo, telefono: limpio.telefono },
+        });
+        const r = (p.respuestasRegistro ?? {}) as Record<string, unknown>;
+        await tx.postulacion.update({
+          where: { id: p.id },
+          data: {
+            respuestasRegistro: { ...r, procedencia: limpio.procedencia, carrera: limpio.carrera, promedio: limpio.promedio } as Prisma.InputJsonValue,
+            expediente: { ...exp, verificadoEl: new Date().toISOString() } as Prisma.InputJsonValue,
+          },
+        });
+        // La cuenta usa el correo del aspirante (si nadie más lo usa); así le llega la recuperación de contraseña
+        const cuenta = await tx.usuario.findFirst({ where: { aspiranteId: a.id } });
+        if (cuenta && cuenta.correo !== limpio.correo && !(await tx.usuario.findUnique({ where: { correo: limpio.correo } })))
+          await tx.usuario.update({ where: { id: cuenta.id }, data: { correo: limpio.correo, nombre: [limpio.nombres, limpio.apellidoPaterno, limpio.apellidoMaterno].filter(Boolean).join(' ') } });
+      });
+    } catch (e) {
+      if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') throw new ConflictException('Ese correo o esa CURP ya están registrados en otra solicitud. Escribe al Departamento de Posgrado.');
+      throw e;
+    }
+    const ETIQ: Record<string, string> = { nombres: 'nombre', apellidoPaterno: 'apellido paterno', apellidoMaterno: 'apellido materno', curp: 'CURP', correo: 'correo', telefono: 'teléfono', procedencia: 'procedencia', carrera: 'carrera', promedio: 'promedio' };
+    await this.adm.bitacora(
+      p.folio,
+      u.nombre,
+      cambios.length ? `El aspirante confirmó sus datos y corrigió: ${cambios.map((k) => `${ETIQ[k]} (antes: ${antes[k] || 'vacío'})`).join(', ')}` : 'El aspirante confirmó que sus datos son correctos',
+    );
+    return this.registro(u);
+  }
+
+  // ---------- Notificaciones en SIGAP ----------
+
+  /** Avisos y comunicados de Posgrado para el aspirante (canal SIGAP) y las notificaciones automáticas de su proceso. */
+  private async listaNotificaciones(u: UsuarioSesion, p: { folio: string }, exp: ExpedienteAspirante) {
+    const almacen = ((await this.adm.almacenLeer('posgrado')) ?? {}) as { avisos?: AvisoAlmacen[]; comunicados?: ComunicadoAlmacen[] };
+    const vistas = exp.notificacionesVistasEl ?? '';
+    const lista: { id: string; fecha: string; titulo: string; mensaje: string; origen: 'aviso' | 'comunicado' | 'proceso'; adjuntos?: string[]; nueva?: boolean }[] = [];
+    for (const a of almacen.avisos ?? [])
+      if (a.aspirante === p.folio && (a.canal === 'sistema' || a.canal === 'ambos') && a.id && a.fecha)
+        lista.push({ id: a.id, fecha: a.fecha, titulo: a.asunto ?? 'Aviso del Departamento de Posgrado', mensaje: a.mensaje ?? '', origen: 'aviso' });
+    for (const c of almacen.comunicados ?? [])
+      if (c.destinatarios?.includes(p.folio) && c.id && c.fecha)
+        lista.push({ id: c.id, fecha: c.fecha, titulo: c.asunto ?? 'Comunicado del Departamento de Posgrado', mensaje: c.cuerpo ?? '', origen: 'comunicado', ...(c.adjuntos?.length ? { adjuntos: c.adjuntos } : {}) });
+    const propias = await this.prisma.notificacion.findMany({ where: { usuarioId: u.id }, orderBy: { creadoEn: 'desc' }, take: 200 });
+    for (const n of propias) lista.push({ id: n.id, fecha: n.creadoEn.toISOString(), titulo: n.titulo, mensaje: n.mensaje, origen: 'proceso' });
+    return lista.sort((x, y) => y.fecha.localeCompare(x.fecha)).map((n) => ({ ...n, nueva: n.fecha > vistas }));
+  }
+
+  async notificaciones(u: UsuarioSesion) {
+    const p = await this.postulacionDe(u);
+    const lista = await this.listaNotificaciones(u, p, (p.expediente ?? {}) as ExpedienteAspirante);
+    return { lista, noLeidas: lista.filter((n) => n.nueva).length };
+  }
+
+  /** Marca como vistas todas las notificaciones hasta ahora. */
+  async notificacionesVistas(u: UsuarioSesion) {
+    const p = await this.postulacionDe(u);
+    const ahora = new Date();
+    await this.prisma.postulacion.update({ where: { id: p.id }, data: { expediente: { ...((p.expediente ?? {}) as object), notificacionesVistasEl: ahora.toISOString() } } });
+    await this.prisma.notificacion.updateMany({ where: { usuarioId: u.id, leidaEn: null }, data: { leidaEn: ahora } });
+    return { noLeidas: 0 };
   }
 }

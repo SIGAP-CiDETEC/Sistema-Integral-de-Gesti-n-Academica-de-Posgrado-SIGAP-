@@ -14,7 +14,7 @@ import { PrismaClient } from '../generated/prisma/client';
 async function main() {
   const arg = process.argv[2]?.trim().toUpperCase();
   if (!arg) throw new Error('Indica el aspirante: npm run borrar-eleccion -- DEMO2703');
-  const folio = arg.replace(/^MTC-([AB]\d{4})$/, 'MTC$1');
+  const folio = arg.replace(/^MTC-([AB]\d{4,5})$/, 'MTC$1');
   const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL ?? '' }) });
   const p = await prisma.postulacion.findUnique({ where: { folio }, include: { aspirante: true } });
   if (!p) throw new Error(`No existe el aspirante ${arg}`);

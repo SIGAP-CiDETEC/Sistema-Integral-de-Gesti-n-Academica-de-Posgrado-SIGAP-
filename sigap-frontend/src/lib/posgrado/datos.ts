@@ -394,7 +394,7 @@ export const ASPIRANTES_BASE: AspiranteP[] = [
   {
     id: "ASP-2026-001",
     nombre: "María González López",
-    curp: "GOLM980412MDFNPR07",
+    curp: "GOLM980412MDFNPR09",
     correo: "maria.gonzalez@correo.mx",
     telefono: "5512345678",
     procedencia: "IPN — ESCOM",

@@ -1,4 +1,5 @@
 import { PROGRAMA } from "./config";
+import { validarCurpCompleta } from "./curp";
 import { TABLAS_SIP02, idCantidadSip, idCeldaSip, GRADOS_SIP02, CAMPOS_GRADO_SIP02 } from "./sip02-secciones";
 
 /**
@@ -122,11 +123,10 @@ export const AREAS_INVESTIGACION = [
 
 // ---------- Validaciones ----------
 
-const CURP_RE = /^[A-Z]{4}\d{6}[HM][A-Z]{5}[A-Z0-9]\d$/;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-const validarCurp = (v: string) =>
-  CURP_RE.test(v.trim().toUpperCase()) ? null : "La CURP debe tener 18 caracteres con el formato oficial.";
+// Formato, fecha, entidad y dígito verificador; en validarSeccion también se compara con el nombre y el género
+const validarCurp = (v: string) => validarCurpCompleta(v);
 const validarEmail = (v: string) => (EMAIL_RE.test(v.trim()) ? null : "Ingresa un correo válido.");
 const validarTelefono = (v: string) =>
   /^\d{10}$/.test(v.replace(/\s|-/g, "")) ? null : "El teléfono debe tener 10 dígitos.";
@@ -164,7 +164,7 @@ export const SECCIONES: Seccion[] = [
         tipo: "email",
         requerido: true,
         placeholder: "correo@ejemplo.com",
-        ayuda: "Ingresa el de uso frecuente. Ahí recibirás tu ID temporal.",
+        ayuda: "Ingresa el de uso frecuente. Ahí te contactará el Departamento de Posgrado.",
         validar: validarEmail,
       },
       {
@@ -424,6 +424,11 @@ export function validarSeccion(seccion: Seccion, r: Respuestas): Record<string, 
     const vacio = Array.isArray(valor) ? valor.length === 0 : !valor || !String(valor).trim();
     if (vacio) {
       if (p.requerido) errores[p.id] = p.tipo === "checkbox" ? "Selecciona al menos una opción." : "Este campo es obligatorio.";
+      continue;
+    }
+    if (p.id === "curp" && typeof valor === "string") {
+      const msg = validarCurpCompleta(valor, { nombre: String(r.nombre ?? ""), apellidoPaterno: String(r.apellidoPaterno ?? ""), apellidoMaterno: String(r.apellidoMaterno ?? ""), genero: String(r.genero ?? "") });
+      if (msg) errores[p.id] = msg;
       continue;
     }
     if (p.validar && typeof valor === "string") {

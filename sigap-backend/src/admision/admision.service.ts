@@ -224,7 +224,31 @@ export class AdmisionService {
       },
     });
     await this.bitacora(folio, u.nombre, d.accion?.trim().slice(0, 1000) || `Marcó ${doc.catalogo.nombre} como ${d.estado}`);
+    // El aspirante se entera en sus notificaciones de SIGAP
+    const nombre = doc.catalogo.nombre;
+    const aviso =
+      estado === 'APROBADO'
+        ? { titulo: `Documento aprobado: ${nombre}`, mensaje: `El Departamento de Posgrado aprobó tu ${nombre}.` }
+        : estado === 'OBSERVADO'
+          ? { titulo: `Documento con observaciones: ${nombre}`, mensaje: `Observación del Departamento de Posgrado: ${d.observacion?.trim()}\n\nCorrígelo y vuelve a subirlo en la sección Documentos.` }
+          : estado === 'PRORROGA'
+            ? {
+                titulo: `Prórroga para entregar: ${nombre}`,
+                mensaje: `Tienes hasta el ${d.prorrogaHasta!.split('-').reverse().join('/')} para entregar tu ${nombre}. Súbelo en la sección Documentos.${d.observacion?.trim() ? `\n\n${d.observacion.trim()}` : ''}`,
+              }
+            : null;
+    if (aviso && doc.estado !== estado) await this.notificarAspirante(p.aspiranteId, { tipo: 'DOCUMENTO', ...aviso, referenciaEntidad: 'DocumentoPostulacion', referenciaId: doc.id });
     return this.aFront(await this.postulacion(folio), 'completa');
+  }
+
+  /** Notificación en SIGAP para la cuenta del aspirante (si ya tiene cuenta). */
+  async notificarAspirante(
+    aspiranteId: string,
+    n: { tipo: 'SISTEMA' | 'DOCUMENTO' | 'ENTREVISTA' | 'EVALUACION' | 'RESULTADO' | 'INSCRIPCION'; titulo: string; mensaje: string; referenciaEntidad?: string; referenciaId?: string },
+  ) {
+    const u = await this.prisma.usuario.findFirst({ where: { aspiranteId }, select: { id: true } });
+    if (!u) return;
+    await this.prisma.notificacion.create({ data: { usuarioId: u.id, canal: 'NOTIFICACION_SIGAP', estado: 'ENVIADA', enviadaEn: new Date(), ...n } });
   }
 
   /**

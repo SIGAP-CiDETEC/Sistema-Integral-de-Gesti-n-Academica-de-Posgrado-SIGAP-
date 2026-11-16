@@ -5,23 +5,38 @@ import { Megaphone } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { enlaceTarjeta, esExterno, useContenido } from "@/lib/contenido";
 import { MenuCentrosIngles } from "@/components/MenuCentrosIngles";
-import { EleccionServidor } from "@/components/portal/EleccionServidor";
+import { InicioServidor } from "@/components/portal/InicioServidor";
 import { DEMO_ASPIRANTES, MODO_API } from "@/lib/api";
 
 /** Inicio del aspirante (mockup "Inicio del aspirante", RF-08). El contenido lo edita el Departamento de Posgrado. */
 export default function AspiranteInicio() {
-  return MODO_API && !DEMO_ASPIRANTES ? <EleccionServidor /> : <InicioDemo />;
+  // Con el servidor real: su avance (las pestañas se habilitan conforme avanza) y la información de Posgrado
+  return MODO_API && !DEMO_ASPIRANTES ? <InicioServidor contenido={<ContenidoPosgrado />} /> : <InicioDemo />;
 }
 
 function InicioDemo() {
+  return (
+    <>
+      <PageHeader titulo="Inicio" subtitulo="Información y recursos para tu proceso de admisión" />
+      <ContenidoPosgrado />
+      <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-sm text-gray-500">Consulta el avance de tu solicitud y los pasos siguientes en Admisión.</p>
+        <Link href="/aspirante/admision" className="rounded-lg bg-primary px-5 py-2.5 text-center text-sm font-medium text-white hover:bg-primary-hover">
+          Ir a mi admisión
+        </Link>
+      </div>
+    </>
+  );
+}
+
+/** Aviso y tarjetas que publica el Departamento de Posgrado en el inicio del aspirante. */
+function ContenidoPosgrado() {
   const { inicioAspirante, cargado } = useContenido();
   if (!cargado) return null;
   const { aviso, tarjetas } = inicioAspirante;
 
   return (
     <>
-      <PageHeader titulo="Inicio" subtitulo="Información y recursos para tu proceso de admisión" />
-
       {aviso.visible && (aviso.titulo || aviso.texto) && (
         <section className="mb-5 flex gap-3 rounded-xl border border-indigo-200 bg-indigo-50/60 p-5">
           <Megaphone size={20} className="mt-0.5 shrink-0 text-primary" />
@@ -43,13 +58,6 @@ function InicioDemo() {
             </div>
           </article>
         ))}
-      </div>
-
-      <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-sm text-gray-500">Consulta el avance de tu solicitud y los pasos siguientes en Admisión.</p>
-        <Link href="/aspirante/admision" className="rounded-lg bg-primary px-5 py-2.5 text-center text-sm font-medium text-white hover:bg-primary-hover">
-          Ir a mi admisión
-        </Link>
       </div>
     </>
   );

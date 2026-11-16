@@ -22,7 +22,7 @@ import { idTemporal } from '../admision/id-temporal';
 async function main() {
   const dir = process.env.SIGAP_DATOS;
   if (!dir || !existsSync(dir)) throw new Error('Define SIGAP_DATOS con la carpeta privada donde se guardarán las contraseñas temporales');
-  const pedidos = process.argv.slice(2).map((x) => x.trim().toUpperCase().replace(/^MTC-([AB])(\d{4})$/, 'MTC$1$2')).filter(Boolean);
+  const pedidos = process.argv.slice(2).map((x) => x.trim().toUpperCase().replace(/^MTC-([AB])(\d{4,5})$/, 'MTC$1$2')).filter(Boolean);
   const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL ?? '' }) });
   const ps = await prisma.postulacion.findMany({
     where: pedidos.length ? { folio: { in: pedidos } } : { folio: { not: { startsWith: 'DEMO' } } },

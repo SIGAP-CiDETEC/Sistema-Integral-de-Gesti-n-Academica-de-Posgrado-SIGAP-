@@ -116,11 +116,16 @@ export const NAV: Record<Rol, NavItem[]> = {
 export const NAV_SERVIDOR: Partial<Record<Rol, NavItem[]>> = {
   // Las contraseñas se recuperan por correo; las cuentas las atiende el Administrador
   posgrado: NAV.posgrado,
-  // Primera etapa del portal del aspirante con el servidor real: solo la elección de cursos propedéuticos o examen
+  // Portal del aspirante con el servidor real: el menú muestra solo las pestañas que ya tiene habilitadas (/portal/yo)
   aspirante: [
-    { label: "Elección de evaluación", href: "/aspirante", icon: "evaluacion" },
-    { label: "Resultados", href: "/aspirante/resultados", icon: "resultados" },
-    { label: "Dictamen final", href: "/aspirante/dictamen", icon: "dictamen" },
+    { label: "Inicio", href: "/aspirante", icon: "home" },
+    { label: "1. Registro", href: "/aspirante/registro", icon: "registro" },
+    { label: "2. Documentos", href: "/aspirante/documentos", icon: "expedientes" },
+    { label: "3. Entrevista", href: "/aspirante/entrevista", icon: "entrevistas" },
+    { label: "4. Evaluación", href: "/aspirante/evaluacion", icon: "evaluacion" },
+    { label: "5. Resultados", href: "/aspirante/resultados", icon: "resultados" },
+    { label: "6. Dictamen final", href: "/aspirante/dictamen", icon: "dictamen" },
+    { label: "Notificaciones", href: "/aspirante/notificaciones", icon: "notificaciones" },
   ],
   admin: [
     { label: "Inicio", href: "/admin", icon: "home" },

@@ -1,6 +1,7 @@
 "use client";
 
-import { SIMULACION } from "@/lib/api";
+import { DEMO_ASPIRANTES, MODO_API, SIMULACION, api } from "@/lib/api";
+import { mensajeDe } from "@/lib/avisos-ui";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -127,7 +128,7 @@ export function RegistroWizard({ convocatoria }: { convocatoria?: IdConvocatoria
       document.getElementById(Object.keys(errs)[0])?.focus();
       return;
     }
-    if (seccion.id === "personales" && CURPS_REGISTRADAS.includes(String(respuestas.curp))) {
+    if (SIMULACION && seccion.id === "personales" && CURPS_REGISTRADAS.includes(String(respuestas.curp))) {
       setDuplicado(true);
       return;
     }
@@ -146,6 +147,21 @@ export function RegistroWizard({ convocatoria }: { convocatoria?: IdConvocatoria
     }
     if (!aceptaPrivacidad) {
       setErrorPrivacidad(true);
+      return;
+    }
+    // Con el servidor real: el servidor crea la solicitud y asigna el ID temporal
+    if (MODO_API && !DEMO_ASPIRANTES) {
+      setEnviando(true);
+      setErrorEnvio("");
+      try {
+        const respuestasEnvio = Object.fromEntries(SECCIONES.flatMap((s) => s.preguntas).filter((p) => esVisible(p, respuestas)).map((p) => [p.id, respuestas[p.id] ?? p.valorFijo ?? ""]));
+        const { idTemporal } = await api<{ idTemporal: string }>("/registro", { cuerpo: { respuestas: respuestasEnvio } });
+        localStorage.removeItem(STORAGE_KEY);
+        router.push(`/registro/exito?id=${idTemporal}`);
+      } catch (e) {
+        setErrorEnvio(mensajeDe(e));
+        setEnviando(false);
+      }
       return;
     }
     // CASCARÓN: el ID lo generará el backend (RF-02)

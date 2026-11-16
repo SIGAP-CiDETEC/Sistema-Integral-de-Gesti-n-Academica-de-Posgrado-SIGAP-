@@ -136,9 +136,7 @@ export function InicioPublico({ forzarCerrada }: { forzarCerrada: boolean }) {
                       <Lock size={15} /> Registro no disponible
                     </button>
                   )}
-                  <p className="mt-2 text-center text-xs text-gray-500">
-                    {conv.activa ? `Al terminar recibirás tu ID temporal (ej. MTC-${conv.id}27001).` : `El registro se abre el ${conv.inicio}.`}
-                  </p>
+                  {!conv.activa && <p className="mt-2 text-center text-xs text-gray-500">El registro se abre el {conv.inicio}.</p>}
                   {conv.activa && conv.id === "A" && (
                     <p className="mt-1 text-center text-xs text-gray-500">El registro se cierra el 30 octubre.</p>
                   )}

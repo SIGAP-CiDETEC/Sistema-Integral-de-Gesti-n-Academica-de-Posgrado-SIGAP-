@@ -14,7 +14,7 @@ import { PrismaClient } from '../generated/prisma/client';
 async function main() {
   const [arg, correoArg, telArg] = process.argv.slice(2);
   if (!arg || (!correoArg && !telArg)) throw new Error('Uso: npm run actualizar-contacto -- MTC-A2702 correo@ejemplo.com 5512345678');
-  const folio = arg.trim().toUpperCase().replace(/^MTC-([AB]\d{4})$/, 'MTC$1');
+  const folio = arg.trim().toUpperCase().replace(/^MTC-([AB]\d{4,5})$/, 'MTC$1');
   const correo = correoArg && correoArg !== '-' ? correoArg.trim().toLowerCase() : undefined;
   const telefono = telArg && telArg !== '-' ? telArg.replace(/[\s()-]/g, '') : undefined;
   if (correo && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo)) throw new Error(`"${correo}" no parece un correo válido`);

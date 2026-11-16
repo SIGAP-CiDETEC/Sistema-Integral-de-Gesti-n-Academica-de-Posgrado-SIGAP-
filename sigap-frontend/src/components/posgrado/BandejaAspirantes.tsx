@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { Download, Info, Search } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
+import { AccesosNuevos } from "./AccesosNuevos";
 import { usePosgrado } from "@/components/posgrado/PosgradoProvider";
 import { EtiquetaBandeja, Etiqueta, Progreso, botonSecundario, inputBase, Regresar } from "@/components/posgrado/ui";
 import { descargarReporteAspirantes } from "@/lib/reporte-aspirantes";
@@ -39,6 +40,7 @@ export function BandejaAspirantes({ inicial, prioridadInicial }: { inicial?: str
     <>
       <Regresar href="/posgrado" t="Inicio" />
       <PageHeader titulo="Bandeja de aspirantes" subtitulo="Consulta y prioriza solicitudes" />
+      <AccesosNuevos />
 
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm">
         <p className="text-gray-600">

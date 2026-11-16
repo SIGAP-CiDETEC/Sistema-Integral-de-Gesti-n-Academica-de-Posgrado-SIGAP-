@@ -61,7 +61,7 @@ export class AuthController {
     solicitudes.set(ip, { ...x, n: x.n + 1 });
     if (!correoConfigurado()) return { ok: true };
     const usuario = dto.usuario.trim().toLowerCase();
-    const acceso = dto.usuario.trim().toUpperCase().replace(/^MTC-?([AB])(\d{4})$/, 'MTC-$1$2');
+    const acceso = dto.usuario.trim().toUpperCase().replace(/^MTC-?([AB])(\d{4,5})$/, 'MTC-$1$2');
     const u = await this.prisma.usuario.findFirst({ where: { OR: [{ correo: usuario }, { identificadorAcceso: acceso }], activo: true }, include: { aspirante: { select: { correo: true } } } });
     // Aspirantes cuya cuenta usa un correo interno: se manda al correo que registraron en su solicitud
     const destino = correoReal(u?.correo) ?? correoReal(u?.aspirante?.correo);
@@ -122,7 +122,7 @@ export class AuthController {
     if (r && Date.now() - r.desde < VENTANA && r.n >= 10) throw new HttpException('Demasiados intentos; espera unos minutos', HttpStatus.TOO_MANY_REQUESTS);
     const usuario = dto.usuario.trim().toLowerCase();
     // Aspirantes: ID temporal "MTC-A2701" (también se acepta "MTCA2701" o en minúsculas)
-    const acceso = dto.usuario.trim().toUpperCase().replace(/^MTC-?([AB])(\d{4})$/, 'MTC-$1$2');
+    const acceso = dto.usuario.trim().toUpperCase().replace(/^MTC-?([AB])(\d{4,5})$/, 'MTC-$1$2');
     const u = await this.prisma.usuario.findFirst({
       where: { OR: [{ correo: usuario }, { identificadorAcceso: acceso }], activo: true },
     });

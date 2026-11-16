@@ -9,6 +9,8 @@ export default async function RegistroExito({ searchParams }: PageProps<"/regist
     ? id.replace(/^ASP-\d{4}-/, "MTC-A27").replace(/^(MTC-[AB]\d{2})-(\d{3})$/, "$1$2")
     : "MTC-A27001";
   const email = typeof correo === "string" && correo ? correo : null;
+  // Con el servidor real la contraseña la entrega Posgrado (el correo automático aún no está activo)
+  const servidor = !!process.env.NEXT_PUBLIC_API_URL && process.env.NEXT_PUBLIC_DEMO !== "1";
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center px-4 py-10">
@@ -26,7 +28,13 @@ export default async function RegistroExito({ searchParams }: PageProps<"/regist
         <div className="mt-6 rounded-xl border border-gray-200 p-5">
           <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">ID temporal</p>
           <p className="mt-1 text-3xl font-bold tracking-wide text-guinda">{idTemporal}</p>
-          {email && (
+          {servidor && (
+            <p className="mt-3 rounded-lg bg-indigo-50 px-3 py-2 text-left text-xs text-navy-800">
+              Anótalo: es tu usuario. El Departamento de Posgrado te hará llegar tu contraseña temporal para entrar a SIGAP; al entrar por
+              primera vez te pedirá cambiarla.
+            </p>
+          )}
+          {!servidor && email && (
             <p className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-indigo-50 px-3 py-1 text-xs text-primary">
               <Mail size={13} /> Enviamos tus credenciales a {email}
             </p>
@@ -34,10 +42,10 @@ export default async function RegistroExito({ searchParams }: PageProps<"/regist
         </div>
 
         <Link
-          href="/aspirante"
+          href={servidor ? `/login?usuario=${idTemporal}` : "/aspirante"}
           className="mt-6 inline-flex w-full justify-center rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white hover:bg-primary-hover"
         >
-          Acceder al portal del aspirante
+          {servidor ? "Ir al inicio de sesión" : "Acceder al portal del aspirante"}
         </Link>
         <Link href="/" className="mt-3 inline-block text-sm text-gray-600 hover:text-gray-900">
           Volver al inicio

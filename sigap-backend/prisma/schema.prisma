@@ -222,6 +222,8 @@ model Postulacion {
   respuestasRegistro    Json                      @default("{}")
   /// Avance del proceso que registra Posgrado (etapa, evaluación, resolución del Colegio…) en el formato del front
   estadoProceso         Json                      @default("{}")
+  /// Lo que hace el aspirante en su portal: registro en línea, verificación de datos, notificaciones vistas, accesos
+  expediente            Json                      @default("{}")
   enviadaEn             DateTime?
   aspirante             Aspirante                 @relation(fields: [aspiranteId], references: [id])
   convocatoria          Convocatoria              @relation(fields: [convocatoriaId], references: [id])

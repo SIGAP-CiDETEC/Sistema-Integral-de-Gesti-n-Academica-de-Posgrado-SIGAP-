@@ -54,7 +54,7 @@ export function ResultadosServidor() {
       {!r ? (
         <section className="rounded-xl border border-dashed border-gray-300 bg-white p-5 text-sm text-gray-600">
           Primero elige cursos propedéuticos o examen en{" "}
-          <Link href="/aspirante" className="font-medium text-primary underline">
+          <Link href="/aspirante/evaluacion" className="font-medium text-primary underline">
             Elección de evaluación
           </Link>
           . Aquí aparecerán tus resultados cuando el Departamento de Posgrado los publique.

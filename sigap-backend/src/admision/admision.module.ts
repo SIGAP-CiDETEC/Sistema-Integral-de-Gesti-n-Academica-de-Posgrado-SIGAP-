@@ -5,6 +5,8 @@ import { AdmisionService } from './admision.service';
 import { AlmacenController, AlmacenPublicoController } from './almacen.controller';
 import { PortalController } from './portal.controller';
 import { PortalService } from './portal.service';
+import { AccesosAspirantesController, RegistroController } from './registro.controller';
+import { RegistroService } from './registro.service';
 
-@Module({ imports: [AuthModule], controllers: [AdmisionController, AlmacenPublicoController, AlmacenController, PortalController], providers: [AdmisionService, PortalService] })
+@Module({ imports: [AuthModule], controllers: [AdmisionController, AlmacenPublicoController, AlmacenController, PortalController, RegistroController, AccesosAspirantesController], providers: [AdmisionService, PortalService, RegistroService] })
 export class AdmisionModule {}

@@ -15,6 +15,7 @@ import { ID_EN_VIVO, useAspiranteActivo } from "@/lib/aspirante-activo";
 import { ASPIRANTES_BASE } from "@/lib/posgrado/datos";
 import { useConfigEvaluacion } from "@/lib/evaluacion-config";
 import { gruposDeProfesor, useProfesorActual } from "@/lib/profesor";
+import { PESTANA_DE_RUTA, usePortal } from "@/lib/portal";
 
 export function Sidebar({ rol }: { rol: Rol }) {
   const pathname = usePathname();
@@ -24,9 +25,16 @@ export function Sidebar({ rol }: { rol: Rol }) {
   const { profesor } = useProfesorActual();
   const { materias } = useConfigEvaluacion();
   const sinGrupos = rol === "profesor" && !gruposDeProfesor(profesor?.id ?? "", materias).length;
+  // Portal del aspirante con el servidor real: las pestañas se habilitan conforme avanza su proceso
+  const portalReal = rol === "aspirante" && MODO_API && !DEMO_ASPIRANTES;
+  const { yo } = usePortal(portalReal);
   // Solo las pestañas que su rol permite (RF-80, menor privilegio)
   const items = (MODO_API && !(DEMO_ASPIRANTES && ROLES_DEMO.includes(rol)) ? (NAV_SERVIDOR[rol] ?? []) : NAV[rol]).filter((i) => {
     if (sinGrupos && i.href === "/profesor/evaluacion") return false;
+    if (portalReal) {
+      const id = PESTANA_DE_RUTA[i.href];
+      return !!id && (id === "inicio" || id === "notificaciones" || !!yo?.pestanas.includes(id));
+    }
     const p = permisoDeRuta(i.href);
     return !p || !permisos || permisos.has(p.id);
   });
@@ -101,6 +109,9 @@ export function Sidebar({ rol }: { rol: Rol }) {
               >
                 <NavIcon name={item.icon} size={17} />
                 {item.label}
+                {portalReal && item.href === "/aspirante/notificaciones" && !!yo?.noLeidas && (
+                  <span className="ml-auto rounded-full bg-guinda px-1.5 py-0.5 text-[10px] font-semibold leading-none text-white">{yo.noLeidas}</span>
+                )}
               </Link>
             );
           })}

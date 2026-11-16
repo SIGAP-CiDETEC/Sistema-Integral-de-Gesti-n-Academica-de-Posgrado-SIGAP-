@@ -11,7 +11,7 @@ export const REGISTRO_DEMO: Respuestas = {
   apellidoPaterno: "González",
   apellidoMaterno: "López",
   nombre: "María",
-  curp: "GOLM980412MDFNPR07",
+  curp: "GOLM980412MDFNPR09",
   correo: "maria.gonzalez@correo.mx",
   telefono: "5512345678",
   ultimosEstudios: "Ingeniería en Sistemas Computacionales",
