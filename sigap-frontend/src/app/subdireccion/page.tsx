@@ -5,6 +5,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { usePosgrado } from "@/components/posgrado/PosgradoProvider";
 import { Etiqueta, Kpi, Tarjeta } from "@/components/posgrado/ui";
 import { SoloConsulta } from "@/components/subdireccion/SoloConsulta";
+import { HorarioPropedeutico } from "@/components/evaluacion/HorarioPropedeutico";
 import { CalendarDays } from "lucide-react";
 import { fechaResultados, useConvocatorias } from "@/lib/convocatoria";
 import { useContenido } from "@/lib/contenido";
@@ -116,6 +117,8 @@ export default function SubdireccionInicio() {
           })}
         </div>
       </Tarjeta>
+
+      <HorarioPropedeutico conDocente />
 
       <Tarjeta titulo="Actividad reciente del proceso" className="mt-6" accion={<Link href="/subdireccion/bitacora" className="text-sm text-primary hover:underline">Ver bitácora</Link>}>
         {bitacora.length ? (

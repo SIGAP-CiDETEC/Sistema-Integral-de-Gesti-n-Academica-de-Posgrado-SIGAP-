@@ -46,6 +46,12 @@ export default function EvaluacionPosgrado() {
       <Regresar href="/posgrado" t="Inicio" />
       <PageHeader titulo="Evaluación académica" subtitulo="Modalidades, grupos del propedéutico y resultados" />
 
+      <Link href="/posgrado/seminario" className="mb-5 flex items-center justify-between gap-3 rounded-xl border border-indigo-200 bg-indigo-50/60 px-4 py-3 text-sm text-navy-800 hover:bg-indigo-50">
+        <span>
+          <strong>Seminario de inducción:</strong> sesiones, horarios y profesores investigadores que presentan su laboratorio
+        </span>
+        <span className="font-medium text-primary">Abrir →</span>
+      </Link>
       <EditarCalendario />
       <InscritosEvaluacion aspirantes={lista} materias={MATERIAS} modo="posgrado" />
 

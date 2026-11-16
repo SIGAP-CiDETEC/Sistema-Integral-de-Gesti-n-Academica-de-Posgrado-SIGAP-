@@ -70,6 +70,7 @@ export const NAV: Record<Rol, NavItem[]> = {
     { label: "Entrevistas", href: "/posgrado/entrevistas", icon: "entrevistas" },
     { label: "Dictamen de entrevista colegiada", href: "/posgrado/dictamen-entrevista", icon: "dictamen" },
     { label: "Evaluación", href: "/posgrado/evaluacion", icon: "evaluacion" },
+    { label: "Seminario de inducción", href: "/posgrado/seminario", icon: "calendario" },
     { label: "Calificaciones", href: "/posgrado/calificaciones", icon: "resultados" },
     { label: "Comisión y dictamen final", href: "/posgrado/comision", icon: "dictamen" },
     { label: "Comunicados", href: "/posgrado/comunicados", icon: "comunicados" },
@@ -94,6 +95,7 @@ export const NAV: Record<Rol, NavItem[]> = {
     { label: "Inicio", href: "/profesor", icon: "home" },
     { label: "Mis entrevistas", href: "/profesor/entrevistas", icon: "entrevistas" },
     { label: "Calificaciones del propedéutico", href: "/profesor/evaluacion", icon: "evaluacion" },
+    { label: "Seminario de inducción", href: "/profesor/seminario", icon: "calendario" },
   ],
   // Coordinador del programa: únicamente firma las actas de los cursos propedéuticos (SIP-12)
   coordinador: [
