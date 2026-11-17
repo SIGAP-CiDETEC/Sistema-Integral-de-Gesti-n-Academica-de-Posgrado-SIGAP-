@@ -7,6 +7,7 @@ import { usePosgrado } from "@/components/posgrado/PosgradoProvider";
 import { Aviso, Etiqueta, EtiquetaBandeja, EtiquetaDoc, Migas, Progreso, Tarjeta } from "@/components/posgrado/ui";
 import { SoloConsulta } from "@/components/subdireccion/SoloConsulta";
 import { useConfigEvaluacion } from "@/lib/evaluacion-config";
+import { describirGrupo, docenteDe, lugarDe } from "@/lib/evaluacion";
 import { TONO_DICTAMEN, dictamenFinal, procedenciaSeparada } from "@/lib/reporte-aspirantes";
 import {
   TONO_INSCRIPCION,
@@ -34,7 +35,7 @@ const ORDEN = ["registro", "documentos", "entrevista", "evaluacion", "comision",
 export default function ProcesoAspirante({ params }: PageProps<"/subdireccion/aspirantes/[id]">) {
   const { id } = use(params);
   const { porId, bitacora, cargado } = usePosgrado();
-  const { modalidades } = useConfigEvaluacion();
+  const { modalidades, materias } = useConfigEvaluacion();
   if (!cargado) return null;
   const a = porId(id);
   if (!a)
@@ -149,6 +150,45 @@ export default function ProcesoAspirante({ params }: PageProps<"/subdireccion/as
             {a.evaluacion.modalidad ? (
               <>
                 {modalidades[a.evaluacion.modalidad].titulo} · <Etiqueta tono={estadoEvaluacion(a.evaluacion).tono}>{estadoEvaluacion(a.evaluacion).t}</Etiqueta>
+                {a.evaluacion.modalidad === "propedeutico" && (
+                  <div className="mt-2 overflow-x-auto rounded-lg border border-gray-100">
+                    <table className="w-full min-w-[560px] text-left text-sm">
+                      <thead className="bg-gray-50 text-xs uppercase tracking-wide text-gray-500">
+                        <tr>
+                          <th className="px-3 py-2 font-medium">Curso propedéutico</th>
+                          <th className="px-3 py-2 font-medium">Grupo y horario</th>
+                          <th className="px-3 py-2 font-medium">Docente</th>
+                          <th className="px-3 py-2 text-right font-medium">Calificación</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100">
+                        {materias.map((m) => {
+                          const gid = a.evaluacion.grupos[m.id] ?? (m.grupos.length === 1 ? m.grupos[0].id : "");
+                          const g = m.grupos.find((x) => x.id === gid);
+                          const docente = gid ? docenteDe(m.id, gid, materias) : undefined;
+                          const calif = a.evaluacion.propedeutico?.areas?.[m.id as AreaEvalId]?.calificacion ?? a.evaluacion.capturas?.propedeutico?.[m.id as AreaEvalId]?.calificacion;
+                          return (
+                            <tr key={m.id}>
+                              <td className="px-3 py-2 text-gray-900">{m.nombre}</td>
+                              <td className="px-3 py-2 text-gray-700">
+                                {g ? (
+                                  <>
+                                    Grupo {g.id} · {describirGrupo(g)}
+                                    <span className="block text-xs text-gray-500">{lugarDe(g)}</span>
+                                  </>
+                                ) : (
+                                  <span className="text-gray-400">Sin grupo</span>
+                                )}
+                              </td>
+                              <td className={`px-3 py-2 ${docente ? "text-gray-800" : "italic text-gray-400"}`}>{docente ? nombreProfesor(docente) : "Por asignar"}</td>
+                              <td className="px-3 py-2 text-right tabular-nums text-gray-800">{calif !== undefined ? calif.toFixed(1) : <span className="text-gray-400">—</span>}</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
                 {a.evaluacion.propedeutico && <Resultado t="Curso propedéutico" r={a.evaluacion.propedeutico} />}
                 {a.evaluacion.segundaOportunidad && (
                   <span className="mt-1 block">
