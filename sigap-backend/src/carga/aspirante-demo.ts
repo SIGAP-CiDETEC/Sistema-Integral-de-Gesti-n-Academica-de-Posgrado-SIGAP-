@@ -34,7 +34,6 @@ const ASPIRANTE_1 = {
 };
 const DOCUMENTOS: Record<string, { nombre: string; obligatorio: boolean }> = {
   titulo: { nombre: 'Título de licenciatura', obligatorio: true },
-  cedula: { nombre: 'Cédula profesional', obligatorio: false },
   certificado: { nombre: 'Certificado de estudios', obligatorio: true },
   ingles: { nombre: 'Constancia de dominio de inglés', obligatorio: true },
   curp: { nombre: 'CURP', obligatorio: false },

@@ -28,7 +28,6 @@ type Datos = { convocatoria: { clave: string; nombre: string }; aspirantes: Aspi
 
 const CATALOGO: Record<string, { nombre: string; obligatorio: boolean }> = {
   titulo: { nombre: 'Título de licenciatura', obligatorio: true },
-  cedula: { nombre: 'Cédula profesional', obligatorio: false },
   certificado: { nombre: 'Certificado de estudios', obligatorio: true },
   ingles: { nombre: 'Constancia de dominio de inglés', obligatorio: true },
   curp: { nombre: 'CURP', obligatorio: false },
@@ -77,6 +76,8 @@ async function main() {
       update: { respuestasRegistro: { procedencia: a.procedencia, carrera: a.carrera, ...(a.promedio ? { promedio: a.promedio } : {}) } },
     });
     for (const [clave, doc] of Object.entries(a.documentos)) {
+      // La Cédula profesional ya no se solicita
+      if (!CATALOGO[clave]) continue;
       const origen = join(dir, doc.archivo);
       if (!existsSync(origen)) throw new Error(`Falta el archivo ${origen}`);
       const destino = join(RAIZ_ALMACEN, doc.archivo);
@@ -87,7 +88,8 @@ async function main() {
       // Al volver a cargar solo se actualiza el archivo: la revisión que ya hizo Posgrado (aprobado, observado…) se respeta
       await prisma.documentoPostulacion.upsert({
         where: { postulacionId_catalogoId: { postulacionId: postulacion.id, catalogoId: catalogo.get(clave)! } },
-        create: { postulacionId: postulacion.id, catalogoId: catalogo.get(clave)!, ...datosDoc, estado: 'APROBADO' },
+        // Los documentos del expediente llegan "Por revisar"; los formatos (SIP-02, cuestionario) no se revisan
+        create: { postulacionId: postulacion.id, catalogoId: catalogo.get(clave)!, ...datosDoc, estado: FORMATOS.includes(clave) ? 'APROBADO' : 'PENDIENTE' },
         // Un documento que faltaba y ya llegó queda "Por revisar" (PENDIENTE) para que Posgrado lo valide
         update: previo && !previo.nombreArchivo ? { ...datosDoc, estado: 'PENDIENTE', observacion: null } : datosDoc,
       });

@@ -7,7 +7,7 @@
  */
 
 /** Documentos escaneados del expediente, en el orden en que se muestran. */
-export const DOCUMENTOS_EXPEDIENTE = ['titulo', 'constancia-titulacion', 'cedula', 'certificado', 'ingles', 'curp', 'acta', 'identificacion', 'extranjero'];
+export const DOCUMENTOS_EXPEDIENTE = ['titulo', 'constancia-titulacion', 'certificado', 'ingles', 'curp', 'acta', 'identificacion', 'extranjero'];
 
 /** Catálogo de documentos (los que aún no existían se agregan al registrarse el primer aspirante en línea). */
 export const CATALOGO_EXPEDIENTE: Record<string, { nombre: string; obligatorio: boolean; descripcion?: string }> = {

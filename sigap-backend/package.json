@@ -26,6 +26,7 @@
     "borrar-eleccion": "node dist/carga/borrar-eleccion.js",
     "borrar-calificaciones": "node dist/carga/borrar-calificaciones.js",
     "calificar-demo": "node dist/carga/calificar-demo.js",
+    "reiniciar-documentos": "node dist/carga/reiniciar-documentos.js",
     "actualizar-contacto": "node dist/carga/actualizar-contacto.js",
     "completar-datos": "node dist/carga/completar-datos.js",
     "probar-correo": "node dist/correo/probar-correo.js"
