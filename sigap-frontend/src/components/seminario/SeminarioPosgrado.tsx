@@ -9,6 +9,7 @@ import { notificar } from "@/lib/avisos-ui";
 import { descargarCsv } from "@/lib/csv";
 import { DURACIONES, detalleDe, diaSesion, diaSesionTitulo, porSesion, useSeminario, type ConfigSeminario, type DetalleSesion, type EspacioSeminario } from "@/lib/seminario";
 import { TextoConEnlaces } from "@/components/TextoConEnlaces";
+import { SALAS, nombreSala } from "@/lib/evaluacion";
 
 type Profesor = { id: string; nombre: string; baja?: boolean };
 
@@ -123,8 +124,8 @@ function Configuracion({ inicial, publicado, onGuardar }: { inicial: ConfigSemin
           <input value={c.titulo} maxLength={120} onChange={(e) => cambiar("titulo", e.target.value)} className={`${inputBase} mt-1`} />
         </label>
         <label className="text-sm">
-          <span className="font-medium text-gray-800">Lugar general</span>
-          <input value={c.lugar} maxLength={300} placeholder="Ej. Auditorio de CIDETEC (para los días presenciales)" onChange={(e) => cambiar("lugar", e.target.value)} className={`${inputBase} mt-1`} />
+          <span className="font-medium text-gray-800">Aula de las sesiones presenciales</span>
+          <SelectorLugar valor={c.lugar} onChange={(v) => cambiar("lugar", v)} vacio="Elige un aula" className="mt-1" />
         </label>
         <label className="text-sm">
           <span className="font-medium text-gray-800">Hora de inicio de cada sesión</span>
@@ -142,13 +143,13 @@ function Configuracion({ inicial, publicado, onGuardar }: { inicial: ConfigSemin
             </select>
           </label>
           <label className="text-sm">
-            <span className="font-medium text-gray-800">Espacios por sesión</span>
+            <span className="font-medium text-gray-800">Profesores por sesión</span>
             <input type="number" min={1} max={20} value={c.espaciosPorSesion} onChange={(e) => cambiar("espaciosPorSesion", Math.max(1, Math.min(20, Number(e.target.value) || 1)))} className={`${inputBase} mt-1`} />
           </label>
         </div>
       </div>
       <p className="mt-2 text-xs text-gray-500">
-        Cada sesión: de {c.horaInicio} a {fin} h, {c.espaciosPorSesion} espacios de {c.duracionMin} min.
+        Cada sesión dura de {c.horaInicio} a {fin} h: {c.espaciosPorSesion} {c.espaciosPorSesion === 1 ? "espacio" : "espacios"} de {c.duracionMin} min, uno por profesor.
       </p>
 
       <div className="mt-5">
@@ -161,18 +162,22 @@ function Configuracion({ inicial, publicado, onGuardar }: { inicial: ConfigSemin
             return (
               <li key={f} className="grid items-center gap-2 px-3 py-2 text-sm sm:grid-cols-[12rem_9rem_1fr_auto]">
                 <span className="font-medium text-gray-800">{diaSesionTitulo(f)}</span>
-                <select value={d.modalidad} onChange={(e) => fijar({ modalidad: e.target.value as DetalleSesion["modalidad"] })} className={`${inputBase} py-1.5`} aria-label="Modalidad">
+                <select value={d.modalidad} onChange={(e) => fijar({ modalidad: e.target.value as DetalleSesion["modalidad"], lugar: "" })} className={`${inputBase} py-1.5`} aria-label="Modalidad">
                   <option value="presencial">Presencial</option>
                   <option value="en-linea">En línea</option>
                 </select>
-                <input
-                  value={d.lugar}
-                  maxLength={500}
-                  onChange={(e) => fijar({ lugar: e.target.value })}
-                  placeholder={enLinea ? "Enlace de la videollamada (Meet, Teams, Zoom…)" : c.lugar ? `${c.lugar} (lugar general)` : "Lugar"}
-                  className={`${inputBase} py-1.5 ${enLinea && !d.lugar.trim() ? "border-amber-400" : ""}`}
-                  aria-label="Lugar o enlace"
-                />
+                {enLinea ? (
+                  <input
+                    value={d.lugar}
+                    maxLength={500}
+                    onChange={(e) => fijar({ lugar: e.target.value })}
+                    placeholder="Enlace de la videollamada (Meet, Teams, Zoom…)"
+                    className={`${inputBase} py-1.5 ${!d.lugar.trim() ? "border-amber-400" : ""}`}
+                    aria-label="Enlace"
+                  />
+                ) : (
+                  <SelectorLugar valor={d.lugar} onChange={(v) => fijar({ lugar: v })} vacio={c.lugar ? `${c.lugar} (la de todas las sesiones)` : "Aula de todas las sesiones"} compacto />
+                )}
                 <button type="button" aria-label={`Quitar ${f}`} onClick={() => cambiar("sesiones", c.sesiones.filter((x) => x !== f))} className="rounded-md p-1.5 text-gray-500 hover:bg-red-50 hover:text-red-700">
                   <X size={15} />
                 </button>
@@ -282,5 +287,36 @@ export function LugarSesion({ c, fecha }: { c: ConfigSeminario; fecha: string })
       <span className={`rounded-full px-2 py-0.5 font-medium ${enLinea ? "bg-violet-50 text-violet-800" : "bg-gray-100 text-gray-700"}`}>{enLinea ? "En línea" : "Presencial"}</span>
       {d.lugar ? <span className="min-w-0 break-all text-gray-600"><TextoConEnlaces texto={d.lugar} /></span> : enLinea && <span className="text-amber-700">Enlace por confirmar</span>}
     </span>
+  );
+}
+
+const AULAS = SALAS.map(nombreSala);
+
+/** Aula del menú de salas de CIDETEC, u otro lugar escrito a mano. */
+function SelectorLugar({ valor, onChange, vacio, className = "", compacto = false }: { valor: string; onChange: (v: string) => void; vacio: string; className?: string; compacto?: boolean }) {
+  const [otro, setOtro] = useState(!!valor && !AULAS.includes(valor));
+  const py = compacto ? "py-1.5" : "";
+  return (
+    <div className={`flex flex-wrap gap-2 ${className}`}>
+      <select
+        value={otro ? "__otro" : valor}
+        onChange={(e) => {
+          const v = e.target.value;
+          setOtro(v === "__otro");
+          onChange(v === "__otro" ? "" : v);
+        }}
+        className={`${inputBase} ${py} min-w-0 flex-1`}
+        aria-label="Aula"
+      >
+        <option value="">{vacio}</option>
+        {AULAS.map((a) => (
+          <option key={a} value={a}>
+            {a}
+          </option>
+        ))}
+        <option value="__otro">Otro lugar…</option>
+      </select>
+      {otro && <input autoFocus value={valor} maxLength={300} placeholder="Escribe el lugar" onChange={(e) => onChange(e.target.value)} className={`${inputBase} ${py} min-w-0 flex-1`} aria-label="Otro lugar" />}
+    </div>
   );
 }
