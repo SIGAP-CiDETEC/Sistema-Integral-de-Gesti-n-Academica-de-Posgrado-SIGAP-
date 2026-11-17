@@ -88,6 +88,7 @@ export const NAV: Record<Rol, NavItem[]> = {
   subdireccion: [
     { label: "Inicio", href: "/subdireccion", icon: "panorama" },
     { label: "Aspirantes", href: "/subdireccion/aspirantes", icon: "expedientes" },
+    { label: "Seminario de inducción", href: "/subdireccion/seminario", icon: "calendario" },
     { label: "Bitácora", href: "/subdireccion/bitacora", icon: "bitacora" },
   ],
   // Profesores: eligen entrevistas (acta MTC-EC) y califican los grupos del propedéutico que imparten
@@ -96,6 +97,7 @@ export const NAV: Record<Rol, NavItem[]> = {
     { label: "Mis entrevistas", href: "/profesor/entrevistas", icon: "entrevistas" },
     { label: "Calificaciones del propedéutico", href: "/profesor/evaluacion", icon: "evaluacion" },
     { label: "Seminario de inducción", href: "/profesor/seminario", icon: "calendario" },
+    { label: "Notificaciones", href: "/profesor/notificaciones", icon: "notificaciones" },
   ],
   // Coordinador del programa: únicamente firma las actas de los cursos propedéuticos (SIP-12)
   coordinador: [
@@ -138,6 +140,7 @@ export const NAV_SERVIDOR: Partial<Record<Rol, NavItem[]>> = {
   subdireccion: [
     { label: "Inicio", href: "/subdireccion", icon: "panorama" },
     { label: "Aspirantes", href: "/subdireccion/aspirantes", icon: "expedientes" },
+    { label: "Seminario de inducción", href: "/subdireccion/seminario", icon: "calendario" },
     { label: "Bitácora", href: "/subdireccion/bitacora", icon: "bitacora" },
   ],
 };

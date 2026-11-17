@@ -16,6 +16,7 @@ import { ASPIRANTES_BASE } from "@/lib/posgrado/datos";
 import { useConfigEvaluacion } from "@/lib/evaluacion-config";
 import { gruposDeProfesor, useProfesorActual } from "@/lib/profesor";
 import { PESTANA_DE_RUTA, usePortal } from "@/lib/portal";
+import { useNoLeidasPersonal } from "@/lib/notificaciones-personal";
 
 export function Sidebar({ rol }: { rol: Rol }) {
   const pathname = usePathname();
@@ -28,6 +29,8 @@ export function Sidebar({ rol }: { rol: Rol }) {
   // Portal del aspirante con el servidor real: las pestañas se habilitan conforme avanza su proceso
   const portalReal = rol === "aspirante" && MODO_API && !DEMO_ASPIRANTES;
   const { yo } = usePortal(portalReal);
+  // Profesores con el servidor real: contador de sus notificaciones
+  const noLeidasPersonal = useNoLeidasPersonal(rol === "profesor" && MODO_API);
   // Solo las pestañas que su rol permite (RF-80, menor privilegio)
   const items = (MODO_API && !(DEMO_ASPIRANTES && ROLES_DEMO.includes(rol)) ? (NAV_SERVIDOR[rol] ?? []) : NAV[rol]).filter((i) => {
     if (sinGrupos && i.href === "/profesor/evaluacion") return false;
@@ -111,6 +114,9 @@ export function Sidebar({ rol }: { rol: Rol }) {
                 {item.label}
                 {portalReal && item.href === "/aspirante/notificaciones" && !!yo?.noLeidas && (
                   <span className="ml-auto rounded-full bg-guinda px-1.5 py-0.5 text-[10px] font-semibold leading-none text-white">{yo.noLeidas}</span>
+                )}
+                {item.href === "/profesor/notificaciones" && noLeidasPersonal > 0 && (
+                  <span className="ml-auto rounded-full bg-guinda px-1.5 py-0.5 text-[10px] font-semibold leading-none text-white">{noLeidasPersonal}</span>
                 )}
               </Link>
             );

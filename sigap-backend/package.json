@@ -25,6 +25,7 @@
     "cargar-profesores": "node dist/carga/cargar-profesores.js",
     "borrar-eleccion": "node dist/carga/borrar-eleccion.js",
     "borrar-calificaciones": "node dist/carga/borrar-calificaciones.js",
+    "calificar-demo": "node dist/carga/calificar-demo.js",
     "actualizar-contacto": "node dist/carga/actualizar-contacto.js",
     "completar-datos": "node dist/carga/completar-datos.js",
     "probar-correo": "node dist/correo/probar-correo.js"

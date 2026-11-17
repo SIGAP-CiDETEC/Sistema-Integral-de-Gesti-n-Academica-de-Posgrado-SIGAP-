@@ -62,6 +62,17 @@ function generar(c: ConfigSeminario, previos: Espacio[]): Espacio[] {
   );
 }
 
+/** Modalidad y lugar efectivos de un día (si no tiene propio: presencial en el aula general). */
+const detalle = (c: ConfigSeminario, f: string) => {
+  const d = c.porSesion?.[f];
+  const modalidad = d?.modalidad ?? 'presencial';
+  return { modalidad, lugar: d?.lugar?.trim() || (modalidad === 'en-linea' ? '' : c.lugar) };
+};
+const lugarTexto = (c: ConfigSeminario, f: string) => {
+  const d = detalle(c, f);
+  return d.modalidad === 'en-linea' ? `en línea${d.lugar ? ` (${d.lugar})` : ' (el enlace se confirmará)'}` : `presencial${d.lugar ? ` en ${d.lugar}` : ''}`;
+};
+
 const fechaTexto = (f: string) => {
   const d = new Date(`${f}T12:00:00-06:00`);
   return d.toLocaleDateString('es-MX', { timeZone: 'America/Mexico_City', weekday: 'long', day: 'numeric', month: 'long' });
@@ -122,6 +133,7 @@ export class SeminarioService {
       if (perdidos.length && !forzar)
         throw new ConflictException(`El cambio quita ${perdidos.length} espacio(s) que ya tienen profesor (${perdidos.map((e) => `${e.fecha} ${e.inicio}`).join(', ')}). Confirma para quitarlos.`);
       await this.guardar(tx, { config, espacios }, u);
+      await this.avisarCambios(tx, previo, { config, espacios });
       await this.adm.bitacora('', u.nombre, previo ? `Actualizó el ${config.titulo}: ${sesiones.length} sesiones, ${config.espaciosPorSesion} espacios de ${config.duracionMin} min desde las ${config.horaInicio}${config.abierto ? '' : ' (cerrado para elegir)'}` : `Publicó el ${config.titulo} para que los profesores elijan su día y hora`);
       return this.ver(u);
     });
@@ -185,8 +197,46 @@ export class SeminarioService {
         });
       await this.guardar(tx, s, u);
       const cuando = `${fechaTexto(e.fecha)}, ${e.inicio} a ${e.fin}`;
+      // Aviso en las notificaciones del profesor asignado y del que se quitó
+      if (prof && antes !== prof.id)
+        await this.notificar(tx, [prof.id], `Te asignaron un horario en el ${s.config.titulo}`, `El Departamento de Posgrado te asignó el ${cuando} h, ${lugarTexto(s.config, e.fecha)}.`);
+      if (antes && antes !== prof?.id)
+        await this.notificar(tx, [antes], `Cambio en tu horario del ${s.config.titulo}`, `El Departamento de Posgrado te quitó del horario del ${cuando} h. Si tienes dudas, escríbele.`);
       await this.adm.bitacora('', u.nombre, prof ? (antes === prof.id ? `Actualizó el laboratorio del horario ${cuando} del ${s.config.titulo}` : `Asignó a ${prof.nombre} al ${s.config.titulo} (${cuando})`) : `Quitó al profesor del horario ${cuando} del ${s.config.titulo}`);
     });
     return this.ver(u);
+  }
+
+  /** Notificación en SIGAP para las cuentas de esos profesores. */
+  private async notificar(tx: Pick<PrismaService, 'usuario' | 'notificacion'>, profesores: string[], titulo: string, mensaje: string) {
+    if (!profesores.length) return;
+    const cuentas = await tx.usuario.findMany({ where: { profesorId: { in: [...new Set(profesores)] }, activo: true }, select: { id: true } });
+    if (cuentas.length)
+      await tx.notificacion.createMany({ data: cuentas.map((c) => ({ usuarioId: c.id, tipo: 'SISTEMA' as const, canal: 'NOTIFICACION_SIGAP' as const, estado: 'ENVIADA' as const, enviadaEn: new Date(), titulo, mensaje, referenciaEntidad: 'Seminario' })) });
+  }
+
+  /** Avisa a los profesores lo que cambió de su horario (modalidad, lugar, horario quitado) y cuándo se abre la elección. */
+  private async avisarCambios(tx: Pick<PrismaService, 'usuario' | 'notificacion' | 'profesor'>, previo: Seminario | null, nuevo: Seminario) {
+    const { config } = nuevo;
+    // Se abrió la elección (al publicar o al reabrir): a todos los profesores
+    if (config.abierto && !previo?.config.abierto) {
+      const todos = await tx.profesor.findMany({ select: { id: true } });
+      const sesiones = config.sesiones.map(fechaTexto).join('; ');
+      await this.notificar(tx, todos.map((p) => p.id), `Elige tu horario en el ${config.titulo}`, `El Departamento de Posgrado abrió la elección de horarios para presentar tu laboratorio a los aspirantes. Sesiones: ${sesiones}. Entra a «Seminario de inducción» para elegir tu día y hora.`);
+    }
+    if (!previo) return;
+    for (const e of previo.espacios) {
+      if (!e.profesorId) continue;
+      const ahora = nuevo.espacios.find((x) => x.id === e.id && x.profesorId === e.profesorId);
+      const cuando = `${fechaTexto(e.fecha)}, ${e.inicio} a ${e.fin} h`;
+      if (!ahora) {
+        await this.notificar(tx, [e.profesorId], `Cambio en tu horario del ${config.titulo}`, `El Departamento de Posgrado cambió las sesiones y tu horario del ${cuando} ya no existe. Entra a «Seminario de inducción» para elegir otro.`);
+        continue;
+      }
+      const a = detalle(previo.config, e.fecha);
+      const b = detalle(config, e.fecha);
+      if (a.modalidad !== b.modalidad || a.lugar !== b.lugar)
+        await this.notificar(tx, [e.profesorId], `Cambio en tu sesión del ${config.titulo}`, `Tu presentación del ${cuando} ahora será ${lugarTexto(config, e.fecha)}.`);
+    }
   }
 }
