@@ -1,4 +1,5 @@
 import {
+  Archive,
   Award,
   ChartPie,
   BarChart3,
@@ -48,6 +49,7 @@ const ICONS: Record<IconName, React.ComponentType<LucideProps>> = {
   contenido: LayoutPanelTop,
   calendario: CalendarRange,
   panorama: ChartPie,
+  archivo: Archive,
 };
 
 export function NavIcon({ name, ...props }: { name: IconName } & LucideProps) {

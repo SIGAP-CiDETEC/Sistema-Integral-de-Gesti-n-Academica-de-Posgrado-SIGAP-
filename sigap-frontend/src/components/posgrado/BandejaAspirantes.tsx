@@ -9,13 +9,23 @@ import { usePosgrado } from "@/components/posgrado/PosgradoProvider";
 import { EtiquetaBandeja, Etiqueta, Progreso, botonSecundario, inputBase, Regresar } from "@/components/posgrado/ui";
 import { descargarReporteAspirantes } from "@/lib/reporte-aspirantes";
 import { ETAPAS } from "@/lib/admision";
-import { TONO_BANDEJA, bandejaDe, prioridadDe, progresoDe, type Bandeja, type Prioridad, documentosPendientes } from "@/lib/posgrado/datos";
+import { TONO_BANDEJA, bandejaDe, prioridadDe, progresoDe, type Bandeja, type Prioridad, documentosPendientes, ordenPeriodo, periodoDe, periodosActuales } from "@/lib/posgrado/datos";
+import { periodoEscolar } from "@/lib/config";
 
 const PRIORIDAD: Record<Prioridad, string> = { Alta: "bg-red-50 text-red-700", Media: "bg-amber-50 text-amber-800", Normal: "bg-gray-100 text-gray-600" };
 
 /** Bandeja de aspirantes (RF-49): buscar, filtrar y abrir cada expediente. */
-export function BandejaAspirantes({ inicial, prioridadInicial }: { inicial?: string; prioridadInicial?: string }) {
-  const { aspirantes, cargado, registroDe } = usePosgrado();
+export function BandejaAspirantes({ inicial, prioridadInicial, archivo = false }: { inicial?: string; prioridadInicial?: string; archivo?: boolean }) {
+  const { aspirantes: todos, cargado, registroDe } = usePosgrado();
+  // Periodos: los dos del ciclo en curso (A-yy, B-yy) o, en el archivo, los anteriores que tienen aspirantes
+  const actual = periodoEscolar();
+  const vigentes = periodosActuales(actual);
+  const periodos = archivo
+    ? [...new Set(todos.map(periodoDe))].filter((p) => !vigentes.includes(p)).sort((x, y) => ordenPeriodo(y) - ordenPeriodo(x))
+    : vigentes;
+  const [periodoElegido, setPeriodo] = useState<string | null>(null);
+  const periodo = periodoElegido && periodos.includes(periodoElegido) ? periodoElegido : archivo ? periodos[0] : actual;
+  const aspirantes = todos.filter((a) => periodoDe(a) === periodo);
   const [q, setQ] = useState("");
   const [bandeja, setBandeja] = useState(inicial ?? "");
   const [etapa, setEtapa] = useState("");
@@ -39,15 +49,41 @@ export function BandejaAspirantes({ inicial, prioridadInicial }: { inicial?: str
   return (
     <>
       <Regresar href="/posgrado" t="Inicio" />
-      <PageHeader titulo="Bandeja de aspirantes" subtitulo="Consulta y prioriza solicitudes" />
-      <AccesosNuevos />
+      <PageHeader
+        titulo={archivo ? "Archivo de aspirantes" : "Bandeja de aspirantes"}
+        subtitulo={archivo ? "Aspirantes que se registraron en periodos anteriores" : "Consulta y prioriza solicitudes"}
+        periodo={
+          periodos.length ? (
+            <div className="flex flex-col items-end gap-1.5" role="tablist" aria-label="Periodo">
+              {periodos.map((p) => {
+                const n = todos.filter((a) => periodoDe(a) === p).length;
+                const sel = p === periodo;
+                return (
+                  <button
+                    key={p}
+                    type="button"
+                    role="tab"
+                    aria-selected={sel}
+                    onClick={() => setPeriodo(p)}
+                    className={`rounded-full px-3 py-1 text-xs font-medium transition ${sel ? "bg-primary text-white" : "bg-indigo-50 text-navy-800 hover:bg-indigo-100"}`}
+                  >
+                    {p === actual ? "Periodo escolar" : "Periodo"} {p} · {n}
+                  </button>
+                );
+              })}
+            </div>
+          ) : undefined
+        }
+      />
+      {archivo && !periodos.length && <p className="rounded-xl border border-dashed border-gray-300 bg-white p-6 text-center text-sm text-gray-600">Aún no hay aspirantes de periodos anteriores.</p>}
+      {!archivo && <AccesosNuevos />}
 
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm">
         <p className="text-gray-600">
-          Reporte para la Subdirección Académica: todos los aspirantes ({aspirantes.length}) con su procedencia, fase, estado, calificaciones y dictamen (CSV, se abre en Excel).
+          Reporte para la Subdirección Académica: los aspirantes del periodo {periodo} ({aspirantes.length}) con su procedencia, fase, estado, calificaciones y dictamen (CSV, se abre en Excel).
         </p>
         <button type="button" className={botonSecundario} onClick={() => descargarReporteAspirantes(aspirantes, registroDe)} disabled={!aspirantes.length}>
-          <Download size={15} /> Descargar CSV de todos los aspirantes
+          <Download size={15} /> Descargar CSV del periodo {periodo}
         </button>
       </div>
 

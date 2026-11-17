@@ -23,6 +23,7 @@ const MODALIDAD: Record<ModalidadEntrevista, string> = { PRESENCIAL: 'Presencial
 
 const conTodo = {
   aspirante: true,
+  convocatoria: { select: { clave: true } },
   documentos: { include: { catalogo: true } },
   entrevista: { include: { sinodo: { orderBy: { elegidoEn: 'asc' } }, acta: true } },
 } satisfies Prisma.PostulacionInclude;
@@ -78,6 +79,8 @@ export class AdmisionService {
     const ultimo = [p.actualizadoEn, e?.actualizadoEn, acta?.actualizadoEn].filter(Boolean).sort((x, y) => +y! - +x!)[0] ?? p.actualizadoEn;
     const base = {
       id: p.folio,
+      // Periodo de la convocatoria en que se registró (A27 → A-27)
+      periodo: p.convocatoria.clave.replace(/^([AB])(\d{2})$/, '$1-$2'),
       nombre: completo || vista === 'docente' ? [a.nombres, a.apellidoPaterno, a.apellidoMaterno].filter(Boolean).join(' ') : 'Aspirante',
       curp: todo ? (a.curp ?? '') : '',
       correo: (completo || vista === 'docente') && !a.correo.endsWith('@sin-correo.sigap.local') ? a.correo : '',

@@ -284,6 +284,8 @@ export const enDias = (dias: number) => {
 
 export type AspiranteP = {
   id: string;
+  /** Periodo de la convocatoria en que se registró (A-27, B-27…) */
+  periodo?: string;
   nombre: string;
   curp: string;
   correo: string;
@@ -872,3 +874,19 @@ export const fechaCorta = (iso: string) =>
   new Date(iso.length === 10 ? `${iso}T12:00:00` : iso).toLocaleDateString("es-MX", { day: "numeric", month: "short", year: "numeric" });
 export const fechaHora = (iso: string) =>
   new Date(iso).toLocaleString("es-MX", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
+
+/** Periodo del aspirante (A-27…): el del servidor o, si no viene, el de su ID (MTC-A2701 → A-27). */
+export function periodoDe(a: Pick<AspiranteP, "id" | "periodo">): string {
+  if (a.periodo) return a.periodo;
+  const m = /([AB])-?(\d{2})\d{2,3}$/.exec(a.id);
+  return m ? `${m[1]}-${m[2]}` : "A-27";
+}
+
+/** Los dos periodos del ciclo de admisión en curso (A-yy y B-yy): los demás van al archivo. */
+export function periodosActuales(periodo: string): [string, string] {
+  const yy = periodo.slice(2);
+  return [`A-${yy}`, `B-${yy}`];
+}
+
+/** Orden cronológico: A-26 < B-26 < A-27 … */
+export const ordenPeriodo = (p: string) => Number(p.slice(2)) * 2 + (p[0] === "B" ? 1 : 0);

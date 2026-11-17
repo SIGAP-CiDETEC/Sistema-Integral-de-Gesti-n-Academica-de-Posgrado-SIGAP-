@@ -29,7 +29,8 @@ export type IconName =
   | "resultados"
   | "contenido"
   | "calendario"
-  | "panorama";
+  | "panorama"
+  | "archivo";
 
 export type NavItem = { label: string; href: string; icon: IconName };
 
@@ -76,6 +77,7 @@ export const NAV: Record<Rol, NavItem[]> = {
     { label: "Comunicados", href: "/posgrado/comunicados", icon: "comunicados" },
     { label: "Inicio del aspirante", href: "/posgrado/inicio-aspirante", icon: "contenido" },
     { label: "Convocatorias y calendario", href: "/posgrado/calendario", icon: "calendario" },
+    { label: "Archivo", href: "/posgrado/archivo", icon: "archivo" },
     { label: "Bitácora", href: "/posgrado/bitacora", icon: "bitacora" },
   ],
   // Control Escolar: solo lo que le toca del proceso de admisión

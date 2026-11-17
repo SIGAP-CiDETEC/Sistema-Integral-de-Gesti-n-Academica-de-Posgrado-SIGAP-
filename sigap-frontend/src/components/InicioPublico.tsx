@@ -136,10 +136,9 @@ export function InicioPublico({ forzarCerrada }: { forzarCerrada: boolean }) {
                       <Lock size={15} /> Registro no disponible
                     </button>
                   )}
-                  {!conv.activa && <p className="mt-2 text-center text-xs text-gray-500">El registro se abre el {conv.inicio}.</p>}
-                  {conv.activa && conv.id === "A" && (
-                    <p className="mt-1 text-center text-xs text-gray-500">El registro se cierra el 30 octubre.</p>
-                  )}
+                  <p className="mt-2 text-center text-xs text-gray-500">
+                    {conv.estado === "Cerrada" ? "El registro concluyó para esta convocatoria." : conv.estado === "Próxima" ? `El registro se abre el ${conv.inicio}.` : `El registro se cierra el ${conv.cierre}.`}
+                  </p>
                 </div>
               </article>
             ))}
