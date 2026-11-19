@@ -20,3 +20,13 @@ body {
   background: var(--color-surface);
   color: #111827;
 }
+
+/* Preguntas del examen (HTML importado de Moodle) */
+.contenido-pregunta p { margin: 0.25rem 0; }
+.contenido-pregunta p:empty { display: none; }
+.contenido-pregunta pre { margin: 0.5rem 0; padding: 0.5rem 0.75rem; border-radius: 0.5rem; background: #f3f4f6; font-size: 0.85em; white-space: pre-wrap; }
+.contenido-pregunta code { font-size: 0.9em; background: #f3f4f6; padding: 0 0.25rem; border-radius: 0.25rem; }
+.contenido-pregunta img { display: inline-block; max-width: 100%; height: auto; vertical-align: middle; }
+.contenido-pregunta ul, .contenido-pregunta ol { margin: 0.25rem 0 0.25rem 1.25rem; list-style: revert; }
+/* El examen en línea no se imprime */
+@media print { .examen-protegido { display: none !important; } }

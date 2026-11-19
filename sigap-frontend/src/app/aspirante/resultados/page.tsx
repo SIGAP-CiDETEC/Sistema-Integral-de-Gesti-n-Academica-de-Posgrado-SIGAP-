@@ -3,6 +3,7 @@
 import { ResultadosServidor } from "@/components/portal/ResultadosServidor";
 import { DEMO_ASPIRANTES, MODO_API } from "@/lib/api";
 import { ConPestana } from "@/components/portal/PortalComun";
+import { TarjetaExamenLinea } from "@/components/examen/TarjetaExamenLinea";
 import { FaseEncabezado } from "@/components/expediente/FaseEncabezado";
 import { ResultadosAspirante } from "@/components/expediente/ResultadosAspirante";
 
@@ -12,6 +13,7 @@ export default function FaseResultados() {
   return (
     <>
       <FaseEncabezado id="resultados" />
+      <TarjetaExamenLinea />
       <ResultadosAspirante />
     </>
   );

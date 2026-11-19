@@ -30,7 +30,8 @@ export type IconName =
   | "contenido"
   | "calendario"
   | "panorama"
-  | "archivo";
+  | "archivo"
+  | "examen";
 
 export type NavItem = { label: string; href: string; icon: IconName };
 
@@ -72,6 +73,7 @@ export const NAV: Record<Rol, NavItem[]> = {
     { label: "Dictamen de entrevista colegiada", href: "/posgrado/dictamen-entrevista", icon: "dictamen" },
     { label: "Evaluación", href: "/posgrado/evaluacion", icon: "evaluacion" },
     { label: "Seminario de inducción", href: "/posgrado/seminario", icon: "calendario" },
+    { label: "Examen en línea", href: "/posgrado/examen", icon: "examen" },
     { label: "Calificaciones", href: "/posgrado/calificaciones", icon: "resultados" },
     { label: "Comisión y dictamen final", href: "/posgrado/comision", icon: "dictamen" },
     { label: "Comunicados", href: "/posgrado/comunicados", icon: "comunicados" },
@@ -91,6 +93,7 @@ export const NAV: Record<Rol, NavItem[]> = {
     { label: "Inicio", href: "/subdireccion", icon: "panorama" },
     { label: "Aspirantes", href: "/subdireccion/aspirantes", icon: "expedientes" },
     { label: "Seminario de inducción", href: "/subdireccion/seminario", icon: "calendario" },
+    { label: "Banco de preguntas", href: "/subdireccion/banco", icon: "examen" },
     { label: "Bitácora", href: "/subdireccion/bitacora", icon: "bitacora" },
   ],
   // Profesores: eligen entrevistas (acta MTC-EC) y califican los grupos del propedéutico que imparten
@@ -121,7 +124,8 @@ export const NAV: Record<Rol, NavItem[]> = {
  */
 export const NAV_SERVIDOR: Partial<Record<Rol, NavItem[]>> = {
   // Las contraseñas se recuperan por correo; las cuentas las atiende el Administrador
-  posgrado: NAV.posgrado,
+  // El examen en línea por ahora solo está en la demostración
+  posgrado: NAV.posgrado.filter((i) => i.href !== "/posgrado/examen"),
   // Portal del aspirante con el servidor real: el menú muestra solo las pestañas que ya tiene habilitadas (/portal/yo)
   aspirante: [
     { label: "Inicio", href: "/aspirante", icon: "home" },
