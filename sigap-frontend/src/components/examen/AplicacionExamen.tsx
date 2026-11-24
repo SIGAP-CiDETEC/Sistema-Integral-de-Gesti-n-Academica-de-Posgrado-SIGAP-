@@ -5,8 +5,8 @@ import { CheckCircle2, ClipboardCheck, RotateCcw, ShieldAlert, UserCheck, UserX 
 import { Aviso, Etiqueta, Tarjeta, botonPrimario, botonSecundario } from "@/components/posgrado/ui";
 import { usePosgrado } from "@/components/posgrado/PosgradoProvider";
 import { notificar } from "@/lib/avisos-ui";
-import { estadoVentana, habilitar, marcarRegistrado, reiniciarIntento, useExamen, type Incidente, type Intento } from "@/lib/examen";
-import { MINIMA_AREA, evaluacionEnCaptura, integrarResultado, nombreArea, type AreaEvalId } from "@/lib/posgrado/datos";
+import { REMOTO, aprobado, claveIntento, estadoVentana, habilitarArea, marcarRegistrado, reiniciarIntento, useExamen, type Incidente, type Intento } from "@/lib/examen";
+import { evaluacionEnCaptura, integrarResultado, nombreArea, type AreaEvalId } from "@/lib/posgrado/datos";
 import { capturasExamen } from "@/lib/profesor";
 import { useSesion } from "@/lib/sesion";
 
@@ -26,76 +26,73 @@ function estadoIntento(i?: Intento): { t: string; tono: string } {
   return i.registradoEl ? { t: "Calificación registrada", tono: "bg-emerald-50 text-emerald-700" } : { t: "Terminado", tono: "bg-violet-50 text-violet-800" };
 }
 
-/** Posgrado habilita el examen a los aspirantes que lo presentan, ve su avance e incidentes y registra sus calificaciones. */
+const fechaHora = (s: string) => new Date(s).toLocaleString("es-MX", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+
+/** Posgrado habilita los exámenes en línea (uno por área) a los aspirantes que los presentan, ve su avance e incidentes y registra sus calificaciones. */
 export function AplicacionExamen() {
-  const { aspirantes, cargado } = usePosgrado();
+  const { aspirantes, cargado, registrarEnBitacora, actualizar } = usePosgrado();
   const { habilitados, intentos, config, cargado: listo } = useExamen();
-  const { registrarEnBitacora, actualizar } = usePosgrado();
   const { sesion } = useSesion();
   const [verIncidentes, setVerIncidentes] = useState<string | null>(null);
   if (!cargado || !listo) return null;
 
-  // Quienes presentan examen (completo o de las áreas no acreditadas en el propedéutico)
-  const porAspirante = new Map<string, { a: (typeof aspirantes)[number]; areas: AreaEvalId[]; esSegunda: boolean }>();
-  for (const f of capturasExamen(aspirantes)) {
-    if (!config.areasEnLinea.includes(f.area)) continue;
-    const x = porAspirante.get(f.a.id) ?? { a: f.a, areas: [], esSegunda: f.esSegunda };
-    x.areas.push(f.area);
-    porAspirante.set(f.a.id, x);
-  }
-  const candidatos = [...porAspirante.values()].sort((x, y) => x.a.nombre.localeCompare(y.a.nombre, "es"));
-  const ventana = estadoVentana(config);
+  // Un renglón por aspirante y área que presenta en línea (examen completo o áreas no acreditadas en el propedéutico)
+  const filas = capturasExamen(aspirantes)
+    .filter((f) => config.areas[f.area]?.activa)
+    .sort((x, y) => x.a.nombre.localeCompare(y.a.nombre, "es") || x.area.localeCompare(y.area));
   const por = sesion?.nombre ?? "Posgrado";
+  const estaHabilitado = (id: string, area: AreaEvalId) => !!habilitados[id]?.areas.includes(area);
 
-  const cambiar = (id: string, nombre: string, areas: AreaEvalId[] | null) => {
-    habilitar(id, areas ? { areas, el: new Date().toISOString(), por } : null);
-    registrarEnBitacora(`${areas ? "Habilitó" : "Quitó"} el examen en línea ${areas ? "a" : "de"} ${nombre} (${id})`);
+  const cambiar = (id: string, nombre: string, area: AreaEvalId, si: boolean) => {
+    habilitarArea(id, area, si, por);
+    // Con el servidor, la bitácora la escribe la API
+    if (!REMOTO) registrarEnBitacora(`${si ? "Habilitó" : "Quitó"} el examen en línea de ${nombreArea(area)} ${si ? "a" : "de"} ${nombre} (${id})`);
   };
-  /** Pasa las calificaciones del examen a Calificaciones (como si la Jefatura las capturara), en un solo cambio. */
-  const registrar = (c: (typeof candidatos)[number], i: Intento) => {
-    const e = c.a.evaluacion;
+  /** Pasa la calificación del examen de un área a Calificaciones (escala 0 a 10), como si la Jefatura la capturara. */
+  const registrar = (f: (typeof filas)[number], i: Intento) => {
+    const e = f.a.evaluacion;
     const pend = evaluacionEnCaptura(e);
-    if (!pend || pend.tipo !== "examen") return notificar("Este aspirante ya no tiene examen por calificar.");
+    if (!pend || pend.tipo !== "examen" || !pend.areas.includes(i.area)) return notificar("Este aspirante ya no tiene examen por calificar en esta área.");
     const ahora = new Date().toISOString();
     const previas = e.capturas?.examen ?? {};
     const delTipo = { ...previas };
-    for (const area of i.areas) {
-      const v = i.calificaciones?.[area];
-      if (v !== undefined && !previas[area]) delTipo[area] = { calificacion: v, por: "Examen en línea", el: ahora, primeraEl: ahora };
-    }
+    if (!previas[i.area] && i.calificacion10 !== undefined) delTipo[i.area] = { calificacion: i.calificacion10, por: "Examen en línea", el: ahora, primeraEl: ahora };
     const resultado = integrarResultado(delTipo, pend.areas);
     actualizar(
-      c.a.id,
+      f.a.id,
       { evaluacion: { ...e, capturas: { ...(e.capturas ?? {}), examen: delTipo }, ...(resultado ? { examen: resultado } : {}) } },
-      `Registró las calificaciones del examen en línea: ${i.areas.map((a) => `${nombreArea(a)} ${i.calificaciones?.[a]?.toFixed(1)}`).join(", ")}${resultado ? ". Listas para que Posgrado las publique" : ""}`,
+      `Registró la calificación del examen en línea de ${nombreArea(i.area)}: ${i.calificacion10?.toFixed(1)} (${i.puntos} de ${i.puntosMax} puntos)${resultado ? ". Lista para que Posgrado la publique" : ""}`,
     );
-    marcarRegistrado(c.a.id);
+    marcarRegistrado(f.a.id, i.area);
     const faltan = pend.areas.filter((a) => !delTipo[a]);
-    notificar(
-      faltan.length
-        ? `Calificación registrada en Calificaciones. Falta capturar ${faltan.map(nombreArea).join(" y ")} para completar su resultado.`
-        : "Calificaciones registradas: ya aparecen en Calificaciones y en Evaluación para publicarse.",
-      "exito",
-    );
+    notificar(faltan.length ? `Calificación registrada. Falta ${faltan.map(nombreArea).join(" y ")} para completar su resultado.` : "Calificaciones completas: ya aparecen en Calificaciones y en Evaluación para publicarse.", "exito");
   };
 
   return (
     <div className="space-y-5">
-      <Aviso tono={ventana === "abierta" ? "exito" : "info"} titulo={ventana === "abierta" ? "El examen está abierto" : ventana === "antes" ? "El examen aún no abre" : "El examen ya cerró"}>
-        {config.titulo}: del {config.inicio.replace("T", " ")} al {config.fin.replace("T", " ")} h, {config.duracionMin} minutos. Áreas en línea: {config.areasEnLinea.map(nombreArea).join(" y ")}. Los aspirantes habilitados lo ven en su fase de Evaluación.
+      <Aviso tono="info" titulo={config.titulo}>
+        {(["matematicas", "programacion"] as AreaEvalId[])
+          .filter((a) => config.areas[a].activa)
+          .map((a) => {
+            const ca = config.areas[a];
+            const v = estadoVentana(ca);
+            return `${nombreArea(a)}: ${fechaHora(ca.inicio)} a ${new Date(ca.fin).toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" })}, ${ca.duracionMin} min (${v === "abierta" ? "abierto ahora" : v === "antes" ? "aún no abre" : "cerrado"})`;
+          })
+          .join(" · ")}
+        . Cada examen se presenta por separado; los aspirantes habilitados lo ven en su fase de Evaluación.
       </Aviso>
 
       <Tarjeta
-        titulo={`Aspirantes que presentan examen · ${candidatos.length}`}
+        titulo={`Exámenes por presentar · ${filas.length}`}
         accion={
-          candidatos.some((c) => !habilitados[c.a.id]) ? (
-            <button type="button" className={botonSecundario} onClick={() => candidatos.filter((c) => !habilitados[c.a.id]).forEach((c) => cambiar(c.a.id, c.a.nombre, c.areas))}>
+          filas.some((f) => !estaHabilitado(f.a.id, f.area)) ? (
+            <button type="button" className={botonSecundario} onClick={() => filas.filter((f) => !estaHabilitado(f.a.id, f.area)).forEach((f) => cambiar(f.a.id, f.a.nombre, f.area, true))}>
               <UserCheck size={15} /> Habilitar a todos
             </button>
           ) : undefined
         }
       >
-        {!candidatos.length ? (
+        {!filas.length ? (
           <p className="py-4 text-center text-sm text-gray-500">Nadie tiene examen pendiente (eligieron examen o deben un área del propedéutico).</p>
         ) : (
           <div className="overflow-x-auto">
@@ -103,7 +100,7 @@ export function AplicacionExamen() {
               <thead className="text-xs uppercase tracking-wide text-gray-500">
                 <tr>
                   <th className="py-2 pr-3 font-medium">Aspirante</th>
-                  <th className="px-3 py-2 font-medium">Áreas</th>
+                  <th className="px-3 py-2 font-medium">Examen</th>
                   <th className="px-3 py-2 font-medium">Estado</th>
                   <th className="px-3 py-2 font-medium">Calificación</th>
                   <th className="px-3 py-2 font-medium">Incidentes</th>
@@ -111,36 +108,40 @@ export function AplicacionExamen() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {candidatos.map((c) => {
-                  const h = habilitados[c.a.id];
-                  const i = intentos[c.a.id];
+                {filas.map((f) => {
+                  const k = claveIntento(f.a.id, f.area);
+                  const h = estaHabilitado(f.a.id, f.area);
+                  const i = intentos[k];
                   const e = estadoIntento(i);
                   return (
-                    <Fragment key={c.a.id}>
+                    <Fragment key={k}>
                       <tr>
                         <td className="py-2.5 pr-3">
-                          <span className="block font-medium text-gray-900">{c.a.nombre}</span>
-                          <span className="font-mono text-xs text-gray-500">{c.a.id}</span>
+                          <span className="block font-medium text-gray-900">{f.a.nombre}</span>
+                          <span className="font-mono text-xs text-gray-500">{f.a.id}</span>
                         </td>
                         <td className="px-3 py-2.5 text-gray-700">
-                          {c.areas.map(nombreArea).join(" y ")}
-                          {c.esSegunda && <span className="block text-xs text-gray-500">Áreas no acreditadas</span>}
+                          {nombreArea(f.area)}
+                          {f.esSegunda && <span className="block text-xs text-gray-500">Área no acreditada</span>}
                         </td>
                         <td className="px-3 py-2.5">
                           {h ? <Etiqueta tono={e.tono}>{e.t}</Etiqueta> : <Etiqueta tono="bg-gray-100 text-gray-500">No habilitado</Etiqueta>}
                         </td>
                         <td className="px-3 py-2.5 tabular-nums">
-                          {i?.calificaciones
-                            ? i.areas.map((a) => (
-                                <span key={a} className={`block ${(i.calificaciones?.[a] ?? 0) >= MINIMA_AREA ? "text-emerald-700" : "text-red-700"}`}>
-                                  {a === "matematicas" ? "Mat." : "Prog."} {i.calificaciones?.[a]?.toFixed(1)}
-                                </span>
-                              ))
-                            : "—"}
+                          {i?.calificacion10 !== undefined ? (
+                            <span className={aprobado(i) ? "text-emerald-700" : "text-red-700"}>
+                              <strong>{i.calificacion10.toFixed(1)}</strong>
+                              <span className="block text-xs text-gray-500">
+                                {i.puntos} de {i.puntosMax} pts
+                              </span>
+                            </span>
+                          ) : (
+                            "—"
+                          )}
                         </td>
                         <td className="px-3 py-2.5">
                           {i?.incidentes.length ? (
-                            <button type="button" onClick={() => setVerIncidentes(verIncidentes === c.a.id ? null : c.a.id)} className="inline-flex items-center gap-1 text-amber-800 underline">
+                            <button type="button" onClick={() => setVerIncidentes(verIncidentes === k ? null : k)} className="inline-flex items-center gap-1 text-amber-800 underline">
                               <ShieldAlert size={14} /> {i.incidentes.length}
                             </button>
                           ) : (
@@ -150,17 +151,17 @@ export function AplicacionExamen() {
                         <td className="py-2.5 pl-3">
                           <span className="flex flex-wrap justify-end gap-1.5">
                             {i?.terminadoEl && !i.registradoEl && (
-                              <button type="button" className={`${botonPrimario} py-1.5`} onClick={() => registrar(c, i)}>
+                              <button type="button" className={`${botonPrimario} py-1.5`} onClick={() => registrar(f, i)}>
                                 <ClipboardCheck size={14} /> Registrar calificación
                               </button>
                             )}
                             {!i &&
                               (h ? (
-                                <button type="button" className={`${botonSecundario} py-1.5`} onClick={() => cambiar(c.a.id, c.a.nombre, null)}>
+                                <button type="button" className={`${botonSecundario} py-1.5`} onClick={() => cambiar(f.a.id, f.a.nombre, f.area, false)}>
                                   <UserX size={14} /> Quitar
                                 </button>
                               ) : (
-                                <button type="button" className={`${botonSecundario} py-1.5`} onClick={() => cambiar(c.a.id, c.a.nombre, c.areas)}>
+                                <button type="button" className={`${botonSecundario} py-1.5`} onClick={() => cambiar(f.a.id, f.a.nombre, f.area, true)}>
                                   <UserCheck size={14} /> Habilitar
                                 </button>
                               ))}
@@ -170,9 +171,9 @@ export function AplicacionExamen() {
                                 title="Por una falla técnica: borra su intento y puede volver a presentarlo"
                                 className="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs text-gray-600 hover:bg-gray-100"
                                 onClick={() => {
-                                  if (!window.confirm(`¿Reiniciar el examen de ${c.a.nombre}? Se borran sus respuestas y podrá volver a presentarlo con otras preguntas.`)) return;
-                                  reiniciarIntento(c.a.id);
-                                  registrarEnBitacora(`Reinició el intento del examen en línea de ${c.a.nombre} (${c.a.id})`);
+                                  if (!window.confirm(`¿Reiniciar el examen de ${nombreArea(f.area)} de ${f.a.nombre}? Se borran sus respuestas y podrá volver a presentarlo con otras preguntas.`)) return;
+                                  reiniciarIntento(f.a.id, f.area);
+                                  if (!REMOTO) registrarEnBitacora(`Reinició el examen en línea de ${nombreArea(f.area)} de ${f.a.nombre} (${f.a.id})`);
                                 }}
                               >
                                 <RotateCcw size={13} /> Reiniciar
@@ -186,11 +187,11 @@ export function AplicacionExamen() {
                           </span>
                         </td>
                       </tr>
-                      {verIncidentes === c.a.id && i && (
+                      {verIncidentes === k && i && (
                         <tr>
                           <td colSpan={6} className="bg-amber-50/50 px-3 py-3">
                             <p className="mb-1 text-xs font-medium text-amber-900">
-                              Incidentes de {c.a.nombre} (inició {hora(i.inicioEl)}
+                              Incidentes de {f.a.nombre} en {nombreArea(f.area)} (inició {hora(i.inicioEl)}
                               {i.terminadoEl ? `, entregó ${hora(i.terminadoEl)}` : ""}):
                             </p>
                             <ul className="grid gap-x-6 gap-y-0.5 text-xs text-amber-900 sm:grid-cols-2">

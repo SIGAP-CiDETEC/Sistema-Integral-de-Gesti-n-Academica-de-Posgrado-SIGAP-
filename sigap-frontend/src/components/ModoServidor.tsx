@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { FlaskConical, KeyRound, Lock } from "lucide-react";
 import { DEMO_ASPIRANTES, MODO_API } from "@/lib/api";
-import { NAV_SERVIDOR, ROLES_DEMO, type Rol } from "@/lib/nav";
+import { NAV_SERVIDOR, ROLES_DEMO, RUTAS_SIN_MENU_SERVIDOR, type Rol } from "@/lib/nav";
 import { useSesion } from "@/lib/sesion";
 
 /** Sesiones que ya trabajan con el servidor real (prueba de la entrevista colegiada). */
@@ -37,7 +37,8 @@ export function ModoServidor({ rol, children }: { rol: Rol; children: React.Reac
       </>
     );
   // Solo las pantallas del menú conectado (y sus detalles); las demás aún trabajan con datos de ejemplo
-  const permitida = (NAV_SERVIDOR[rol] ?? []).some((i) => ruta === i.href || (i.href !== `/${rol}` && ruta.startsWith(`${i.href}/`)));
+  const permitida =
+    (NAV_SERVIDOR[rol] ?? []).some((i) => ruta === i.href || (i.href !== `/${rol}` && ruta.startsWith(`${i.href}/`))) || !!RUTAS_SIN_MENU_SERVIDOR[rol]?.includes(ruta);
   if (!ROLES_CON_SERVIDOR.includes(rol) || !permitida)
     return (
       <div className="mx-auto mt-10 max-w-md rounded-xl border border-gray-200 bg-white p-6 text-center">

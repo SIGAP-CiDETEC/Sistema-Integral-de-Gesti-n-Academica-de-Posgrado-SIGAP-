@@ -11,5 +11,5 @@ import { NotificacionesController } from './notificaciones.controller';
 import { SeminarioController } from './seminario.controller';
 import { SeminarioService } from './seminario.service';
 
-@Module({ imports: [AuthModule], controllers: [AdmisionController, AlmacenPublicoController, AlmacenController, PortalController, RegistroController, AccesosAspirantesController, SeminarioController, NotificacionesController], providers: [AdmisionService, PortalService, RegistroService, SeminarioService] })
+@Module({ imports: [AuthModule], controllers: [AdmisionController, AlmacenPublicoController, AlmacenController, PortalController, RegistroController, AccesosAspirantesController, SeminarioController, NotificacionesController], providers: [AdmisionService, PortalService, RegistroService, SeminarioService], exports: [AdmisionService] })
 export class AdmisionModule {}

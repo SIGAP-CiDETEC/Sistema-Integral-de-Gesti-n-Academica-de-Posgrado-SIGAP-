@@ -237,6 +237,7 @@ model Postulacion {
   resolucionColegio     RegistroResolucionColegio?
   inscripcion           Inscripcion?
   recordatorios         RecordatorioProgramado[]
+  examenes              ExamenAspirante[]
   creadoEn              DateTime                  @default(now())
   actualizadoEn         DateTime                  @updatedAt
 
@@ -768,4 +769,48 @@ model Almacen {
   valor                 Json
   actualizadoPor        String?
   actualizadoEn         DateTime  @updatedAt
+}
+
+/// Banco de preguntas del examen de admisión en línea. `datos` guarda la pregunta completa en el formato del front
+/// (enunciado, opciones y respuestas correctas): nunca se entrega tal cual al aspirante.
+model PreguntaExamen {
+  id                    String          @id
+  area                  AreaEvaluacion
+  nivel                 String
+  tipo                  String
+  tema                  String
+  activa                Boolean         @default(true)
+  datos                 Json
+  actualizadoPor        String?
+  creadoEn              DateTime        @default(now())
+  actualizadoEn         DateTime        @updatedAt
+
+  @@index([area, nivel, activa])
+}
+
+/// Examen en línea de un aspirante en un área: habilitación, preguntas que le tocaron (copia al iniciar),
+/// respuestas, incidentes y calificación. El tiempo y la calificación los controla el servidor.
+model ExamenAspirante {
+  id                    String          @id @default(cuid())
+  postulacionId         String
+  area                  AreaEvaluacion
+  habilitadoEn          DateTime        @default(now())
+  habilitadoPor         String
+  inicioEn              DateTime?
+  limiteEn              DateTime?
+  terminadoEn           DateTime?
+  /// Preguntas que le tocaron: copia de cada una (con respuestas) más su valor y lo generado al azar
+  preguntas             Json?
+  respuestas            Json            @default("{}")
+  incidentes            Json            @default("[]")
+  puntos                Float?
+  puntosMax             Float?
+  valorExamen           Float?
+  calificacion          Float?
+  calificacion10        Float?
+  registradoEn          DateTime?
+  postulacion           Postulacion     @relation(fields: [postulacionId], references: [id], onDelete: Cascade)
+  actualizadoEn         DateTime        @updatedAt
+
+  @@unique([postulacionId, area])
 }

@@ -6,7 +6,7 @@ import type { AreaEvalId } from "./posgrado/datos";
  * Toma el tema de la categoría ($CATEGORY: …/Unidad/1.1 Tema) y el nivel de la etiqueta [tag:comprender].
  * Si no hay categorías (todo en una), usa el nombre de la pregunta (PROG_4_4.2_…: unidad 4, tema 4.2).
  * Tipos: opción múltiple, verdadero/falso, relacionar columnas y respuesta corta. Las que vienen vacías u otros tipos
- * (numérica, ensayo, arrastrar…) se reportan como omitidas.
+ * (arrastrar y soltar, calculadas…) no existen en GIFT: para esos hay que exportar en Moodle XML.
  */
 export type ResultadoImportacion = { preguntas: Pregunta[]; omitidas: { nombre: string; motivo: string }[] };
 
@@ -96,11 +96,27 @@ export function importarGift(texto: string, area: AreaEvalId, por: string): Resu
       continue;
     }
     if (resp.startsWith("#")) {
-      omitidas.push({ nombre, motivo: "Pregunta numérica (aún no compatible)" });
+      // Numérica: {#3.14:0.01}, {#1..5} o varias respuestas {# =3.14:0.01 =3:0.5}
+      const cuerpo = resp.slice(1).trim();
+      const lista = /^[=~%]/.test(cuerpo) ? cuerpo.split(/(?=[=~])/).filter((x) => x.trim().startsWith("=") || /^~?%100%/.test(x.trim())) : [cuerpo];
+      const numericas = lista
+        .map((x) => restaurar(x.replace(/^[=~]/, "").replace(/^%\d+%/, "").split("#")[0]).trim())
+        .map((x) => {
+          const rango = /^(-?[\d.]+)\.\.(-?[\d.]+)$/.exec(x);
+          if (rango) return { valor: (Number(rango[1]) + Number(rango[2])) / 2, tolerancia: Math.abs(Number(rango[2]) - Number(rango[1])) / 2 };
+          const [v, t] = x.split(":");
+          return { valor: Number(v), tolerancia: Math.abs(Number(t ?? 0) || 0) };
+        })
+        .filter((x) => Number.isFinite(x.valor) && x.valor === x.valor);
+      if (!numericas.length) {
+        omitidas.push({ nombre, motivo: "Numérica sin respuesta válida" });
+        continue;
+      }
+      preguntas.push({ ...base, tipo: "numerica", numericas });
       continue;
     }
     if (!resp) {
-      omitidas.push({ nombre, motivo: "Pregunta abierta (ensayo): no se califica automáticamente" });
+      preguntas.push({ ...base, tipo: "ensayo" });
       continue;
     }
     const partes = resp

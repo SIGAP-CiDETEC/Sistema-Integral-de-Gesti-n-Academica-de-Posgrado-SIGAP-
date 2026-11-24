@@ -7,10 +7,10 @@ import { AdmisionService } from './admision.service';
  * Datos compartidos que edita Posgrado. Cada clave tiene quién la puede leer:
  * - convocatorias y contenido: públicos (la página de inicio y el login los muestran a cualquiera).
  * - evaluacion: cualquier cuenta del personal (los profesores ven sus grupos).
- * - posgrado (comunicados, avisos, acta del Colegio, actas SIP-12): Posgrado y Subdirección.
+ * - posgrado (comunicados, avisos, acta del Colegio, actas SIP-12) y examen (configuración del examen en línea): Posgrado y Subdirección.
  * Solo Posgrado los modifica.
  */
-const LECTURA: Record<string, 'publico' | 'personal' | 'posgrado'> = { convocatorias: 'publico', contenido: 'publico', evaluacion: 'personal', posgrado: 'posgrado' };
+const LECTURA: Record<string, 'publico' | 'personal' | 'posgrado'> = { convocatorias: 'publico', contenido: 'publico', evaluacion: 'personal', posgrado: 'posgrado', examen: 'posgrado' };
 
 class AlmacenDto {
   @Allow() valor!: unknown;

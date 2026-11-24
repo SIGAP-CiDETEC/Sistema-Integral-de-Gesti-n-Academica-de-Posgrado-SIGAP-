@@ -1,16 +1,52 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
-import { ChevronDown, ChevronRight, Copy, Eye, EyeOff, FileUp, Pencil, Plus, RotateCcw, Search, Trash2 } from "lucide-react";
-import { Aviso, Etiqueta, botonPrimario, botonSecundario, inputBase } from "@/components/posgrado/ui";
+import {
+  ChevronDown,
+  ChevronRight,
+  Copy,
+  Eye,
+  EyeOff,
+  FileUp,
+  Pencil,
+  Plus,
+  RotateCcw,
+  Search,
+  Trash2,
+} from "lucide-react";
+import {
+  Aviso,
+  Etiqueta,
+  botonPrimario,
+  botonSecundario,
+  inputBase,
+} from "@/components/posgrado/ui";
 import { usePosgrado } from "@/components/posgrado/PosgradoProvider";
 import { notificar } from "@/lib/avisos-ui";
-import { NIVELES, NOMBRE_NIVEL, NOMBRE_TIPO, eliminarPregunta, guardarPregunta, importarPreguntas, nuevoId, restaurarBancoEjemplo, useExamen, type Nivel, type Pregunta, type TipoPregunta } from "@/lib/examen";
+import {
+  REMOTO,
+  NIVELES,
+  NOMBRE_NIVEL,
+  NOMBRE_TIPO,
+  eliminarPregunta,
+  guardarPregunta,
+  importarPreguntas,
+  nuevoId,
+  restaurarBancoEjemplo,
+  useExamen,
+  valorPregunta,
+  TIPO,
+  type Nivel,
+  type Pregunta,
+  type TipoPregunta,
+} from "@/lib/examen";
 import { importarGift, type ResultadoImportacion } from "@/lib/examen-gift";
+import { esMoodleXml, importarMoodleXml } from "@/lib/examen-xml";
 import { AREAS_EVAL, nombreArea, type AreaEvalId } from "@/lib/posgrado/datos";
 import { useSesion } from "@/lib/sesion";
 import { Contenido, textoPlano } from "./Contenido";
-import { EditorPregunta } from "./EditorPregunta";
+import { EditorPregunta, prepararTipo } from "./EditorPregunta";
+import { ElegirTipo } from "./ElegirTipo";
 import { VistaRespuestas } from "./VistaRespuestas";
 
 const TONO_NIVEL: Record<Nivel, string> = {
@@ -18,14 +54,12 @@ const TONO_NIVEL: Record<Nivel, string> = {
   comprender: "bg-sky-50 text-sky-800",
   aplicar: "bg-emerald-50 text-emerald-700",
   analizar: "bg-violet-50 text-violet-800",
-  evaluar: "bg-amber-50 text-amber-800",
-  crear: "bg-rose-50 text-rose-800",
-  "sin-nivel": "bg-gray-50 text-gray-500",
+  "sin-nivel": "bg-amber-50 text-amber-800",
 };
 
 /** Banco de preguntas del examen de admisión: lo consultan y editan Posgrado y la Subdirección Académica. */
 export function BancoPreguntas() {
-  const { banco, cargado } = useExamen();
+  const { banco, config, cargado } = useExamen();
   const { registrarEnBitacora } = usePosgrado();
   const { sesion } = useSesion();
   const por = sesion?.nombre ?? "Posgrado";
@@ -38,49 +72,69 @@ export function BancoPreguntas() {
   const [abierta, setAbierta] = useState<string | null>(null);
   const [editando, setEditando] = useState<Pregunta | null>(null);
   const [importando, setImportando] = useState(false);
+  const [eligiendo, setEligiendo] = useState(false);
 
-  const delArea = useMemo(() => banco.filter((p) => p.area === area), [banco, area]);
-  const temas = useMemo(() => [...new Set(delArea.map((p) => p.tema))].sort((a, b) => a.localeCompare(b, "es", { numeric: true })), [delArea]);
+  const delArea = useMemo(
+    () => banco.filter((p) => p.area === area),
+    [banco, area],
+  );
+  const temas = useMemo(
+    () =>
+      [...new Set(delArea.map((p) => p.tema))].sort((a, b) =>
+        a.localeCompare(b, "es", { numeric: true }),
+      ),
+    [delArea],
+  );
   if (!cargado) return null;
 
-  const norm = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+  const norm = (s: string) =>
+    s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
   const lista = delArea.filter(
     (p) =>
       (!tema || p.tema === tema) &&
       (!nivel || p.nivel === nivel) &&
       (!tipo || p.tipo === tipo) &&
       (verInactivas || p.activa) &&
-      (!q || norm(`${textoPlano(p.enunciado)} ${p.clave ?? ""}`).includes(norm(q))),
+      (!q ||
+        norm(`${textoPlano(p.enunciado)} ${p.clave ?? ""}`).includes(norm(q))),
   );
-  const nueva = (): Pregunta => ({
-    id: nuevoId(),
-    area,
-    unidad: delArea.find((p) => p.tema === tema)?.unidad ?? "",
-    tema: tema || temas[0] || "",
-    nivel: "comprender",
-    tipo: "opcion",
-    enunciado: "",
-    opciones: [
-      { id: "a", texto: "", correcta: true },
-      { id: "b", texto: "", correcta: false },
-      { id: "c", texto: "", correcta: false },
-      { id: "d", texto: "", correcta: false },
-    ],
-    activa: true,
-    origen: "sigap",
-    actualizadoEl: new Date().toISOString(),
-    actualizadoPor: por,
-  });
-  const etiqueta = (p: Pregunta) => p.clave || `${p.tema} · ${textoPlano(p.enunciado).slice(0, 40)}`;
+  const nueva = (t: TipoPregunta): Pregunta =>
+    prepararTipo(
+      {
+        id: nuevoId(),
+        area,
+        unidad: delArea.find((p) => p.tema === tema)?.unidad ?? "",
+        tema: tema || temas[0] || "",
+        nivel: "comprender",
+        tipo: t,
+        enunciado: "",
+        activa: true,
+        origen: "sigap",
+        actualizadoEl: new Date().toISOString(),
+        actualizadoPor: por,
+      },
+      t,
+    );
+  const etiqueta = (p: Pregunta) =>
+    p.clave || `${p.tema} · ${textoPlano(p.enunciado).slice(0, 40)}`;
   const guardar = (p: Pregunta, accion: string) => {
-    guardarPregunta({ ...p, actualizadoEl: new Date().toISOString(), actualizadoPor: por });
-    registrarEnBitacora(`${accion} en el banco del examen (${nombreArea(p.area)}): ${etiqueta(p)}`);
+    guardarPregunta({
+      ...p,
+      actualizadoEl: new Date().toISOString(),
+      actualizadoPor: por,
+    });
+    registrarEnBitacora(
+      `${accion} en el banco del examen (${nombreArea(p.area)}): ${etiqueta(p)}`,
+    );
   };
 
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="inline-flex rounded-lg border border-gray-200 bg-white p-1" role="tablist">
+        <div
+          className="inline-flex rounded-lg border border-gray-200 bg-white p-1"
+          role="tablist"
+        >
           {AREAS_EVAL.map((a) => (
             <button
               key={a.id}
@@ -93,33 +147,63 @@ export function BancoPreguntas() {
               }}
               className={`rounded-md px-3 py-1.5 text-sm font-medium ${area === a.id ? "bg-primary text-white" : "text-gray-700 hover:bg-gray-100"}`}
             >
-              {a.id === "matematicas" ? "Matemáticas" : a.nombre} · {banco.filter((p) => p.area === a.id).length}
+              {a.id === "matematicas" ? "Matemáticas" : a.nombre} ·{" "}
+              {banco.filter((p) => p.area === a.id).length}
             </button>
           ))}
         </div>
         <div className="flex flex-wrap gap-2">
-          <button type="button" className={botonSecundario} onClick={() => setImportando(true)}>
+          <button
+            type="button"
+            className={botonSecundario}
+            onClick={() => setImportando(true)}
+          >
             <FileUp size={15} /> Importar de Moodle
           </button>
-          <button type="button" className={botonPrimario} onClick={() => setEditando(nueva())}>
+          <button
+            type="button"
+            className={botonPrimario}
+            onClick={() => setEligiendo(true)}
+          >
             <Plus size={15} /> Nueva pregunta
           </button>
         </div>
       </div>
 
       <Resumen preguntas={delArea} />
+      {delArea.some((p) => p.activa && p.nivel === "sin-nivel") && (
+        <Aviso
+          tono="alerta"
+          titulo={`${delArea.filter((p) => p.activa && p.nivel === "sin-nivel").length} preguntas sin nivel`}
+        >
+          No saldrán en el examen: el examen se arma solo con Recordar,
+          Comprender, Aplicar y Analizar. Edítalas para asignarles nivel.
+        </Aviso>
+      )}
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <label className="text-sm">
           <span className="font-medium text-gray-900">Buscar</span>
           <span className="relative mt-1 block">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Texto o clave de Moodle" className={`${inputBase} pl-8`} />
+            <Search
+              size={14}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+            />
+            <input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Texto o clave de Moodle"
+              className={`${inputBase} pl-8`}
+            />
           </span>
         </label>
         <label className="text-sm">
           <span className="font-medium text-gray-900">Tema</span>
-          <select value={tema} onChange={(e) => setTema(e.target.value)} className={`${inputBase} mt-1`}>
+          <select
+            value={tema}
+            onChange={(e) => setTema(e.target.value)}
+            className={`${inputBase} mt-1`}
+          >
             <option value="">Todos ({temas.length})</option>
             {temas.map((t) => (
               <option key={t}>{t}</option>
@@ -128,7 +212,11 @@ export function BancoPreguntas() {
         </label>
         <label className="text-sm">
           <span className="font-medium text-gray-900">Nivel</span>
-          <select value={nivel} onChange={(e) => setNivel(e.target.value)} className={`${inputBase} mt-1`}>
+          <select
+            value={nivel}
+            onChange={(e) => setNivel(e.target.value)}
+            className={`${inputBase} mt-1`}
+          >
             <option value="">Todos</option>
             {[...NIVELES, "sin-nivel" as const].map((n) => (
               <option key={n} value={n}>
@@ -139,7 +227,11 @@ export function BancoPreguntas() {
         </label>
         <label className="text-sm">
           <span className="font-medium text-gray-900">Tipo</span>
-          <select value={tipo} onChange={(e) => setTipo(e.target.value)} className={`${inputBase} mt-1`}>
+          <select
+            value={tipo}
+            onChange={(e) => setTipo(e.target.value)}
+            className={`${inputBase} mt-1`}
+          >
             <option value="">Todos</option>
             {(Object.keys(NOMBRE_TIPO) as TipoPregunta[]).map((t) => (
               <option key={t} value={t}>
@@ -150,7 +242,12 @@ export function BancoPreguntas() {
         </label>
       </div>
       <label className="flex items-center gap-2 text-sm text-gray-700">
-        <input type="checkbox" checked={verInactivas} onChange={(e) => setVerInactivas(e.target.checked)} /> Mostrar las desactivadas (no salen en el examen)
+        <input
+          type="checkbox"
+          checked={verInactivas}
+          onChange={(e) => setVerInactivas(e.target.checked)}
+        />{" "}
+        Mostrar las desactivadas (no salen en el examen)
       </label>
 
       <section className="overflow-hidden rounded-xl border border-gray-200 bg-white">
@@ -162,49 +259,138 @@ export function BancoPreguntas() {
             const ver = abierta === p.id;
             return (
               <li key={p.id} className={p.activa ? "" : "bg-gray-50/80"}>
-                <button type="button" onClick={() => setAbierta(ver ? null : p.id)} className="flex w-full items-start gap-3 px-4 py-3 text-left hover:bg-gray-50">
-                  {ver ? <ChevronDown size={16} className="mt-0.5 shrink-0 text-gray-400" /> : <ChevronRight size={16} className="mt-0.5 shrink-0 text-gray-400" />}
+                <button
+                  type="button"
+                  onClick={() => setAbierta(ver ? null : p.id)}
+                  className="flex w-full items-start gap-3 px-4 py-3 text-left hover:bg-gray-50"
+                >
+                  {ver ? (
+                    <ChevronDown
+                      size={16}
+                      className="mt-0.5 shrink-0 text-gray-400"
+                    />
+                  ) : (
+                    <ChevronRight
+                      size={16}
+                      className="mt-0.5 shrink-0 text-gray-400"
+                    />
+                  )}
                   <span className="min-w-0 flex-1">
-                    <span className={`block truncate text-sm ${p.activa ? "text-gray-900" : "text-gray-500 line-through"}`}>{textoPlano(p.enunciado) || "(sin enunciado)"}</span>
+                    <span
+                      className={`block truncate text-sm ${p.activa ? "text-gray-900" : "text-gray-500 line-through"}`}
+                    >
+                      {textoPlano(p.enunciado) || "(sin enunciado)"}
+                    </span>
                     <span className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-gray-500">
                       <span>{p.tema}</span>·<span>{NOMBRE_TIPO[p.tipo]}</span>
-                      <Etiqueta tono={TONO_NIVEL[p.nivel]}>{NOMBRE_NIVEL[p.nivel]}</Etiqueta>
+                      <Etiqueta tono={TONO_NIVEL[p.nivel]}>
+                        {NOMBRE_NIVEL[p.nivel]}
+                      </Etiqueta>
+                      {p.nivel !== "sin-nivel" && (
+                        <span
+                          className={
+                            p.valor !== undefined
+                              ? "font-medium text-violet-800"
+                              : ""
+                          }
+                        >
+                          {valorPregunta(p, config.pesos)} pts
+                          {p.valor !== undefined ? " (propio)" : ""}
+                        </span>
+                      )}
                       {p.clave && <span className="font-mono">{p.clave}</span>}
-                      {!p.activa && <Etiqueta tono="bg-gray-200 text-gray-600">Desactivada</Etiqueta>}
+                      {!p.activa && (
+                        <Etiqueta tono="bg-gray-200 text-gray-600">
+                          Desactivada
+                        </Etiqueta>
+                      )}
+                      {!TIPO[p.tipo]?.enExamen && (
+                        <Etiqueta tono="bg-amber-50 text-amber-800">
+                          No sale en el examen
+                        </Etiqueta>
+                      )}
                     </span>
                   </span>
                 </button>
                 {ver && (
                   <div className="space-y-3 border-t border-gray-100 bg-gray-50/50 px-4 py-4 pl-11">
-                    <Contenido html={p.enunciado} className="text-sm text-gray-900" />
+                    <Contenido
+                      html={p.enunciado}
+                      className="text-sm text-gray-900"
+                    />
                     <VistaRespuestas p={p} />
                     {p.retroalimentacion && (
                       <div className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs text-gray-600">
-                        <span className="font-medium text-gray-700">Retroalimentación: </span>
+                        <span className="font-medium text-gray-700">
+                          Retroalimentación:{" "}
+                        </span>
                         <Contenido html={p.retroalimentacion} como="span" />
                       </div>
                     )}
                     <p className="text-xs text-gray-500">
-                      {p.unidad} · {p.origen === "moodle" ? "Importada de Moodle" : "Creada en SIGAP"} · Último cambio: {p.actualizadoPor},{" "}
-                      {new Date(p.actualizadoEl).toLocaleString("es-MX", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                      {p.unidad} ·{" "}
+                      {p.origen === "moodle"
+                        ? "Importada de Moodle"
+                        : "Creada en SIGAP"}{" "}
+                      · Último cambio: {p.actualizadoPor},{" "}
+                      {new Date(p.actualizadoEl).toLocaleString("es-MX", {
+                        day: "numeric",
+                        month: "short",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
                     </p>
                     <div className="flex flex-wrap gap-2">
-                      <button type="button" className={botonSecundario} onClick={() => setEditando(p)}>
+                      <button
+                        type="button"
+                        className={botonSecundario}
+                        onClick={() => setEditando(p)}
+                      >
                         <Pencil size={14} /> Editar
                       </button>
-                      <button type="button" className={botonSecundario} onClick={() => setEditando({ ...p, id: nuevoId(), clave: undefined, origen: "sigap" })}>
+                      <button
+                        type="button"
+                        className={botonSecundario}
+                        onClick={() =>
+                          setEditando({
+                            ...p,
+                            id: nuevoId(),
+                            clave: undefined,
+                            origen: "sigap",
+                          })
+                        }
+                      >
                         <Copy size={14} /> Duplicar
                       </button>
-                      <button type="button" className={botonSecundario} onClick={() => guardar({ ...p, activa: !p.activa }, p.activa ? "Desactivó una pregunta" : "Activó una pregunta")}>
-                        {p.activa ? <EyeOff size={14} /> : <Eye size={14} />} {p.activa ? "Desactivar" : "Activar"}
+                      <button
+                        type="button"
+                        className={botonSecundario}
+                        onClick={() =>
+                          guardar(
+                            { ...p, activa: !p.activa },
+                            p.activa
+                              ? "Desactivó una pregunta"
+                              : "Activó una pregunta",
+                          )
+                        }
+                      >
+                        {p.activa ? <EyeOff size={14} /> : <Eye size={14} />}{" "}
+                        {p.activa ? "Desactivar" : "Activar"}
                       </button>
                       <button
                         type="button"
                         className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm text-red-700 hover:bg-red-50"
                         onClick={() => {
-                          if (!window.confirm("¿Eliminar esta pregunta del banco? No se puede deshacer (si solo quieres que no salga, desactívala).")) return;
+                          if (
+                            !window.confirm(
+                              "¿Eliminar esta pregunta del banco? No se puede deshacer (si solo quieres que no salga, desactívala).",
+                            )
+                          )
+                            return;
                           eliminarPregunta(p.id);
-                          registrarEnBitacora(`Eliminó una pregunta del banco del examen (${nombreArea(p.area)}): ${etiqueta(p)}`);
+                          registrarEnBitacora(
+                            `Eliminó una pregunta del banco del examen (${nombreArea(p.area)}): ${etiqueta(p)}`,
+                          );
                         }}
                       >
                         <Trash2 size={14} /> Eliminar
@@ -215,20 +401,40 @@ export function BancoPreguntas() {
               </li>
             );
           })}
-          {!lista.length && <li className="px-4 py-8 text-center text-sm text-gray-500">No hay preguntas con esos filtros.</li>}
+          {!lista.length && (
+            <li className="px-4 py-8 text-center text-sm text-gray-500">
+              No hay preguntas con esos filtros.
+            </li>
+          )}
         </ul>
       </section>
 
-      <button
-        type="button"
-        className="inline-flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-800"
-        onClick={() => {
-          if (window.confirm("¿Volver al banco de ejemplo? Se borran las preguntas importadas y los cambios de este navegador.")) restaurarBancoEjemplo();
-        }}
-      >
-        <RotateCcw size={12} /> Restaurar el banco de ejemplo (demostración)
-      </button>
+      {!REMOTO && (
+        <button
+          type="button"
+          className="inline-flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-800"
+          onClick={() => {
+            if (
+              window.confirm(
+                "¿Volver al banco de ejemplo? Se borran las preguntas importadas y los cambios de este navegador.",
+              )
+            )
+              restaurarBancoEjemplo();
+          }}
+        >
+          <RotateCcw size={12} /> Restaurar el banco de ejemplo (demostración)
+        </button>
+      )}
 
+      {eligiendo && (
+        <ElegirTipo
+          onCancelar={() => setEligiendo(false)}
+          onElegir={(t) => {
+            setEligiendo(false);
+            setEditando(nueva(t));
+          }}
+        />
+      )}
       {editando && (
         <EditorPregunta
           inicial={editando}
@@ -241,7 +447,10 @@ export function BancoPreguntas() {
             setEditando(null);
             setAbierta(p.id);
             setArea(p.area);
-            notificar(existe ? "Pregunta actualizada." : "Pregunta agregada al banco.", "exito");
+            notificar(
+              existe ? "Pregunta actualizada." : "Pregunta agregada al banco.",
+              "exito",
+            );
           }}
         />
       )}
@@ -250,12 +459,26 @@ export function BancoPreguntas() {
           area={area}
           por={por}
           onCerrar={() => setImportando(false)}
-          onImportar={(a, r, reemplazar) => {
-            importarPreguntas(a, r.preguntas, reemplazar);
-            registrarEnBitacora(`Importó ${r.preguntas.length} preguntas de Moodle al banco del examen (${nombreArea(a)})${reemplazar ? ", reemplazando las anteriores" : ""}`);
+          onImportar={async (a, r, reemplazar) => {
+            try {
+              await importarPreguntas(a, r.preguntas, reemplazar);
+            } catch (e) {
+              notificar(
+                e instanceof Error
+                  ? `No se pudo importar: ${e.message}`
+                  : "No se pudo importar el banco.",
+              );
+              return;
+            }
+            registrarEnBitacora(
+              `Importó ${r.preguntas.length} preguntas de Moodle al banco del examen (${nombreArea(a)})${reemplazar ? ", reemplazando las anteriores" : ""}`,
+            );
             setImportando(false);
             setArea(a);
-            notificar(`Se importaron ${r.preguntas.length} preguntas.`, "exito");
+            notificar(
+              `Se importaron ${r.preguntas.length} preguntas.`,
+              "exito",
+            );
           }}
         />
       )}
@@ -266,13 +489,18 @@ export function BancoPreguntas() {
 /** Cuántas preguntas activas hay por tema y nivel. */
 function Resumen({ preguntas }: { preguntas: Pregunta[] }) {
   const activas = preguntas.filter((p) => p.activa);
-  const niveles = [...NIVELES, "sin-nivel" as const].filter((n) => activas.some((p) => p.nivel === n));
-  const temas = [...new Set(activas.map((p) => p.tema))].sort((a, b) => a.localeCompare(b, "es", { numeric: true }));
+  const niveles = [...NIVELES, "sin-nivel" as const].filter((n) =>
+    activas.some((p) => p.nivel === n),
+  );
+  const temas = [...new Set(activas.map((p) => p.tema))].sort((a, b) =>
+    a.localeCompare(b, "es", { numeric: true }),
+  );
   if (!temas.length) return null;
   return (
     <details className="rounded-xl border border-gray-200 bg-white">
       <summary className="cursor-pointer px-4 py-2.5 text-sm font-medium text-gray-900">
-        {activas.length} preguntas activas en {temas.length} temas · ver cuántas hay por tema y nivel
+        {activas.length} preguntas activas en {temas.length} temas · ver cuántas
+        hay por tema y nivel
       </summary>
       <div className="overflow-x-auto border-t border-gray-100">
         <table className="w-full min-w-[520px] text-left text-xs">
@@ -292,11 +520,17 @@ function Resumen({ preguntas }: { preguntas: Pregunta[] }) {
               <tr key={t}>
                 <td className="px-3 py-1.5 text-gray-800">{t}</td>
                 {niveles.map((n) => (
-                  <td key={n} className="px-2 py-1.5 text-center tabular-nums text-gray-700">
-                    {activas.filter((p) => p.tema === t && p.nivel === n).length || "·"}
+                  <td
+                    key={n}
+                    className="px-2 py-1.5 text-center tabular-nums text-gray-700"
+                  >
+                    {activas.filter((p) => p.tema === t && p.nivel === n)
+                      .length || "·"}
                   </td>
                 ))}
-                <td className="px-3 py-1.5 text-center font-medium tabular-nums">{activas.filter((p) => p.tema === t).length}</td>
+                <td className="px-3 py-1.5 text-center font-medium tabular-nums">
+                  {activas.filter((p) => p.tema === t).length}
+                </td>
               </tr>
             ))}
           </tbody>
@@ -306,7 +540,21 @@ function Resumen({ preguntas }: { preguntas: Pregunta[] }) {
   );
 }
 
-function Importar({ area: inicial, por, onCerrar, onImportar }: { area: AreaEvalId; por: string; onCerrar: () => void; onImportar: (a: AreaEvalId, r: ResultadoImportacion, reemplazar: boolean) => void }) {
+function Importar({
+  area: inicial,
+  por,
+  onCerrar,
+  onImportar,
+}: {
+  area: AreaEvalId;
+  por: string;
+  onCerrar: () => void;
+  onImportar: (
+    a: AreaEvalId,
+    r: ResultadoImportacion,
+    reemplazar: boolean,
+  ) => void;
+}) {
   const [area, setArea] = useState(inicial);
   const [r, setR] = useState<ResultadoImportacion | null>(null);
   const [archivo, setArchivo] = useState("");
@@ -317,20 +565,38 @@ function Importar({ area: inicial, por, onCerrar, onImportar }: { area: AreaEval
     setError("");
     setR(null);
     if (!f) return;
-    if (f.size > 4 * 1024 * 1024) return setError("El archivo es muy grande (máximo 4 MB).");
+    if (f.size > 4 * 1024 * 1024)
+      return setError("El archivo es muy grande (máximo 4 MB).");
     const texto = await f.text();
-    const res = importarGift(texto, area, por);
-    if (!res.preguntas.length) return setError("No se encontraron preguntas. Exporta el banco desde Moodle en formato GIFT.");
+    const res = esMoodleXml(texto)
+      ? importarMoodleXml(texto, area, por)
+      : importarGift(texto, area, por);
+    if (!res.preguntas.length)
+      return setError(
+        res.omitidas[0]?.nombre === "(archivo)"
+          ? res.omitidas[0].motivo
+          : "No se encontraron preguntas. Exporta el banco desde Moodle en formato Moodle XML o GIFT.",
+      );
     setArchivo(f.name);
     setR(res);
   };
   const temas = r ? [...new Set(r.preguntas.map((p) => p.tema))] : [];
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" role="dialog" aria-modal="true">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
+      role="dialog"
+      aria-modal="true"
+    >
       <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl bg-white p-5 shadow-xl">
-        <h2 className="font-semibold text-gray-900">Importar preguntas de Moodle</h2>
+        <h2 className="font-semibold text-gray-900">
+          Importar preguntas de Moodle
+        </h2>
         <p className="mt-1 text-sm text-gray-600">
-          En Moodle: <em>Banco de preguntas → Exportar</em>, formato <strong>GIFT</strong>. El tema se toma de la categoría y el nivel de la etiqueta (p. ej. “comprender”).
+          En Moodle: <em>Banco de preguntas → Exportar</em>, formato{" "}
+          <strong>Moodle XML</strong> (recomendado: trae todos los tipos e
+          imágenes) o <strong>GIFT</strong>. El tema se toma de la categoría (o
+          del nombre, p. ej. PROG_4_…) y el nivel de la etiqueta o de una
+          carpeta con el nombre del nivel (p. ej. “Comprender”).
         </p>
         <label className="mt-4 block text-sm">
           <span className="font-medium text-gray-900">Área del examen</span>
@@ -349,18 +615,35 @@ function Importar({ area: inicial, por, onCerrar, onImportar }: { area: AreaEval
             ))}
           </select>
         </label>
-        <input ref={input} type="file" accept=".txt,.gift,text/plain" className="hidden" onChange={(e) => leer(e.target.files?.[0])} />
-        <button type="button" className={`${botonSecundario} mt-3`} onClick={() => input.current?.click()}>
-          <FileUp size={15} /> {archivo ? "Elegir otro archivo" : "Elegir archivo .txt"}
+        <input
+          ref={input}
+          type="file"
+          accept=".xml,.txt,.gift,text/xml,application/xml,text/plain"
+          className="hidden"
+          onChange={(e) => leer(e.target.files?.[0])}
+        />
+        <button
+          type="button"
+          className={`${botonSecundario} mt-3`}
+          onClick={() => input.current?.click()}
+        >
+          <FileUp size={15} />{" "}
+          {archivo ? "Elegir otro archivo" : "Elegir archivo .xml o .txt"}
         </button>
         {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
         {r && (
           <div className="mt-4 space-y-3">
-            <Aviso tono="exito" titulo={`${r.preguntas.length} preguntas listas para importar`}>
+            <Aviso
+              tono="exito"
+              titulo={`${r.preguntas.length} preguntas listas para importar`}
+            >
               {archivo} · {temas.length} temas.
             </Aviso>
             {!!r.omitidas.length && (
-              <Aviso tono="alerta" titulo={`${r.omitidas.length} no se pueden importar`}>
+              <Aviso
+                tono="alerta"
+                titulo={`${r.omitidas.length} no se pueden importar`}
+              >
                 <ul className="mt-1 max-h-32 list-disc overflow-y-auto pl-4 text-xs">
                   {r.omitidas.map((o, i) => (
                     <li key={i}>
@@ -371,8 +654,16 @@ function Importar({ area: inicial, por, onCerrar, onImportar }: { area: AreaEval
               </Aviso>
             )}
             <label className="flex items-start gap-2 text-sm">
-              <input type="checkbox" checked={reemplazar} onChange={(e) => setReemplazar(e.target.checked)} className="mt-1" />
-              <span>Reemplazar las preguntas que ya hay de {nombreArea(area)} (si no, se agregan a las existentes)</span>
+              <input
+                type="checkbox"
+                checked={reemplazar}
+                onChange={(e) => setReemplazar(e.target.checked)}
+                className="mt-1"
+              />
+              <span>
+                Reemplazar las preguntas que ya hay de {nombreArea(area)} (si
+                no, se agregan a las existentes)
+              </span>
             </label>
           </div>
         )}
@@ -380,7 +671,12 @@ function Importar({ area: inicial, por, onCerrar, onImportar }: { area: AreaEval
           <button type="button" className={botonSecundario} onClick={onCerrar}>
             Cancelar
           </button>
-          <button type="button" className={botonPrimario} disabled={!r} onClick={() => r && onImportar(area, r, reemplazar)}>
+          <button
+            type="button"
+            className={botonPrimario}
+            disabled={!r}
+            onClick={() => r && onImportar(area, r, reemplazar)}
+          >
             Importar
           </button>
         </div>

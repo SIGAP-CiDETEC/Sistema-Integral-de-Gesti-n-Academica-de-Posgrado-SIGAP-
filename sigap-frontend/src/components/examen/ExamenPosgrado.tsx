@@ -2,8 +2,7 @@
 
 import { useState } from "react";
 import { PageHeader } from "@/components/PageHeader";
-import { Aviso, Regresar } from "@/components/posgrado/ui";
-import { MODO_API, SIMULACION } from "@/lib/api";
+import { Regresar } from "@/components/posgrado/ui";
 import { AplicacionExamen } from "./AplicacionExamen";
 import { BancoPreguntas } from "./BancoPreguntas";
 import { ConfigExamenPosgrado } from "./ConfigExamen";
@@ -44,13 +43,7 @@ export function ExamenPosgrado() {
   );
 }
 
-/** Por ahora el examen en línea funciona en la demostración (todo en el navegador). */
+/** Envoltura del módulo (antes solo existía en la demostración; ahora también funciona con el servidor). */
 export function EnDemostracion({ children }: { children: React.ReactNode }) {
-  if (MODO_API && !SIMULACION)
-    return (
-      <Aviso tono="info" titulo="En preparación">
-        El examen en línea se está probando en la versión de demostración; todavía no está disponible en el servidor.
-      </Aviso>
-    );
   return <>{children}</>;
 }

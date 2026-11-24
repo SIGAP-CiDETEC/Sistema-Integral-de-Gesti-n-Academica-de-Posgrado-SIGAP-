@@ -124,8 +124,7 @@ export const NAV: Record<Rol, NavItem[]> = {
  */
 export const NAV_SERVIDOR: Partial<Record<Rol, NavItem[]>> = {
   // Las contraseñas se recuperan por correo; las cuentas las atiende el Administrador
-  // El examen en línea por ahora solo está en la demostración
-  posgrado: NAV.posgrado.filter((i) => i.href !== "/posgrado/examen"),
+  posgrado: NAV.posgrado,
   // Portal del aspirante con el servidor real: el menú muestra solo las pestañas que ya tiene habilitadas (/portal/yo)
   aspirante: [
     { label: "Inicio", href: "/aspirante", icon: "home" },
@@ -147,8 +146,15 @@ export const NAV_SERVIDOR: Partial<Record<Rol, NavItem[]>> = {
     { label: "Inicio", href: "/subdireccion", icon: "panorama" },
     { label: "Aspirantes", href: "/subdireccion/aspirantes", icon: "expedientes" },
     { label: "Seminario de inducción", href: "/subdireccion/seminario", icon: "calendario" },
+    { label: "Banco de preguntas", href: "/subdireccion/banco", icon: "examen" },
     { label: "Bitácora", href: "/subdireccion/bitacora", icon: "bitacora" },
   ],
+};
+
+/** Pantallas conectadas al servidor que no van en el menú (se llega a ellas desde otra pantalla). */
+export const RUTAS_SIN_MENU_SERVIDOR: Partial<Record<Rol, string[]>> = {
+  // El aspirante entra a su examen desde la tarjeta de su fase de Evaluación
+  aspirante: ["/aspirante/examen"],
 };
 
 /** Usuario de ejemplo mientras no hay autenticación real. */
