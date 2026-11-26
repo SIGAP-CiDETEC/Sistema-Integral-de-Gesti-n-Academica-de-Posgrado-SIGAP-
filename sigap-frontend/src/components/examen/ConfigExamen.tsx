@@ -18,13 +18,13 @@ const RESTRICCIONES: { id: keyof Restricciones; t: string; d: string }[] = [
 const num = (v: string, min: number, max: number, def: number) => Math.max(min, Math.min(max, Number.isFinite(Number(v)) && v !== "" ? Number(v) : def));
 
 /** Configuración del examen: ponderación por nivel y, por área, horario, duración, preguntas por nivel y valor. */
-export function ConfigExamenPosgrado() {
+export function ConfigExamenPosgrado({ soloLectura = false }: { soloLectura?: boolean }) {
   const { config, banco, cargado } = useExamen();
   if (!cargado) return null;
-  return <Formulario key={JSON.stringify(config)} inicial={config} banco={banco} />;
+  return <Formulario key={JSON.stringify(config)} inicial={config} banco={banco} soloLectura={soloLectura} />;
 }
 
-function Formulario({ inicial, banco }: { inicial: ConfigExamen; banco: ReturnType<typeof useExamen>["banco"] }) {
+function Formulario({ inicial, banco, soloLectura }: { inicial: ConfigExamen; banco: ReturnType<typeof useExamen>["banco"]; soloLectura: boolean }) {
   const { registrarEnBitacora } = usePosgrado();
   const [c, setC] = useState(inicial);
   const set = <K extends keyof ConfigExamen>(k: K, v: ConfigExamen[K]) => setC({ ...c, [k]: v });
@@ -52,7 +52,9 @@ function Formulario({ inicial, banco }: { inicial: ConfigExamen; banco: ReturnTy
   };
 
   return (
-    <div className="space-y-5">
+    // Solo consulta (Subdirección): los campos quedan deshabilitados y sin botón de guardar
+    <fieldset disabled={soloLectura} className="min-w-0 space-y-5">
+      {soloLectura && <p className="rounded-lg bg-sky-50 px-3 py-2 text-sm text-sky-900">Consulta: la configuración la define el Departamento de Posgrado.</p>}
       <Tarjeta titulo="General">
         <label className="block max-w-md text-sm">
           <span className="font-medium text-gray-900">Nombre</span>
@@ -209,9 +211,11 @@ function Formulario({ inicial, banco }: { inicial: ConfigExamen; banco: ReturnTy
           <AlertTriangle size={15} className="mt-0.5 shrink-0" /> Se piden más preguntas de las disponibles en: {faltan.join(", ")}. A cada aspirante le tocarán menos.
         </p>
       )}
-      <button type="button" className={botonPrimario} onClick={guardar}>
-        <Save size={15} /> Guardar configuración
-      </button>
-    </div>
+      {!soloLectura && (
+        <button type="button" className={botonPrimario} onClick={guardar}>
+          <Save size={15} /> Guardar configuración
+        </button>
+      )}
+    </fieldset>
   );
 }

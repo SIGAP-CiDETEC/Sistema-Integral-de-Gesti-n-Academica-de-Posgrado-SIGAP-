@@ -29,7 +29,7 @@ function estadoIntento(i?: Intento): { t: string; tono: string } {
 const fechaHora = (s: string) => new Date(s).toLocaleString("es-MX", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
 
 /** Posgrado habilita los exámenes en línea (uno por área) a los aspirantes que los presentan, ve su avance e incidentes y registra sus calificaciones. */
-export function AplicacionExamen() {
+export function AplicacionExamen({ soloLectura = false }: { soloLectura?: boolean }) {
   const { aspirantes, cargado, registrarEnBitacora, actualizar } = usePosgrado();
   const { habilitados, intentos, config, cargado: listo } = useExamen();
   const { sesion } = useSesion();
@@ -85,7 +85,7 @@ export function AplicacionExamen() {
       <Tarjeta
         titulo={`Exámenes por presentar · ${filas.length}`}
         accion={
-          filas.some((f) => !estaHabilitado(f.a.id, f.area)) ? (
+          !soloLectura && filas.some((f) => !estaHabilitado(f.a.id, f.area)) ? (
             <button type="button" className={botonSecundario} onClick={() => filas.filter((f) => !estaHabilitado(f.a.id, f.area)).forEach((f) => cambiar(f.a.id, f.a.nombre, f.area, true))}>
               <UserCheck size={15} /> Habilitar a todos
             </button>
@@ -150,12 +150,14 @@ export function AplicacionExamen() {
                         </td>
                         <td className="py-2.5 pl-3">
                           <span className="flex flex-wrap justify-end gap-1.5">
-                            {i?.terminadoEl && !i.registradoEl && (
+                            {soloLectura && !i?.registradoEl && <span className="text-xs text-gray-400">—</span>}
+                            {!soloLectura && i?.terminadoEl && !i.registradoEl && (
                               <button type="button" className={`${botonPrimario} py-1.5`} onClick={() => registrar(f, i)}>
                                 <ClipboardCheck size={14} /> Registrar calificación
                               </button>
                             )}
-                            {!i &&
+                            {!soloLectura &&
+                              !i &&
                               (h ? (
                                 <button type="button" className={`${botonSecundario} py-1.5`} onClick={() => cambiar(f.a.id, f.a.nombre, f.area, false)}>
                                   <UserX size={14} /> Quitar
@@ -165,7 +167,7 @@ export function AplicacionExamen() {
                                   <UserCheck size={14} /> Habilitar
                                 </button>
                               ))}
-                            {i && !i.registradoEl && (
+                            {!soloLectura && i && !i.registradoEl && (
                               <button
                                 type="button"
                                 title="Por una falla técnica: borra su intento y puede volver a presentarlo"

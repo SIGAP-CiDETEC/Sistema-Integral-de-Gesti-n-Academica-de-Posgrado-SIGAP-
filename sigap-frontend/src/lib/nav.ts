@@ -93,7 +93,7 @@ export const NAV: Record<Rol, NavItem[]> = {
     { label: "Inicio", href: "/subdireccion", icon: "panorama" },
     { label: "Aspirantes", href: "/subdireccion/aspirantes", icon: "expedientes" },
     { label: "Seminario de inducción", href: "/subdireccion/seminario", icon: "calendario" },
-    { label: "Banco de preguntas", href: "/subdireccion/banco", icon: "examen" },
+    { label: "Examen en línea", href: "/subdireccion/examen", icon: "examen" },
     { label: "Bitácora", href: "/subdireccion/bitacora", icon: "bitacora" },
   ],
   // Profesores: eligen entrevistas (acta MTC-EC) y califican los grupos del propedéutico que imparten
@@ -146,7 +146,7 @@ export const NAV_SERVIDOR: Partial<Record<Rol, NavItem[]>> = {
     { label: "Inicio", href: "/subdireccion", icon: "panorama" },
     { label: "Aspirantes", href: "/subdireccion/aspirantes", icon: "expedientes" },
     { label: "Seminario de inducción", href: "/subdireccion/seminario", icon: "calendario" },
-    { label: "Banco de preguntas", href: "/subdireccion/banco", icon: "examen" },
+    { label: "Examen en línea", href: "/subdireccion/examen", icon: "examen" },
     { label: "Bitácora", href: "/subdireccion/bitacora", icon: "bitacora" },
   ],
 };

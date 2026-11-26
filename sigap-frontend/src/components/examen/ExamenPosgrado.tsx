@@ -13,13 +13,20 @@ const PESTANAS = [
   { id: "aplicacion", t: "Aplicación y resultados" },
 ] as const;
 
-/** Examen de admisión en línea (Posgrado): banco, configuración y aplicación. */
-export function ExamenPosgrado() {
+/**
+ * Examen de admisión en línea: banco, configuración y aplicación.
+ * Posgrado lo administra todo; la Subdirección Académica edita el banco y consulta la configuración y los resultados.
+ */
+export function ExamenPosgrado({ rol = "posgrado" }: { rol?: "posgrado" | "subdireccion" }) {
   const [p, setP] = useState<(typeof PESTANAS)[number]["id"]>("banco");
+  const consulta = rol === "subdireccion";
   return (
     <>
-      <Regresar href="/posgrado/evaluacion" t="Evaluación" />
-      <PageHeader titulo="Examen en línea" subtitulo="Banco de preguntas, configuración y aplicación del examen de admisión" />
+      {!consulta && <Regresar href="/posgrado/evaluacion" t="Evaluación" />}
+      <PageHeader
+        titulo="Examen en línea"
+        subtitulo={consulta ? "Banco de preguntas (editable), configuración y resultados del examen de admisión" : "Banco de preguntas, configuración y aplicación del examen de admisión"}
+      />
       <EnDemostracion>
         <div className="mb-5 flex flex-wrap gap-1 border-b border-gray-200" role="tablist">
           {PESTANAS.map((x) => (
@@ -36,8 +43,8 @@ export function ExamenPosgrado() {
           ))}
         </div>
         {p === "banco" && <BancoPreguntas />}
-        {p === "config" && <ConfigExamenPosgrado />}
-        {p === "aplicacion" && <AplicacionExamen />}
+        {p === "config" && <ConfigExamenPosgrado soloLectura={consulta} />}
+        {p === "aplicacion" && <AplicacionExamen soloLectura={consulta} />}
       </EnDemostracion>
     </>
   );
